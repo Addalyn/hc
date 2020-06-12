@@ -357,7 +357,7 @@ public class MyNetworkManager : NetworkManager
 		base.connectionConfig.MaxSentMessageQueueSize = 0x400;
 		base.connectionConfig.PingTimeout = (uint)HydrogenConfig.Get().HeartbeatPeriod.TotalMilliseconds;
 		base.connectionConfig.DisconnectTimeout = (uint)HydrogenConfig.Get().HeartbeatTimeout.TotalMilliseconds;
-		base.logLevel = LogFilter.FilterLevel.Info;
+		base.logLevel = LogFilter.FilterLevel.Developer;
 		if (0x24 < base.connectionConfig.ChannelCount)
 		{
 			Log.Error("BootstrapSingletons.prefab>My Network Manager>QoS Channels only has {0} channels but our script requires {1}", new object[]
