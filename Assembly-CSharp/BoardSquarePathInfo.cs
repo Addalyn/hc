@@ -37,9 +37,9 @@ public class BoardSquarePathInfo : IComparable
 
 	public float heuristicCost;
 
-	public BoardSquarePathInfo prev;
+	internal BoardSquarePathInfo prev;
 
-	public BoardSquarePathInfo next;
+	internal BoardSquarePathInfo next;
 
 	public bool m_unskippable;
 
