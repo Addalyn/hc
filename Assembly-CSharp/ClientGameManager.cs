@@ -4433,6 +4433,7 @@ public class ClientGameManager : MonoBehaviour
 			return;
 		}
 		GameManager.AssetsLoadingProgress assetsLoadingProgress = msg.ReadMessage<GameManager.AssetsLoadingProgress>();
+		Log.Info($"[JSON] {{\"AssetsLoadingProgress\":{DefaultJsonSerializer.Serialize(assetsLoadingProgress)} }}");
 		if (assetsLoadingProgress == null)
 		{
 			return;
@@ -4448,6 +4449,7 @@ public class ClientGameManager : MonoBehaviour
 			return;
 		}
 		GameManager.SpawningObjectsNotification spawningObjectsNotification = msg.ReadMessage<GameManager.SpawningObjectsNotification>();
+		Log.Info($"[JSON] {{\"SpawningObjectsNotification\":{DefaultJsonSerializer.Serialize(spawningObjectsNotification)} }}");
 		if (spawningObjectsNotification == null)
 		{
 			return;
@@ -4479,6 +4481,7 @@ public class ClientGameManager : MonoBehaviour
 	private void HandleReplayManagerFile(NetworkMessage msg)
 	{
 		GameManager.ReplayManagerFile replayManagerFile = msg.ReadMessage<GameManager.ReplayManagerFile>();
+		Log.Info($"[JSON] {{\"ReplayManagerFile\":{DefaultJsonSerializer.Serialize(replayManagerFile)} }}");
 		if (replayManagerFile == null)
 		{
 			return;
@@ -4523,6 +4526,7 @@ public class ClientGameManager : MonoBehaviour
 	private void HandleReconnectReplayStatus(NetworkMessage msg)
 	{
 		GameManager.ReconnectReplayStatus reconnectReplayStatus = msg.ReadMessage<GameManager.ReconnectReplayStatus>();
+		Log.Info($"[JSON] {{\"ReconnectReplayStatus\":{DefaultJsonSerializer.Serialize(reconnectReplayStatus)} }}");
 		if (reconnectReplayStatus == null)
 		{
 			return;
@@ -4556,7 +4560,9 @@ public class ClientGameManager : MonoBehaviour
 
 	private void HandleEndGameNotification(NetworkMessage msg)
 	{
-		if (msg.ReadMessage<GameManager.EndGameNotification>() == null)
+		GameManager.EndGameNotification endGameNotification = msg.ReadMessage<GameManager.EndGameNotification>();
+		Log.Info($"[JSON] {{\"EndGameNotification\":{DefaultJsonSerializer.Serialize(endGameNotification)} }}");
+		if (endGameNotification == null)
 		{
 			return;
 		}
@@ -4572,6 +4578,7 @@ public class ClientGameManager : MonoBehaviour
 			return;
 		}
 		GameManager.LoginResponse loginResponse = msg.ReadMessage<GameManager.LoginResponse>();
+		Log.Info($"[JSON] {{\"LoginResponse\":{DefaultJsonSerializer.Serialize(loginResponse)} }}");
 		if (loginResponse == null)
 		{
 			return;
