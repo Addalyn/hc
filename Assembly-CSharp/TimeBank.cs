@@ -130,6 +130,7 @@ public class TimeBank : NetworkBehaviour
 	[Command]
 	private void CmdConsumableUsed()
 	{
+		Log.Info($"[JSON] {{\"CmdConsumableUsed\":{{}}}}");
 		m_clientConsumableUsed = true;
 	}
 
