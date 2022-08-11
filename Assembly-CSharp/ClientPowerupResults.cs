@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using UnityEngine;
 
 public class ClientPowerupResults
 {
+	[JsonProperty]
 	private List<ServerClientUtils.SequenceStartData> m_seqStartDataList;
-
+	[JsonProperty]
 	private ClientAbilityResults m_powerupAbilityResults;
 
 	public ClientPowerupResults(List<ServerClientUtils.SequenceStartData> seqStartDataList, ClientAbilityResults clientAbilityResults)
