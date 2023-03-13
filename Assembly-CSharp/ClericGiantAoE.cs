@@ -142,4 +142,51 @@ public class ClericGiantAoE : Ability
 		dictionary[AbilityTooltipSymbol.Healing] = value2;
 		return dictionary;
 	}
+
+#if SERVER
+	// Added in rouges
+	private List<ActorData> GetHitTargets(List<AbilityTarget> targets, ActorData caster, List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		List<Team> onlyValidTeams = new List<Team>
+		{
+			caster.GetTeam(),
+			caster.GetEnemyTeam(),
+			Team.Objects
+		};
+		return AreaEffectUtils.GetActorsInRadius(caster.GetLoSCheckPos(), this.GetAoeRadius(), this.PenetrateLoS(), caster, onlyValidTeams, nonActorTargetInfo);
+	}
+
+	public override List<ServerClientUtils.SequenceStartData> GetAbilityRunSequenceStartDataList(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		List<ServerClientUtils.SequenceStartData> list = new List<ServerClientUtils.SequenceStartData>();
+		ServerClientUtils.SequenceStartData item = new ServerClientUtils.SequenceStartData(this.m_castSequencePrefab, caster.GetLoSCheckPos(), additionalData.m_abilityResults.HitActorsArray(), caster, additionalData.m_sequenceSource, null);
+		list.Add(item);
+		return list;
+	}
+
+	public override void GatherAbilityResults(List<AbilityTarget> targets, ActorData caster, ref AbilityResults abilityResults)
+	{
+		List<NonActorTargetInfo> nonActorTargetInfo = new List<NonActorTargetInfo>();
+		foreach (ActorData actorData in this.GetHitTargets(targets, caster, nonActorTargetInfo))
+		{
+			ActorHitResults actorHitResults = base.MakeActorHitRes(actorData, caster.GetLoSCheckPos());
+			int num = Mathf.RoundToInt((actorData.GetLoSCheckPos() - caster.GetLoSCheckPos()).magnitude / Board.Get().squareSize);
+			num = Mathf.Max(0, num - 1);
+			if (actorData.GetTeam() != caster.GetTeam())
+			{
+				int baseDamage = this.GetDamageAmount() - Mathf.RoundToInt((float)num * this.GetDamageDecreasePerSquare());
+				actorHitResults.SetBaseDamage(baseDamage);
+				actorHitResults.AddStandardEffectInfo(this.GetEnemyHitEffect());
+			}
+			else
+			{
+				int baseHealing = this.GetHealAmount() - Mathf.RoundToInt((float)num * this.GetHealDecreasePerSquare());
+				actorHitResults.SetBaseHealing(baseHealing);
+				actorHitResults.AddStandardEffectInfo(this.GetAllyHitEffect());
+			}
+			abilityResults.StoreActorHit(actorHitResults);
+		}
+		abilityResults.StoreNonActorTargetInfo(nonActorTargetInfo);
+	}
+#endif
 }

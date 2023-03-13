@@ -137,4 +137,51 @@ public class ClericConeKnockback : Ability
 		AddTokenInt(tokens, "Cone_Angle", "angle of the damage cone", (int)GetConeWidthAngle());
 		AddTokenInt(tokens, "Cone_Length", "range of the damage cone", Mathf.RoundToInt(GetConeLength()));
 	}
+
+#if SERVER
+	// added in rogues
+	private List<ActorData> GetHitTargets(List<AbilityTarget> targets, ActorData caster, List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		Vector3 aimDirection = targets[0].AimDirection;
+		Vector3 loSCheckPos = caster.GetLoSCheckPos();
+		float coneLength = GetConeLength();
+		float coneCenterAngleDegrees = VectorUtils.HorizontalAngle_Deg(aimDirection);
+		return AreaEffectUtils.GetActorsInCone(loSCheckPos, coneCenterAngleDegrees, GetConeWidthAngle(), coneLength, GetConeBackwardOffset(), PenetrateLineOfSight(), caster, caster.GetOtherTeams(), nonActorTargetInfo);
+	}
+
+	// added in rogues
+	public override void GatherAbilityResults(List<AbilityTarget> targets, ActorData caster, ref AbilityResults abilityResults)
+	{
+		List<NonActorTargetInfo> nonActorTargetInfo = new List<NonActorTargetInfo>();
+		List<ActorData> hitTargets = this.GetHitTargets(targets, caster, nonActorTargetInfo);
+		int damageAmount = this.GetDamageAmount();
+		float knockbackDistance = this.GetKnockbackDistance();
+		foreach (ActorData target in hitTargets)
+		{
+			ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(target, caster.GetFreePos()));
+			actorHitResults.SetBaseDamage(damageAmount);
+			actorHitResults.AddStandardEffectInfo(this.GetTargetHitEffect());
+			if (knockbackDistance != 0f)
+			{
+				Vector3 loSCheckPos = caster.GetLoSCheckPos();
+				Vector3 vector = targets[0].FreePos - loSCheckPos;
+				vector.y = 0f;
+				vector.Normalize();
+				Vector3 vector2 = Vector3.Cross(vector, Vector3.up);
+				float num = Vector3.Dot(vector2, targets[1].AimDirection.normalized);
+				Vector3 aimDir = Vector3.RotateTowards(vector, (num > 0f) ? vector2 : (-vector2), this.GetConeWidthAngle() * 0.5f * 0.0174532924f, 0f);
+				KnockbackHitData knockbackData = new KnockbackHitData(target, caster, this.GetKnockbackType(), aimDir, caster.GetFreePos(), knockbackDistance);
+				actorHitResults.AddKnockbackData(knockbackData);
+			}
+			abilityResults.StoreActorHit(actorHitResults);
+		}
+		abilityResults.StoreNonActorTargetInfo(nonActorTargetInfo);
+	}
+
+	// added in rogues
+	public override ServerClientUtils.SequenceStartData GetAbilityRunSequenceStartData(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		return new ServerClientUtils.SequenceStartData(this.m_castSequencePrefab, caster.GetCurrentBoardSquare(), additionalData.m_abilityResults.HitActorsArray(), caster, additionalData.m_sequenceSource, null);
+	}
+#endif
 }

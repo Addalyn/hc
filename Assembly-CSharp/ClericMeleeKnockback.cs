@@ -5,45 +5,27 @@ public class ClericMeleeKnockback : Ability
 {
 	[Header("-- Targeting")]
 	public bool m_penetrateLineOfSight;
-
 	public float m_minSeparationBetweenAoeAndCaster = 1f;
-
 	public float m_maxSeparationBetweenAoeAndCaster = 2.5f;
-
 	public float m_aoeRadius = 1.5f;
-
 	public int m_maxTargets = 5;
-
 	[Header("-- On Hit Damage/Effect")]
 	public int m_damageAmount = 20;
-
 	public float m_knockbackDistance = 1f;
-
 	public KnockbackType m_knockbackType = KnockbackType.AwayFromSource;
-
 	public StandardEffectInfo m_targetHitEffect;
-
-	[Separator("Connecting Laser between caster and aoe center", true)]
+	[Separator("Connecting Laser between caster and aoe center")]
 	public float m_connectLaserWidth;
-
 	public int m_connectLaserDamage = 20;
-
 	public StandardEffectInfo m_connectLaserEnemyHitEffect;
-
-	[Separator("-- Sequences", true)]
+	[Separator("-- Sequences")]
 	public GameObject m_castSequencePrefab;
-
 	[Header("-- Anim versions")]
 	public float m_rangePercentForLongRangeAnim = 0.5f;
-
 	private Cleric_SyncComponent m_syncComp;
-
 	private AbilityMod_ClericMeleeKnockback m_abilityMod;
-
 	private StandardEffectInfo m_cachedTargetHitEffect;
-
 	private StandardEffectInfo m_cachedConnectLaserEnemyHitEffect;
-
 	private StandardEffectInfo m_cachedSingleTargetHitEffect;
 
 	private void Start()
@@ -52,9 +34,27 @@ public class ClericMeleeKnockback : Ability
 		{
 			m_abilityName = "Sphere of Might";
 		}
-		m_syncComp = GetComponent<Cleric_SyncComponent>();
+		m_syncComp = base.GetComponent<Cleric_SyncComponent>();
 		SetupTargeter();
 	}
+
+#if SERVER
+	// added in rogues
+	public override void Run(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		base.Run(targets, caster, additionalData);
+		if (m_syncComp != null)
+		{
+			m_syncComp.Networkm_meleeKnockbackAnimRange = 0;
+			TargetData targetData = GetTargetData()[0];
+			float num = (targetData.m_range - targetData.m_minRange) * Board.SquareSizeStatic;
+			if (((TargeterUtils.GetClampedFreePos(targets[0].FreePos, caster, targetData.m_minRange, targetData.m_range) - caster.GetFreePos()).magnitude - targetData.m_minRange * Board.SquareSizeStatic) / num > m_rangePercentForLongRangeAnim)
+			{
+				m_syncComp.Networkm_meleeKnockbackAnimRange = 1;
+			}
+		}
+	}
+#endif
 
 	private void SetupTargeter()
 	{

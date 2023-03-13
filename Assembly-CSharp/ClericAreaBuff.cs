@@ -3,71 +3,47 @@ using UnityEngine;
 
 public class ClericAreaBuff : Ability
 {
-	[Separator("Targeting", true)]
+	[Separator("Targeting")]
 	public AbilityAreaShape m_shape;
-
 	public bool m_penetrateLoS;
-
 	public bool m_includeEnemies;
-
 	public bool m_includeAllies;
-
 	public bool m_includeCaster;
-
 	public Color m_iconColorWhileActive = Color.cyan;
-
-	[Separator("Misc - Energy, Cooldown, Animation", true)]
+	[Separator("Misc - Energy, Cooldown, Animation")]
 	public int m_extraTpCostPerTurnActive = 5;
-
 	public int m_cooldownWhenBuffLapses = 2;
-
-	[Separator("On Hit Heal/Damage/Effect", true)]
+	[Separator("On Hit Heal/Damage/Effect")]
 	public int m_effectDuration = 2;
-
 	public int m_healAmount;
-
 	public StandardEffectInfo m_effectOnCaster;
-
 	public StandardEffectInfo m_effectOnAllies;
-
 	[Header("-- Shielding on self override, if >= 0")]
 	public int m_selfShieldingOverride = -1;
-
 	public StandardEffectInfo m_effectOnEnemies;
-
-	[Separator("Vision on Target Square", true)]
+	[Separator("Vision on Target Square")]
 	public bool m_addVisionOnTargetSquare;
-
 	public float m_visionRadius = 1.5f;
-
 	public int m_visionDuration = 1;
-
 	public VisionProviderInfo.BrushRevealType m_brushRevealType = VisionProviderInfo.BrushRevealType.Always;
-
 	public bool m_visionAreaIgnoreLos = true;
-
-	[Separator("Sequences", true)]
+	[Separator("Sequences")]
 	public GameObject m_castSequencePrefab;
-
 	public GameObject m_persistentSequencePrefab;
-
 	public GameObject m_pulseSequencePrefab;
-
 	public GameObject m_toggleOffSequencePrefab;
-
 	private AbilityData.ActionType m_buffActionType;
-
 	private Cleric_SyncComponent m_syncComp;
-
 	private AbilityMod_ClericAreaBuff m_abilityMod;
-
 	private StandardEffectInfo m_cachedEffectOnCaster;
-
 	private StandardEffectInfo m_cachedEffectOnAllies;
-
 	private StandardEffectInfo m_cachedFirstTurnEffectOnAllies;
-
 	private StandardEffectInfo m_cachedEffectOnEnemies;
+
+#if SERVER
+	// added in rogues
+	public GroundEffectField m_aoeField;
+#endif
 
 	private void Start()
 	{
@@ -99,6 +75,30 @@ public class ClericAreaBuff : Ability
 		m_syncComp = GetComponent<Cleric_SyncComponent>();
 		m_buffActionType = GetActionTypeOfAbility(this);
 	}
+
+	// Added in rouges
+	/*
+	protected override void ProcessGatheredHits(List<AbilityTarget> targets, ActorData caster, AbilityResults abilityResults, List<ActorHitResults> actorHitResults, List<PositionHitResults> positionHitResults, List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		List<ActorData> list = new List<ActorData>();
+		ActorHitResults actorHitResults2 = null;
+		foreach (ActorHitResults actorHitResults3 in actorHitResults)
+		{
+			list.Add(actorHitResults3.m_hitParameters.Target);
+			if (actorHitResults3.m_hitParameters.Target == caster)
+			{
+				actorHitResults2 = actorHitResults3;
+			}
+		}
+		if (actorHitResults2 != null)
+		{
+			MovingGroundEffect movingGroundEffect = new MovingGroundEffect(base.AsEffectSource(), caster.GetCurrentBoardSquare(), caster.GetFreePos(), caster, caster, m_aoeField);
+			movingGroundEffect.AddToActorsHitThisTurn(list);
+			actorHitResults2.AddEffect(movingGroundEffect);
+			return;
+		}
+		Log.Error("ClericAreaBuff needs to hit the caster, since it attaches the moving ground effect to them", Array.Empty<object>());
+	}*/
 
 	protected override void OnApplyAbilityMod(AbilityMod abilityMod)
 	{

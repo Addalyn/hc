@@ -50,30 +50,10 @@ public class Cleric_SyncComponent : NetworkBehaviour
 
 	internal void MeleeKnockbackAnimRangeChanged(int value)
 	{
-		ActorData component = GetComponent<ActorData>();
-		if (!(component != null))
+		ActorData component = base.GetComponent<ActorData>();
+		if (component != null && component.GetActorModelData() != null && component.GetActorModelData().HasAnimatorControllerParamater("AttackRange"))
 		{
-			return;
-		}
-		while (true)
-		{
-			if (!(component.GetActorModelData() != null))
-			{
-				return;
-			}
-			while (true)
-			{
-				if (component.GetActorModelData().HasAnimatorControllerParamater("AttackRange"))
-				{
-					while (true)
-					{
-						Animator modelAnimator = component.GetActorModelData().GetModelAnimator();
-						modelAnimator.SetInteger(animAttackRange, value);
-						return;
-					}
-				}
-				return;
-			}
+			component.GetActorModelData().GetModelAnimator().SetInteger("AttackRange", value);
 		}
 	}
 

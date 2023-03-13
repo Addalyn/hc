@@ -670,6 +670,8 @@
     <Compile Include="ClericConeKnockback.cs" />
     <Compile Include="ClericGiantAoE.cs" />
     <Compile Include="ClericHammerThrow.cs" />
+    <Compile Include="ClericHealReactionEffect.cs" />
+    <Compile Include="ClericHitReactEffect.cs" />
     <Compile Include="ClericMeleeKnockback.cs" />
     <Compile Include="ClericRangedHeal.cs" />
     <Compile Include="Cleric_SyncComponent.cs" />
@@ -1678,6 +1680,7 @@
     <Compile Include="MovementStage.cs" />
     <Compile Include="MovementUtils.cs" />
     <Compile Include="MoveState.cs" />
+    <Compile Include="MovingGroundEffect.cs" />
     <Compile Include="MultiAreaMeleeAttackSequence.cs" />
     <Compile Include="MultiDistanceMeleeAttackSequence.cs" />
     <Compile Include="MyMsgType.cs" />
