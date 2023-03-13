@@ -34,8 +34,8 @@ public class AbilityMod_ClericBasicAttack : AbilityMod
 		ClericBasicAttack clericBasicAttack = targetAbility as ClericBasicAttack;
 		if (clericBasicAttack != null)
 		{
-            AddToken(tokens, m_coneAngleMod, "ConeAngle", string.Empty, clericBasicAttack.m_coneAngle);
-            AddToken(tokens, m_coneLengthInnerMod, "ConeLengthInner", string.Empty, clericBasicAttack.m_coneLengthInner);
+			AddToken(tokens, m_coneAngleMod, "ConeAngle", string.Empty, clericBasicAttack.m_coneAngle);
+			AddToken(tokens, m_coneLengthInnerMod, "ConeLengthInner", string.Empty, clericBasicAttack.m_coneLengthInner);
 			AddToken(tokens, m_coneLengthMod, "ConeLength", string.Empty, clericBasicAttack.m_coneLength);
 			AddToken(tokens, m_coneBackwardOffsetMod, "ConeBackwardOffset", string.Empty, clericBasicAttack.m_coneBackwardOffset);
 			AddToken(tokens, m_maxTargetsMod, "MaxTargets", string.Empty, clericBasicAttack.m_maxTargets);
