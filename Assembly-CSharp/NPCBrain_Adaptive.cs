@@ -3,49 +3,24 @@ using UnityEngine;
 public class NPCBrain_Adaptive : NPCBrain
 {
 	public string m_name;
-
 	public BotDifficulty m_botDifficulty = BotDifficulty.Hard;
-
 	public bool m_canTaunt;
-
 	public bool m_inactiveUntilPlayerEncountered;
-
 	public float m_evasionScoreTweak = 1f;
-
 	public float m_damageScoreTweak = 1f;
-
 	public float m_healingScoreTweak = 1f;
-
 	public float m_shieldingScoreTweak = 1f;
-
 	public float m_multipleEnemyTweak = 1f;
-
 	public float m_multipleAllyTweak = 1f;
-
 	public int[] m_allowedAbilities;
-
 	public bool m_logReasoning;
-
 	public bool m_sendReasoningToTeamChat;
-
 	[HideInInspector]
 	public bool m_playerEncountered;
 
-	private bool m_isReplacingHuman;
-
 	private static bool s_gatherRealResults = true;
 
-	public bool isReplacingHuman
-	{
-		get
-		{
-			return m_isReplacingHuman;
-		}
-		set
-		{
-			m_isReplacingHuman = value;
-		}
-	}
+	public bool isReplacingHuman { get; set; }
 
 	public override NPCBrain Create(BotController bot, Transform destination)
 	{
