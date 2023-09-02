@@ -19,11 +19,8 @@ public class NPCBrain_Tutorial : NPCBrain
 	}
 
 	public AttackPattern m_attackPattern = AttackPattern.AttackPlayerIfInLoS;
-
 	private Transform m_destination;
-
 	public MovementPattern m_movementPattern;
-
 	public float m_attackRange = 5f;
 
 	public override NPCBrain Create(BotController bot, Transform destination)
@@ -38,131 +35,64 @@ public class NPCBrain_Tutorial : NPCBrain
 
 	public bool IsPlayerInLoS()
 	{
-		ActorData component = GetComponent<ActorData>();
-		bool flag = component.IsActorVisibleToAnyEnemy();
+		bool isVisibleToEnemy = GetComponent<ActorData>().IsActorVisibleToAnyEnemy();
 		ActorData localPlayer = SinglePlayerManager.Get().GetLocalPlayer();
 		if (localPlayer == null)
 		{
-			while (true)
-			{
-				return false;
-			}
+			return false;
 		}
-		ActorStatus component2 = localPlayer.GetComponent<ActorStatus>();
-		int num;
-		if (localPlayer.IsInBrush())
-		{
-			if (!component2.HasStatus(StatusType.CantHideInBrush))
-			{
-				num = (component2.HasStatus(StatusType.Revealed) ? 1 : 0);
-				goto IL_007a;
-			}
-		}
-		num = 1;
-		goto IL_007a;
-		IL_007a:
-		bool flag2 = (byte)num != 0;
-		int result;
-		if (flag)
-		{
-			result = (flag2 ? 1 : 0);
-		}
-		else
-		{
-			result = 0;
-		}
-		return (byte)result != 0;
+		ActorStatus actorStatus = localPlayer.GetComponent<ActorStatus>();
+		bool isNotHidden = !localPlayer.IsInBrush()
+		             || actorStatus.HasStatus(StatusType.CantHideInBrush)
+		             || actorStatus.HasStatus(StatusType.Revealed);
+		return isVisibleToEnemy && isNotHidden;
 	}
 
 	public ActorData FindNearestEnemy()
 	{
-		ActorData result = null;
-		ActorData component = GetComponent<ActorData>();
-		BoardSquare currentBoardSquare = component.GetCurrentBoardSquare();
-		float num = float.MaxValue;
+		ActorData nearestEnemy = null;
+		ActorData actorData = GetComponent<ActorData>();
+		BoardSquare currentBoardSquare = actorData.GetCurrentBoardSquare();
+		float minDistToEnemy = float.MaxValue;
 		List<ActorData> actors = GameFlowData.Get().GetActors();
-		using (List<ActorData>.Enumerator enumerator = actors.GetEnumerator())
+		foreach (ActorData otherActor in actors)
 		{
-			while (enumerator.MoveNext())
+			if (otherActor.GetTeam() == actorData.GetTeam())
 			{
-				ActorData current = enumerator.Current;
-				if (current.GetTeam() != component.GetTeam())
-				{
-					BoardSquare currentBoardSquare2 = current.GetCurrentBoardSquare();
-					if (currentBoardSquare2 != null)
-					{
-						float num2 = currentBoardSquare.HorizontalDistanceOnBoardTo(currentBoardSquare2);
-						if (num2 < num)
-						{
-							num = num2;
-							result = current;
-						}
-					}
-				}
+				continue;
 			}
-			while (true)
+			BoardSquare enemySquare = otherActor.GetCurrentBoardSquare();
+			if (enemySquare == null)
 			{
-				switch (2)
-				{
-				case 0:
-					break;
-				default:
-					return result;
-				}
+				continue;
+			}
+			float distToEnemy = currentBoardSquare.HorizontalDistanceOnBoardTo(enemySquare);
+			if (distToEnemy < minDistToEnemy)
+			{
+				minDistToEnemy = distToEnemy;
+				nearestEnemy = otherActor;
 			}
 		}
+		return nearestEnemy;
 	}
 
 	public void MoveToDestination()
 	{
-		if (!(m_destination != null))
+		if (m_destination == null) return;
+		ActorData actorData = GetComponent<ActorData>();
+		ActorMovement actorMovement = GetComponent<ActorMovement>();
+		ActorTurnSM actorTurnSM = GetComponent<ActorTurnSM>();
+		BoardSquare targetSquare = Board.Get().GetSquareFromTransform(m_destination);
+		if (actorData != null
+		    && actorMovement != null
+		    && actorTurnSM != null
+		    && targetSquare != null)
 		{
-			return;
-		}
-		ActorData component = GetComponent<ActorData>();
-		ActorMovement component2 = GetComponent<ActorMovement>();
-		ActorTurnSM component3 = GetComponent<ActorTurnSM>();
-		BoardSquare boardSquare = Board.Get().GetSquareFromTransform(m_destination);
-		if (!(component != null))
-		{
-			return;
-		}
-		while (true)
-		{
-			if (!(component2 != null))
+			BoardSquare closestMoveableSquareTo = actorMovement.GetClosestMoveableSquareTo(targetSquare);
+			if (closestMoveableSquareTo != null
+			    && closestMoveableSquareTo != actorData.GetCurrentBoardSquare())
 			{
-				return;
-			}
-			while (true)
-			{
-				if (!(component3 != null))
-				{
-					return;
-				}
-				while (true)
-				{
-					if (!(boardSquare != null))
-					{
-						return;
-					}
-					BoardSquare closestMoveableSquareTo = component2.GetClosestMoveableSquareTo(boardSquare);
-					if (!(closestMoveableSquareTo != null))
-					{
-						return;
-					}
-					while (true)
-					{
-						if (closestMoveableSquareTo != component.GetCurrentBoardSquare())
-						{
-							while (true)
-							{
-								component3.SelectMovementSquareForMovement(closestMoveableSquareTo);
-								return;
-							}
-						}
-						return;
-					}
-				}
+				actorTurnSM.SelectMovementSquareForMovement(closestMoveableSquareTo);
 			}
 		}
 	}
