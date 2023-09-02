@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using Unity;
 using UnityEngine;
@@ -5,16 +7,35 @@ using UnityEngine.Networking;
 
 public class ActorCover : NetworkBehaviour
 {
+	// reactor
 	private bool[] m_hasCover = new bool[4];
+	// rogues
+	// private ThinCover.CoverType[] m_hasCover = new ThinCover.CoverType[4];
+	
 	private bool[] m_cachedHasCoverFromBarriers = new bool[4];
 	private SyncListTempCoverInfo m_syncTempCoverProviders = new SyncListTempCoverInfo();
 	private List<CoverDirections> m_tempCoverProviders = new List<CoverDirections>();
 	private List<CoverDirections> m_tempCoverIgnoreMinDist = new List<CoverDirections>();
+	
+	// added in rogues
+	// private List<CoverDirections> m_adjacentCoverProviders = new List<CoverDirections>();
+	
 	private GameObject m_coverParent;
 	private ActorData m_owner;
+	
+	// reactor
 	private GameObject[] m_mouseOverCoverObjs = new GameObject[4];
 	private GameObject[] m_actorCoverObjs = new GameObject[4];
 	private List<ParticleSystemRenderer[]> m_actorCoverSymbolRenderers = new List<ParticleSystemRenderer[]>();
+	// rogues
+	// private GameObject[,] m_mouseOverCoverObjs = new GameObject[3, 4];
+	// private GameObject[,] m_actorCoverObjs = new GameObject[3, 4];
+	// private List<ParticleSystemRenderer[]>[] m_actorCoverSymbolRenderers = {
+	// 	new List<ParticleSystemRenderer[]>(),
+	// 	new List<ParticleSystemRenderer[]>(),
+	// 	new List<ParticleSystemRenderer[]>()
+	// };
+
 	private static Vector3[] m_coverDir = new Vector3[4];
 	private float m_coverHeight = 2f;
 	private float m_coverDirIndicatorHideTime = -1f;
@@ -24,13 +45,20 @@ public class ActorCover : NetworkBehaviour
 	private MeshRenderer[] m_coverDirIndicatorRenderers;
 	private EasedFloatCubic m_coverDirIndicatorOpacity = new EasedFloatCubic(1f);
 	
+	// removed in rogues
 	private static int kListm_syncTempCoverProviders = 0x55B6FA50;
-
+	
+	// reactor
 	static ActorCover()
 	{
 		RegisterSyncListDelegate(typeof(ActorCover), kListm_syncTempCoverProviders, InvokeSyncListm_syncTempCoverProviders);
 		NetworkCRC.RegisterBehaviour("ActorCover", 0);
 	}
+	// rogues
+	// public ActorCover()
+	// {
+	// 	base.InitSyncObject(m_syncTempCoverProviders);
+	// }
 
 	public bool HasAnyCover(bool recalculate = false)
 	{
@@ -41,7 +69,7 @@ public class ActorCover : NetworkBehaviour
 		bool result = false;
 		foreach (bool hasCover in m_hasCover)
 		{
-			if (hasCover)
+			if (hasCover)  // hasCover != ThinCover.CoverType.None in rogues
 			{
 				result = true;
 			}
@@ -49,6 +77,7 @@ public class ActorCover : NetworkBehaviour
 		return result;
 	}
 
+	// changed in rogues (to accomodate more cover types)
 	private void Awake()
 	{
 		m_coverParent = GameObject.Find("CoverParent");
@@ -87,6 +116,7 @@ public class ActorCover : NetworkBehaviour
 		ResetTempCoverListFromSyncList();
 	}
 
+	// changed in rogues (to accomodate more cover types)
 	private void InitCoverObjs(GameObject[] coverObjs, GameObject coverPrefab)
 	{
 		coverObjs[0] = CreateCoverIndicatorObject(-90f, coverPrefab);
@@ -136,7 +166,7 @@ public class ActorCover : NetworkBehaviour
 	{
 		for (int i = 0; i < 4; i++)
 		{
-			m_hasCover[i] = false;
+			m_hasCover[i] = false; // ThinCover.CoverType.None in rogues
 			m_cachedHasCoverFromBarriers[i] = false;
 		}
 	}
@@ -183,7 +213,20 @@ public class ActorCover : NetworkBehaviour
 				return Quaternion.LookRotation(Vector3.forward);
 		}
 	}
-
+	
+#if SERVER
+	// added in rogues
+	public bool HasNonThinCover(BoardSquare currentSquare, int xDelta, int yDelta)
+	{
+		BoardSquare boardSquare = Board.Get().GetSquareFromIndex(currentSquare.x + xDelta, currentSquare.y + yDelta);
+		if (boardSquare == null)
+		{
+			return false;
+		}
+		return boardSquare.height - currentSquare.height >= 1;
+	}
+#endif
+	
 	public bool HasNonThinCover(BoardSquare currentSquare, int xDelta, int yDelta, bool halfHeight)
 	{
 		BoardSquare boardSquare = Board.Get().GetSquareFromIndex(currentSquare.x + xDelta, currentSquare.y + yDelta);
@@ -195,6 +238,7 @@ public class ActorCover : NetworkBehaviour
 		return halfHeight ? coverHeight == 1 : coverHeight == 2;
 	}
 
+	// tweaked in rogues
 	public float CoverRating(BoardSquare square)
 	{
 		List<ActorData> allTeamMembers = GameFlowData.Get().GetAllTeamMembers(m_owner.GetEnemyTeam());
@@ -255,7 +299,29 @@ public class ActorCover : NetworkBehaviour
 		}
 		return num;
 	}
-
+	
+#if SERVER
+	// added in rogues
+	public int AmountOfCover(BoardSquare square)
+	{
+		int num = 0;
+		for (int i = 0; i < 4; i++)
+		{
+			CoverDirections coverDirections = (CoverDirections)i;
+			if (square.GetThinCover(coverDirections) != ThinCover.CoverType.None)
+			{
+				num++;
+			}
+			else if ((coverDirections == CoverDirections.X_NEG && HasNonThinCover(square, -1, 0)) || (coverDirections == CoverDirections.X_POS && HasNonThinCover(square, 1, 0)) || (coverDirections == CoverDirections.Y_NEG && HasNonThinCover(square, 0, -1)) || (coverDirections == CoverDirections.Y_POS && HasNonThinCover(square, 0, 1)))
+			{
+				num++;
+			}
+		}
+		return num;
+	}
+#endif
+	
+	// changed in rogues (to accomodate more cover types)
 	internal void UpdateCoverHighlights(BoardSquare currentSquare)
 	{
 		ActorData owner = m_owner;
@@ -312,6 +378,7 @@ public class ActorCover : NetworkBehaviour
 		}
 	}
 
+	// changed in rogues (to accomodate more cover types)
 	private void Update()
 	{
 		if (m_coverDirHighlight != null && m_coverDirIndicatorRenderers != null)
@@ -358,6 +425,7 @@ public class ActorCover : NetworkBehaviour
 		}
 	}
 
+	// changed in rogues (to accomodate more cover types)
 	public void ShowRelevantCover(Vector3 damageOrigin)
 	{
 		List<CoverDirections> coverDirectionsList = new List<CoverDirections>();
@@ -397,6 +465,7 @@ public class ActorCover : NetworkBehaviour
 		}
 	}
 
+	// changed in rogues (to accomodate more cover types)
 	public static GameObject CreateCoverDirIndicator(bool[] hasCoverFlags, Color color, float radiusInSquares)
 	{
 		float coverProtectionAngle = GameplayData.Get() != null ? GameplayData.Get().m_coverProtectionAngle : 110f;
@@ -497,6 +566,7 @@ public class ActorCover : NetworkBehaviour
 		return gameObject;
 	}
 
+	// changed in rogues (to accomodate more cover types)
 	private void ShowCoverIndicatorForDirection(CoverDirections dir)
 	{
 		BoardSquare boardSquare = m_owner != null ? m_owner.GetCurrentBoardSquare() : null;
@@ -545,6 +615,7 @@ public class ActorCover : NetworkBehaviour
 		m_coverDirIndicatorFadeStartTime = Time.time + GetCoverDirFadeoutStartDelay();
 	}
 
+	// changed in rogues (to accomodate more cover types)
 	public void HideRelevantCover()
 	{
 		for (int i = 0; i < 4; i++)
@@ -670,8 +741,9 @@ public class ActorCover : NetworkBehaviour
 	{
 		ActorData owner = m_owner;
 		UpdateCoverFromBarriers();
+		// CalculateAdjacentCoverProviders(); // rogues
 		BoardSquare currentBoardSquare = owner.GetCurrentBoardSquare();
-		CalcCover(out m_hasCover, currentBoardSquare, m_tempCoverProviders, m_tempCoverIgnoreMinDist, m_cachedHasCoverFromBarriers, true);
+		CalcCover(out m_hasCover, currentBoardSquare, m_tempCoverProviders, m_tempCoverIgnoreMinDist,  m_cachedHasCoverFromBarriers, true); // m_adjacentCoverProviders, m_cachedHasCoverFromBarriers, true in rogues
 	}
 
 	private void ResetTempCoverListFromSyncList()
@@ -704,11 +776,13 @@ public class ActorCover : NetworkBehaviour
 		}
 	}
 
+	// changed in rogues (to accomodate more cover types)
 	internal static bool CalcCoverLevelGeoOnly(out bool[] hasCover, BoardSquare square)
 	{
 		return CalcCover(out hasCover, square, null, null, null, true);
 	}
 
+	// changed in rogues (to accomodate more cover types)
 	internal static bool CalcCover(
 		out bool[] hasCover,
 		BoardSquare square,
@@ -781,10 +855,10 @@ public class ActorCover : NetworkBehaviour
 		return result;
 	}
 
-	public bool IsInCoverWrt(Vector3 damageOrigin)
+	public bool IsInCoverWrt(Vector3 damageOrigin)  // , out HitChanceBracketType strongestCover in rogues
 	{
 		List<CoverDirections> list = null;
-		return IsInCoverWrt(damageOrigin, ref list);
+		return IsInCoverWrt(damageOrigin, ref list); // , out strongestCover in rogues
 	}
 
 	public static bool IsInCoverWrt(
@@ -792,7 +866,10 @@ public class ActorCover : NetworkBehaviour
 		BoardSquare targetSquare,
 		List<CoverDirections> tempCoverProviders,
 		List<CoverDirections> tempCoversIgnoreMinDist,
-		bool[] coverDirFromBarriers)
+		// List<CoverDirections> adjacentCovers, // rogues
+		bool[] coverDirFromBarriers
+		// , out HitChanceBracketType strongestCover // rogues
+		)
 	{
 		List<CoverDirections> list = null;
 		return IsInCoverWrt(
@@ -801,10 +878,13 @@ public class ActorCover : NetworkBehaviour
 			ref list,
 			tempCoverProviders,
 			tempCoversIgnoreMinDist,
-			coverDirFromBarriers);
+			// adjacentCovers, // rogues
+			coverDirFromBarriers
+			// , out strongestCover // rogues
+			);
 	}
 
-	public bool IsInCoverWrt(Vector3 damageOrigin, ref List<CoverDirections> coverDirections)
+	public bool IsInCoverWrt(Vector3 damageOrigin, ref List<CoverDirections> coverDirections) // , out HitChanceBracketType strongestCover in rogues
 	{
 		ActorData component = GetComponent<ActorData>();
 		BoardSquare currentBoardSquare = component.GetCurrentBoardSquare();
@@ -814,12 +894,15 @@ public class ActorCover : NetworkBehaviour
 			ref coverDirections,
 			m_tempCoverProviders,
 			m_tempCoverIgnoreMinDist,
-			m_cachedHasCoverFromBarriers);
+			// m_adjacentCoverProviders,  // rogues
+			m_cachedHasCoverFromBarriers
+			// , out strongestCover  // rogues
+			);
 	}
 
 	public bool IsInCoverForDirection(CoverDirections dir)
 	{
-		return m_hasCover[(int)dir];
+		return m_hasCover[(int)dir]; // > ThinCover.CoverType.None in rogues
 	}
 
 	public static bool IsInCoverWrt(
@@ -828,8 +911,12 @@ public class ActorCover : NetworkBehaviour
 		ref List<CoverDirections> coverDirections,
 		List<CoverDirections> tempCoverProviders,
 		List<CoverDirections> tempCoversIgnoreMinDist,
-		bool[] coverDirFromBarriers)
+		// List<CoverDirections> adjacentCovers, // rogues
+		bool[] coverDirFromBarriers
+		// , out HitChanceBracketType strongestCover // rogues
+		)
 	{
+		// strongestCover = HitChanceBracketType.Default; // rogues
 		if (targetSquare == null)
 		{
 			return false;
@@ -851,12 +938,15 @@ public class ActorCover : NetworkBehaviour
 			ref coverDirections,
 			tempCoverProviders,
 			tempCoversIgnoreMinDist,
+			// adjacentCovers,  // rpgues
 			coverDirFromBarriers,
-			flag);
+			flag
+			// , out strongestCover  // rpgues
+			);
 		return numCoverSourcesByDirectionOnly > 0;
 	}
 
-	public bool IsInCoverWrtDirectionOnly(Vector3 damageOrigin, BoardSquare targetSquare)
+	public bool IsInCoverWrtDirectionOnly(Vector3 damageOrigin, BoardSquare targetSquare) // , out HitChanceBracketType strongestCover in rogues
 	{
 		List<CoverDirections> list = null;
 		return GetNumCoverSourcesByDirectionOnly(
@@ -865,12 +955,31 @@ public class ActorCover : NetworkBehaviour
 			       ref list,
 			       m_tempCoverProviders,
 			       m_tempCoverIgnoreMinDist,
+			       // m_adjacentCoverProviders,
 			       m_cachedHasCoverFromBarriers,
-			       true) >
+			       true
+			       // , out strongestCover
+			       ) >
 		       0;
 	}
 
-	private static int GetNumCoverSourcesByDirectionOnly(Vector3 damageOrigin, BoardSquare targetSquare, ref List<CoverDirections> coverDirections, List<CoverDirections> tempCoverProviders, List<CoverDirections> tempCoverIgnoreMinDist, bool[] coverDirFromBarriers, bool minDistOk)
+	// rogues
+	// private static HitChanceBracketType CoverTypeToHitChanceBracketType(ThinCover.CoverType coverType)
+	// {
+	// 	switch (coverType)
+	// 	{
+	// 	case ThinCover.CoverType.Half:
+	// 	case ThinCover.CoverType.HalfThick:
+	// 		return HitChanceBracketType.HalfCover;
+	// 	case ThinCover.CoverType.Full:
+	// 	case ThinCover.CoverType.FullThick:
+	// 		return HitChanceBracketType.FullCover;
+	// 	}
+	// 	return HitChanceBracketType.Default;
+	// }
+
+	// changed in rogues (to accomodate more cover types)
+	private static int GetNumCoverSourcesByDirectionOnly(Vector3 damageOrigin, BoardSquare targetSquare, ref List<CoverDirections> coverDirections, List<CoverDirections> tempCoverProviders, List<CoverDirections> tempCoverIgnoreMinDist /*, List<CoverDirections> adjacentCovers*/, bool[] coverDirFromBarriers, bool minDistOk/*, out HitChanceBracketType strongestCover*/)
 	{
 		int num = 0;
 		Vector3 vector = targetSquare.ToVector3();
@@ -980,7 +1089,7 @@ public class ActorCover : NetworkBehaviour
 		float num = GameplayData.Get().m_coverProtectionAngle / 2f;
 		for (int i = 0; i < 4; i++)
 		{
-			if (m_hasCover[i])
+			if (m_hasCover[i]) //  != ThinCover.CoverType.None in rogues
 			{
 				CoverDirections dir = (CoverDirections)i;
 				float centerAngleOfDirection = GetCenterAngleOfDirection(dir);
@@ -1101,10 +1210,34 @@ public class ActorCover : NetworkBehaviour
 		return coverRegion.IsInCoverFromPos(attackOriginPos);
 	}
 
+	// rogues
+	// public void CalculateAdjacentCoverProviders()
+	// {
+	// 	m_adjacentCoverProviders.Clear();
+	// 	List<BoardSquare> list = new List<BoardSquare>();
+	// 	if (m_owner.GetCurrentBoardSquare() != null)
+	// 	{
+	// 		Board.Get().GetAllAdjacentSquares(m_owner.GetCurrentBoardSquare().x, m_owner.GetCurrentBoardSquare().y, ref list);
+	// 		foreach (BoardSquare boardSquare in list)
+	// 		{
+	// 			if (boardSquare.OccupantActor != null && boardSquare.OccupantActor.GetTeam() != m_owner.GetEnemyTeam() && boardSquare.OccupantActor.m_grantCover)
+	// 			{
+	// 				m_adjacentCoverProviders.Add(GetCoverDirection(m_owner.GetCurrentBoardSquare(), boardSquare));
+	// 			}
+	// 		}
+	// 	}
+	// }
+
+	// reactor
 	private void UNetVersion()
 	{
 	}
+	// rogues
+	// private void MirrorProcessed()
+	// {
+	// }
 
+	// removed in rogues
 	protected static void InvokeSyncListm_syncTempCoverProviders(NetworkBehaviour obj, NetworkReader reader)
 	{
 		if (!NetworkClient.active)
@@ -1115,6 +1248,7 @@ public class ActorCover : NetworkBehaviour
 		((ActorCover)obj).m_syncTempCoverProviders.HandleMsg(reader);
 	}
 
+	// removed in rogues
 	public override bool OnSerialize(NetworkWriter writer, bool forceAll)
 	{
 		if (forceAll)
@@ -1139,6 +1273,7 @@ public class ActorCover : NetworkBehaviour
 		return flag;
 	}
 
+	// removed in rogues
 	public override void OnDeserialize(NetworkReader reader, bool initialState)
 	{
 		if (initialState)
