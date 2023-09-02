@@ -3,9 +3,7 @@ using UnityEngine;
 public class NPCBrain_Scripted : NPCBrain
 {
 	public string m_name;
-
 	public ActionsForTurn[] m_actions;
-
 	public NPCBrain m_brainAfterActions;
 
 	public override NPCBrain Create(BotController bot, Transform destination)
