@@ -23,6 +23,7 @@ public class ActorCover : NetworkBehaviour
 	private GameObject m_coverDirHighlight;
 	private MeshRenderer[] m_coverDirIndicatorRenderers;
 	private EasedFloatCubic m_coverDirIndicatorOpacity = new EasedFloatCubic(1f);
+	
 	private static int kListm_syncTempCoverProviders = 0x55B6FA50;
 
 	static ActorCover()
@@ -64,10 +65,9 @@ public class ActorCover : NetworkBehaviour
 		InitCoverObjs(m_actorCoverObjs, HighlightUtils.Get().m_coverShieldOnlyPrefab);
 		foreach (GameObject coverObj in m_actorCoverObjs)
 		{
-			ParticleSystemRenderer[] item = coverObj != null
+			m_actorCoverSymbolRenderers.Add(coverObj != null
 				? coverObj.GetComponentsInChildren<ParticleSystemRenderer>()
-				: new ParticleSystemRenderer[0];
-			m_actorCoverSymbolRenderers.Add(item);
+				: new ParticleSystemRenderer[0]);
 		}
 		m_coverDir[(int)CoverDirections.X_NEG] = Vector3.left; 
 		m_coverDir[(int)CoverDirections.X_POS] = Vector3.right; 
@@ -105,8 +105,7 @@ public class ActorCover : NetworkBehaviour
 
 	public static void ResetParticleTime(GameObject particleObject)
 	{
-		ParticleSystem[] componentsInChildren = particleObject.GetComponentsInChildren<ParticleSystem>();
-		foreach (ParticleSystem particleSystem in componentsInChildren)
+		foreach (ParticleSystem particleSystem in particleObject.GetComponentsInChildren<ParticleSystem>())
 		{
 			particleSystem.Clear();
 			particleSystem.time = 0f;
@@ -187,16 +186,13 @@ public class ActorCover : NetworkBehaviour
 
 	public bool HasNonThinCover(BoardSquare currentSquare, int xDelta, int yDelta, bool halfHeight)
 	{
-		bool result = false;
 		BoardSquare boardSquare = Board.Get().GetSquareFromIndex(currentSquare.x + xDelta, currentSquare.y + yDelta);
-		if (boardSquare != null)
+		if (boardSquare == null)
 		{
-			int heightDiff = boardSquare.height - currentSquare.height;
-			result = halfHeight
-				? heightDiff == 1
-				: heightDiff == 2;
+			return false;
 		}
-		return result;
+		int coverHeight = boardSquare.height - currentSquare.height;
+		return halfHeight ? coverHeight == 1 : coverHeight == 2;
 	}
 
 	public float CoverRating(BoardSquare square)
@@ -205,171 +201,55 @@ public class ActorCover : NetworkBehaviour
 		float num = 0f;
 		foreach (ActorData actorData in allTeamMembers)
 		{
-			if (!actorData.IsDead())
+			if (actorData.IsDead() || actorData.GetCurrentBoardSquare() == null)
 			{
-				if (actorData.GetCurrentBoardSquare() != null)
+				continue;
+			}
+			Vector3 vector = actorData.GetCurrentBoardSquare().transform.position - square.transform.position;
+			if (vector.magnitude <= Board.Get().squareSize * 1.5f)
+			{
+				continue;
+			}
+			if (Mathf.Abs(vector.x) > Mathf.Abs(vector.z))
+			{
+				if (vector.x < 0f
+				    && (HasNonThinCover(square, -1, 0, true)
+				        || square.GetThinCover(CoverDirections.X_NEG) == ThinCover.CoverType.Half)
+				    || vector.x > 0f
+				    && (HasNonThinCover(square, 1, 0, true)
+				        || square.GetThinCover(CoverDirections.X_POS) == ThinCover.CoverType.Half))
 				{
-					Vector3 vector = actorData.GetCurrentBoardSquare().transform.position - square.transform.position;
-					if (vector.magnitude > Board.Get().squareSize * 1.5f)
-					{
-						if (Mathf.Abs(vector.x) > Mathf.Abs(vector.z))
-						{
-							if (vector.x >= 0f)
-							{
-								goto IL_11C;
-							}
-							if (HasNonThinCover(square, -1, 0, true))
-							{
-								goto IL_162;
-							}
-							if (square.GetThinCover(CoverDirections.X_NEG) == ThinCover.CoverType.Half)
-							{
-								goto IL_162;
-							}
-							for (;;)
-							{
-								switch (4)
-								{
-								case 0:
-									continue;
-								}
-								goto IL_11C;
-							}
-							continue;
-							IL_11C:
-							if (vector.x > 0f)
-							{
-								if (HasNonThinCover(square, 1, 0, true))
-								{
-									goto IL_162;
-								}
-								if (square.GetThinCover(CoverDirections.X_POS) == ThinCover.CoverType.Half)
-								{
-									for (;;)
-									{
-										switch (1)
-										{
-										case 0:
-											continue;
-										}
-										goto IL_162;
-									}
-								}
-							}
-							if (vector.x >= 0f)
-							{
-								goto IL_1B5;
-							}
-							if (!HasNonThinCover(square, -1, 0, false))
-							{
-								if (square.GetThinCover(CoverDirections.X_NEG) != ThinCover.CoverType.Full)
-								{
-									for (;;)
-									{
-										switch (6)
-										{
-										case 0:
-											continue;
-										}
-										goto IL_1B5;
-									}
-								}
-							}
-							IL_1FB:
-							num += 0.5f;
-							continue;
-							IL_1B5:
-							if (vector.x <= 0f)
-							{
-								continue;
-							}
-							if (HasNonThinCover(square, 1, 0, false))
-							{
-								goto IL_1FB;
-							}
-							if (square.GetThinCover(CoverDirections.X_POS) != ThinCover.CoverType.Full)
-							{
-								continue;
-							}
-							for (;;)
-							{
-								switch (2)
-								{
-								case 0:
-									continue;
-								}
-								goto IL_1FB;
-							}
-							IL_162:
-							num += 1f;
-						}
-						else
-						{
-							if (vector.z >= 0f)
-							{
-								goto IL_244;
-							}
-							if (!HasNonThinCover(square, 0, -1, true) && square.GetThinCover(CoverDirections.Y_NEG) != ThinCover.CoverType.Half)
-							{
-								for (;;)
-								{
-									switch (3)
-									{
-									case 0:
-										continue;
-									}
-									goto IL_244;
-								}
-							}
-							IL_280:
-							num += 1f;
-							continue;
-							IL_244:
-							if (vector.z > 0f)
-							{
-								if (HasNonThinCover(square, 0, 1, true))
-								{
-									goto IL_280;
-								}
-								if (square.GetThinCover(CoverDirections.Y_POS) == ThinCover.CoverType.Half)
-								{
-									for (;;)
-									{
-										switch (5)
-										{
-										case 0:
-											continue;
-										}
-										goto IL_280;
-									}
-								}
-							}
-							if (vector.z < 0f)
-							{
-								if (HasNonThinCover(square, 0, -1, false))
-								{
-									goto IL_303;
-								}
-								if (square.GetThinCover(CoverDirections.Y_NEG) == ThinCover.CoverType.Full)
-								{
-									goto IL_303;
-								}
-							}
-							if (vector.z <= 0f)
-							{
-								continue;
-							}
-							if (!HasNonThinCover(square, 0, 1, false))
-							{
-								if (square.GetThinCover(CoverDirections.Y_POS) != ThinCover.CoverType.Full)
-								{
-									continue;
-								}
-							}
-							IL_303:
-							num += 0.5f;
-						}
-					}
+					num += 1f;
+				}
+				else if (vector.x < 0f
+				    && (HasNonThinCover(square, -1, 0, false)
+				        || square.GetThinCover(CoverDirections.X_NEG) == ThinCover.CoverType.Full)
+				    || vector.x > 0f
+				    && (HasNonThinCover(square, 1, 0, false)
+				        || square.GetThinCover(CoverDirections.X_POS) == ThinCover.CoverType.Full))
+				{
+					num += 0.5f;
+				}
+			}
+			else
+			{
+				if (vector.z < 0f
+				    && (HasNonThinCover(square, 0, -1, true)
+				        || square.GetThinCover(CoverDirections.Y_NEG) == ThinCover.CoverType.Half)
+				    || vector.z > 0f
+				    && (HasNonThinCover(square, 0, 1, true)
+				        || square.GetThinCover(CoverDirections.Y_POS) == ThinCover.CoverType.Half))
+				{
+					num += 1f;
+				}
+				else if ((vector.z < 0f
+				     && (HasNonThinCover(square, 0, -1, false)
+				         || square.GetThinCover(CoverDirections.Y_NEG) == ThinCover.CoverType.Full))
+				    || vector.z > 0f
+				    && (HasNonThinCover(square, 0, 1, false)
+				        || square.GetThinCover(CoverDirections.Y_POS) == ThinCover.CoverType.Full))
+				{
+					num += 0.5f;
 				}
 			}
 		}
@@ -379,93 +259,54 @@ public class ActorCover : NetworkBehaviour
 	internal void UpdateCoverHighlights(BoardSquare currentSquare)
 	{
 		ActorData owner = m_owner;
-		if (currentSquare != null && currentSquare.IsValidForGameplay())
+		if (currentSquare == null || !currentSquare.IsValidForGameplay())
 		{
-			ActorTurnSM actorTurnSM = owner.GetActorTurnSM();
-			if (actorTurnSM != null)
+			foreach (GameObject mouseOverCoverObj in m_mouseOverCoverObjs)
 			{
-				bool flag = actorTurnSM.AmTargetingAction();
-				List<BoardSquare> list = null;
-				Board.Get().GetCardinalAdjacentSquares(currentSquare.x, currentSquare.y, ref list);
-				if (list != null)
+				if (mouseOverCoverObj)
 				{
-					for (int i = 0; i < list.Count; i++)
-					{
-						BoardSquare boardSquare = list[i];
-						if (boardSquare == null)
-						{
-						}
-						else
-						{
-							CoverDirections coverDirection = GetCoverDirection(currentSquare, boardSquare);
-							int num = boardSquare.height - currentSquare.height;
-							GameObject gameObject;
-							if (coverDirection < (CoverDirections)m_mouseOverCoverObjs.Length)
-							{
-								gameObject = m_mouseOverCoverObjs[(int)coverDirection];
-							}
-							else
-							{
-								gameObject = null;
-							}
-							GameObject gameObject2 = gameObject;
-							if (gameObject2 != null)
-							{
-								if (num < 1)
-								{
-									if (currentSquare.GetThinCover(coverDirection) == ThinCover.CoverType.None)
-									{
-										goto IL_1E5;
-									}
-								}
-								if (!flag)
-								{
-									if (actorTurnSM.CurrentState != TurnStateEnum.PICKING_RESPAWN)
-									{
-										Vector3 vector = new Vector3(currentSquare.worldX, currentSquare.height + m_coverHeight, currentSquare.worldY);
-										vector += GetCoverOffset(coverDirection);
-										if (gameObject2.transform.position != vector)
-										{
-											goto IL_1C6;
-										}
-										if (!gameObject2.activeSelf)
-										{
-											for (;;)
-											{
-												switch (1)
-												{
-												case 0:
-													continue;
-												}
-												goto IL_1C6;
-											}
-										}
-										IL_1E3:
-										goto IL_1ED;
-										IL_1C6:
-										gameObject2.transform.position = vector;
-										gameObject2.SetActive(true);
-										ResetParticleTime(gameObject2);
-										goto IL_1E3;
-									}
-								}
-								IL_1E5:
-								gameObject2.SetActive(false);
-							}
-						}
-						IL_1ED:;
-					}
+					mouseOverCoverObj.SetActive(false);
 				}
 			}
+
+			return;
 		}
-		else
+		
+		ActorTurnSM actorTurnSM = owner.GetActorTurnSM();
+		if (actorTurnSM == null)
 		{
-			for (int j = 0; j < m_mouseOverCoverObjs.Length; j++)
+			return;
+		}
+		
+		bool amTargetingAction = actorTurnSM.AmTargetingAction();
+		List<BoardSquare> cardinalAdjacentSquares = null;
+		Board.Get().GetCardinalAdjacentSquares(currentSquare.x, currentSquare.y, ref cardinalAdjacentSquares);
+		if (cardinalAdjacentSquares != null)
+		{
+			foreach (BoardSquare square in cardinalAdjacentSquares)
 			{
-				GameObject gameObject3 = m_mouseOverCoverObjs[j];
-				if (gameObject3)
+				if (square == null) continue;
+				CoverDirections coverDirection = GetCoverDirection(currentSquare, square);
+				int elevation = square.height - currentSquare.height;
+				GameObject mouseOverCoverObj = coverDirection < (CoverDirections)m_mouseOverCoverObjs.Length
+					? m_mouseOverCoverObjs[(int)coverDirection]
+					: null;
+				if (mouseOverCoverObj == null) continue;
+				if ((elevation >= 1 || currentSquare.GetThinCover(coverDirection) != ThinCover.CoverType.None)
+				    && !amTargetingAction && actorTurnSM.CurrentState != TurnStateEnum.PICKING_RESPAWN)
 				{
-					gameObject3.SetActive(false);
+					Vector3 pos = new Vector3(currentSquare.worldX, currentSquare.height + m_coverHeight, currentSquare.worldY);
+					pos += GetCoverOffset(coverDirection);
+					if (mouseOverCoverObj.transform.position != pos || !mouseOverCoverObj.activeSelf)
+					{
+						mouseOverCoverObj.transform.position = pos;
+						mouseOverCoverObj.SetActive(true);
+						ResetParticleTime(mouseOverCoverObj);
+					}
+				}
+				else
+				{
+					mouseOverCoverObj.SetActive(false);
 				}
 			}
 		}
@@ -475,16 +316,15 @@ public class ActorCover : NetworkBehaviour
 	{
 		if (m_coverDirHighlight != null && m_coverDirIndicatorRenderers != null)
 		{
-			float opacity = m_coverDirIndicatorOpacity * GetCoverDirInitialOpacity();
-			for (int i = 0; i < m_coverDirIndicatorRenderers.Length; i++)
+			float indicatorOpacity = m_coverDirIndicatorOpacity * GetCoverDirInitialOpacity();
+			foreach (MeshRenderer meshRenderer in m_coverDirIndicatorRenderers)
 			{
-				MeshRenderer meshRenderer = m_coverDirIndicatorRenderers[i];
 				if (meshRenderer != null)
 				{
-					AbilityUtil_Targeter.SetMaterialOpacity(meshRenderer.materials, opacity);
+					AbilityUtil_Targeter.SetMaterialOpacity(meshRenderer.materials, indicatorOpacity);
 				}
 			}
-			float opacity2 = m_coverDirIndicatorOpacity * GetCoverDirParticleInitialOpacity();
+			float particleOpacity = m_coverDirIndicatorOpacity * GetCoverDirParticleInitialOpacity();
 			for (int j = 0; j < m_hasCover.Length; j++)
 			{
 				if (j >= m_actorCoverSymbolRenderers.Count)
@@ -495,7 +335,7 @@ public class ActorCover : NetworkBehaviour
 				{
 					foreach (ParticleSystemRenderer particleSystemRenderer in m_actorCoverSymbolRenderers[j])
 					{
-						AbilityUtil_Targeter.SetMaterialOpacity(particleSystemRenderer.materials, opacity2);
+						AbilityUtil_Targeter.SetMaterialOpacity(particleSystemRenderer.materials, particleOpacity);
 					}
 				}
 			}
@@ -505,35 +345,29 @@ public class ActorCover : NetworkBehaviour
 			ShowAllRelevantCoverIndicator();
 			m_coverDirIndicatorSpawnTime = -1f;
 		}
-		if (m_coverDirIndicatorFadeStartTime > 0f)
+		if (m_coverDirIndicatorFadeStartTime > 0f && Time.time > m_coverDirIndicatorFadeStartTime)
 		{
-			if (Time.time > m_coverDirIndicatorFadeStartTime)
-			{
-				m_coverDirIndicatorOpacity.EaseTo(0f, GetCoverDirIndicatorDuration() - GetCoverDirFadeoutStartDelay());
-				m_coverDirIndicatorFadeStartTime = -1f;
-			}
+			m_coverDirIndicatorOpacity.EaseTo(0f, GetCoverDirIndicatorDuration() - GetCoverDirFadeoutStartDelay());
+			m_coverDirIndicatorFadeStartTime = -1f;
 		}
-		if (m_coverDirIndicatorHideTime > 0f)
+		if (m_coverDirIndicatorHideTime > 0f && Time.time > m_coverDirIndicatorHideTime)
 		{
-			if (Time.time > m_coverDirIndicatorHideTime)
-			{
-				HideRelevantCover();
-				DestroyCoverDirHighlight();
-				m_coverDirIndicatorHideTime = -1f;
-			}
+			HideRelevantCover();
+			DestroyCoverDirHighlight();
+			m_coverDirIndicatorHideTime = -1f;
 		}
 	}
 
 	public void ShowRelevantCover(Vector3 damageOrigin)
 	{
-		List<CoverDirections> list = new List<CoverDirections>();
-		if (IsInCoverWrt(damageOrigin, ref list))
+		List<CoverDirections> coverDirectionsList = new List<CoverDirections>();
+		if (IsInCoverWrt(damageOrigin, ref coverDirectionsList))
 		{
 			BoardSquare currentBoardSquare = m_owner.GetCurrentBoardSquare();
 			for (int i = 0; i < 4; i++)
 			{
 				CoverDirections coverDirections = (CoverDirections)i;
-				if (list.Contains(coverDirections))
+				if (coverDirectionsList.Contains(coverDirections))
 				{
 					Vector3 a = new Vector3(currentBoardSquare.worldX, currentBoardSquare.height + m_coverHeight, currentBoardSquare.worldY);
 					m_actorCoverObjs[i].transform.position = a + GetCoverOffset(coverDirections);
@@ -565,41 +399,32 @@ public class ActorCover : NetworkBehaviour
 
 	public static GameObject CreateCoverDirIndicator(bool[] hasCoverFlags, Color color, float radiusInSquares)
 	{
-		float num;
-		if (GameplayData.Get())
-		{
-			num = GameplayData.Get().m_coverProtectionAngle;
-		}
-		else
-		{
-			num = 110f;
-		}
-		float num2 = num;
-		float num3 = num2 - 90f;
+		float coverProtectionAngle = GameplayData.Get() != null ? GameplayData.Get().m_coverProtectionAngle : 110f;
+		float coverProtectionAngleOffset = coverProtectionAngle - 90f;
 		GameObject gameObject = new GameObject("CoverDirHighlightParent");
-		int num4 = 0;
+		int numCovers = 0;
 		bool flag = false;
-		for (int i = 0; i < hasCoverFlags.Length; i++)
+		foreach (bool hasCover in hasCoverFlags)
 		{
-			if (hasCoverFlags[i])
+			if (hasCover)
 			{
-				num4++;
+				numCovers++;
 			}
 		}
-		if (num4 == 2)
+		if (numCovers == 2)
 		{
-			flag = (hasCoverFlags[1] == hasCoverFlags[0]);
+			flag = hasCoverFlags[1] == hasCoverFlags[0];
 		}
 		float borderStartOffset = 0.7f;
-		GameObject gameObject2 = HighlightUtils.Get().CreateDynamicConeMesh(radiusInSquares, num2, false);
-		HighlightUtils.Get().SetDynamicConeMeshBorderActive(gameObject2, false);
-		UIDynamicCone component = gameObject2.GetComponent<UIDynamicCone>();
+		GameObject indicatorMesh = HighlightUtils.Get().CreateDynamicConeMesh(radiusInSquares, coverProtectionAngle, false);
+		HighlightUtils.Get().SetDynamicConeMeshBorderActive(indicatorMesh, false);
+		UIDynamicCone component = indicatorMesh.GetComponent<UIDynamicCone>();
 		if (component != null)
 		{
 			component.SetBorderStartOffset(borderStartOffset);
 		}
 		Vector3 forward = Vector3.forward;
-		if (num4 <= 3)
+		if (numCovers <= 3)
 		{
 			if (!flag)
 			{
@@ -611,96 +436,85 @@ public class ActorCover : NetworkBehaviour
 						a += m_coverDir[j];
 					}
 				}
-				forward = (a / num4).normalized;
+				forward = (a / numCovers).normalized;
 			}
 		}
-		if (num4 == 2)
+		if (numCovers == 2 && flag)
 		{
-			if (flag)
+			GameObject gameObject3 = HighlightUtils.Get().CreateDynamicConeMesh(radiusInSquares, coverProtectionAngle, false);
+			HighlightUtils.Get().SetDynamicConeMeshBorderActive(gameObject3, false);
+			UIDynamicCone component2 = gameObject3.GetComponent<UIDynamicCone>();
+			if (component2 != null)
 			{
-				GameObject gameObject3 = HighlightUtils.Get().CreateDynamicConeMesh(radiusInSquares, num2, false);
-				HighlightUtils.Get().SetDynamicConeMeshBorderActive(gameObject3, false);
-				UIDynamicCone component2 = gameObject3.GetComponent<UIDynamicCone>();
-				if (component2 != null)
-				{
-					component2.SetBorderStartOffset(borderStartOffset);
-				}
-				MeshRenderer[] componentsInChildren = gameObject3.GetComponentsInChildren<MeshRenderer>();
-				foreach (MeshRenderer meshRenderer in componentsInChildren)
-				{
-					if (HighlightUtils.Get() != null)
-					{
-						AbilityUtil_Targeter.SetMaterialColor(meshRenderer.materials, color);
-					}
-					AbilityUtil_Targeter.SetMaterialOpacity(meshRenderer.materials, GetCoverDirInitialOpacity());
-				}
-				if (hasCoverFlags[1])
-				{
-					forward = Vector3.right;
-					gameObject3.transform.localRotation = Quaternion.LookRotation(Vector3.left);
-				}
-				else
-				{
-					forward = Vector3.forward;
-					gameObject3.transform.localRotation = Quaternion.LookRotation(Vector3.back);
-				}
-				gameObject3.transform.parent = gameObject.transform;
-				gameObject3.transform.localPosition = Vector3.zero;
-				goto IL_320;
+				component2.SetBorderStartOffset(borderStartOffset);
 			}
+
+			foreach (MeshRenderer meshRenderer in gameObject3.GetComponentsInChildren<MeshRenderer>())
+			{
+				if (HighlightUtils.Get() != null)
+				{
+					AbilityUtil_Targeter.SetMaterialColor(meshRenderer.materials, color);
+				}
+				AbilityUtil_Targeter.SetMaterialOpacity(meshRenderer.materials, GetCoverDirInitialOpacity());
+			}
+			if (hasCoverFlags[1])
+			{
+				forward = Vector3.right;
+				gameObject3.transform.localRotation = Quaternion.LookRotation(Vector3.left);
+			}
+			else
+			{
+				forward = Vector3.forward;
+				gameObject3.transform.localRotation = Quaternion.LookRotation(Vector3.back);
+			}
+			gameObject3.transform.parent = gameObject.transform;
+			gameObject3.transform.localPosition = Vector3.zero;
 		}
-		if (num4 == 2)
+		else if (numCovers == 2)
 		{
-			HighlightUtils.Get().AdjustDynamicConeMesh(gameObject2, radiusInSquares, 180f + num3);
+			HighlightUtils.Get().AdjustDynamicConeMesh(indicatorMesh, radiusInSquares, 180f + coverProtectionAngleOffset);
 		}
-		else if (num4 == 3)
+		else if (numCovers == 3)
 		{
-			HighlightUtils.Get().AdjustDynamicConeMesh(gameObject2, radiusInSquares, 270f + num3);
+			HighlightUtils.Get().AdjustDynamicConeMesh(indicatorMesh, radiusInSquares, 270f + coverProtectionAngleOffset);
 		}
-		else if (num4 == 4)
+		else if (numCovers == 4)
 		{
-			HighlightUtils.Get().AdjustDynamicConeMesh(gameObject2, radiusInSquares, 360f);
+			HighlightUtils.Get().AdjustDynamicConeMesh(indicatorMesh, radiusInSquares, 360f);
 		}
-		IL_320:
-		gameObject2.transform.parent = gameObject.transform;
-		gameObject2.transform.localRotation = Quaternion.LookRotation(forward);
-		gameObject2.transform.localPosition = Vector3.zero;
-		MeshRenderer[] componentsInChildren2 = gameObject2.GetComponentsInChildren<MeshRenderer>();
-		foreach (MeshRenderer meshRenderer2 in componentsInChildren2)
+		
+		indicatorMesh.transform.parent = gameObject.transform;
+		indicatorMesh.transform.localRotation = Quaternion.LookRotation(forward);
+		indicatorMesh.transform.localPosition = Vector3.zero;
+		foreach (MeshRenderer meshRenderer in indicatorMesh.GetComponentsInChildren<MeshRenderer>())
 		{
 			if (HighlightUtils.Get() != null)
 			{
-				AbilityUtil_Targeter.SetMaterialColor(meshRenderer2.materials, color);
+				AbilityUtil_Targeter.SetMaterialColor(meshRenderer.materials, color);
 			}
-			AbilityUtil_Targeter.SetMaterialOpacity(meshRenderer2.materials, GetCoverDirInitialOpacity());
+			AbilityUtil_Targeter.SetMaterialOpacity(meshRenderer.materials, GetCoverDirInitialOpacity());
 		}
 		return gameObject;
 	}
 
 	private void ShowCoverIndicatorForDirection(CoverDirections dir)
 	{
-		BoardSquare boardSquare = (!(m_owner != null)) ? null : m_owner.GetCurrentBoardSquare();
-		if (boardSquare != null)
+		BoardSquare boardSquare = m_owner != null ? m_owner.GetCurrentBoardSquare() : null;
+		if (boardSquare != null
+		    && dir < (CoverDirections)m_hasCover.Length
+		    && dir < (CoverDirections)m_actorCoverObjs.Length
+		    && m_actorCoverObjs[(int)dir] != null)
 		{
-			if (dir < (CoverDirections)m_hasCover.Length)
+			if (m_hasCover[(int)dir])
 			{
-				if (dir < (CoverDirections)m_actorCoverObjs.Length)
-				{
-					if (m_actorCoverObjs[(int)dir] != null)
-					{
-						if (m_hasCover[(int)dir])
-						{
-							Vector3 a = new Vector3(boardSquare.worldX, boardSquare.height + m_coverHeight, boardSquare.worldY);
-							m_actorCoverObjs[(int)dir].transform.position = a + GetCoverOffset(dir);
-							m_actorCoverObjs[(int)dir].SetActive(true);
-							ResetParticleTime(m_actorCoverObjs[(int)dir]);
-						}
-						else
-						{
-							m_actorCoverObjs[(int)dir].SetActive(false);
-						}
-					}
-				}
+				Vector3 a = new Vector3(boardSquare.worldX, boardSquare.height + m_coverHeight, boardSquare.worldY);
+				m_actorCoverObjs[(int)dir].transform.position = a + GetCoverOffset(dir);
+				m_actorCoverObjs[(int)dir].SetActive(true);
+				ResetParticleTime(m_actorCoverObjs[(int)dir]);
+			}
+			else
+			{
+				m_actorCoverObjs[(int)dir].SetActive(false);
 			}
 		}
 	}
@@ -716,19 +530,10 @@ public class ActorCover : NetworkBehaviour
 		ShowCoverIndicatorForDirection(CoverDirections.Y_NEG);
 		ShowCoverIndicatorForDirection(CoverDirections.Y_POS);
 		DestroyCoverDirHighlight();
-		BoardSquare boardSquare;
-		if (m_owner != null)
+		BoardSquare boardSquare = m_owner != null ? m_owner.GetCurrentBoardSquare() : null;
+		if (boardSquare != null)
 		{
-			boardSquare = m_owner.GetCurrentBoardSquare();
-		}
-		else
-		{
-			boardSquare = null;
-		}
-		BoardSquare boardSquare2 = boardSquare;
-		if (boardSquare2 != null)
-		{
-			Vector3 position = boardSquare2.ToVector3();
+			Vector3 position = boardSquare.ToVector3();
 			position.y = HighlightUtils.GetHighlightHeight();
 			m_coverDirHighlight = CreateCoverDirIndicator(m_hasCover, HighlightUtils.Get().m_coverDirIndicatorColor, GetCoverDirIndicatorRadius());
 			m_coverDirHighlight.transform.position = position;
@@ -825,30 +630,29 @@ public class ActorCover : NetworkBehaviour
 
 	public void RemoveTempCoverProvider(CoverDirections direction, bool ignoreMinDist)
 	{
-		if (NetworkServer.active)
+		if (!NetworkServer.active)
 		{
-			bool flag = false;
-			for (int i = m_syncTempCoverProviders.Count - 1; i >= 0; i--)
+			return;
+		}
+		bool flag = false;
+		for (int i = m_syncTempCoverProviders.Count - 1; i >= 0; i--)
+		{
+			if (m_syncTempCoverProviders[i].m_coverDir == direction
+			    && m_syncTempCoverProviders[i].m_ignoreMinDist == ignoreMinDist)
 			{
-				if (m_syncTempCoverProviders[i].m_coverDir == direction)
-				{
-					if (m_syncTempCoverProviders[i].m_ignoreMinDist == ignoreMinDist)
-					{
-						m_syncTempCoverProviders.RemoveAt(i);
-						flag = true;
-						break;
-					}
-				}
+				m_syncTempCoverProviders.RemoveAt(i);
+				flag = true;
+				break;
 			}
-			if (flag)
-			{
-				ResetTempCoverListFromSyncList();
-				RecalculateCover();
-			}
-			else
-			{
-				Log.Warning("RemoveTempCoverProvider did not find matching entry to remove");
-			}
+		}
+		if (flag)
+		{
+			ResetTempCoverListFromSyncList();
+			RecalculateCover();
+		}
+		else
+		{
+			Log.Warning("RemoveTempCoverProvider did not find matching entry to remove");
 		}
 	}
 
@@ -894,12 +698,9 @@ public class ActorCover : NetworkBehaviour
 			m_cachedHasCoverFromBarriers[i] = false;
 		}
 		BoardSquare currentBoardSquare = m_owner.GetCurrentBoardSquare();
-		if (BarrierManager.Get() != null)
+		if (BarrierManager.Get() != null && currentBoardSquare != null)
 		{
-			if (currentBoardSquare != null)
-			{
-				BarrierManager.Get().UpdateCachedCoverDirections(m_owner, currentBoardSquare, ref m_cachedHasCoverFromBarriers);
-			}
+			BarrierManager.Get().UpdateCachedCoverDirections(m_owner, currentBoardSquare, ref m_cachedHasCoverFromBarriers);
 		}
 	}
 
@@ -922,15 +723,21 @@ public class ActorCover : NetworkBehaviour
 			return false;
 		}
 		bool hasAnyCover = false;
-		List<BoardSquare> list = null;
-		Board.Get().GetCardinalAdjacentSquares(square.x, square.y, ref list);
-		foreach (BoardSquare adjacentSquare in list)
+		List<BoardSquare> cardinalAdjacentSquares = null;
+		Board.Get().GetCardinalAdjacentSquares(square.x, square.y, ref cardinalAdjacentSquares);
+		foreach (BoardSquare boardSquare in cardinalAdjacentSquares)
 		{
-			CoverDirections coverDirection = GetCoverDirection(square, adjacentSquare);
-			int heightDiff = adjacentSquare.height - square.height;
-			if (minDistOk)
+			CoverDirections coverDirection = GetCoverDirection(square, boardSquare);
+			int elevation = boardSquare.height - square.height;
+			if (!minDistOk)
 			{
-				if (heightDiff < 1
+				bool ignoreMinDist = tempCoversIgnoreMinDist != null && tempCoversIgnoreMinDist.Contains(coverDirection);
+				hasCover[(int)coverDirection] = ignoreMinDist;
+				hasAnyCover = hasAnyCover || ignoreMinDist;
+			}
+			else
+			{
+				if (elevation < 1
 				    && square.GetThinCover(coverDirection) == ThinCover.CoverType.None
 				    && (tempCoversNormal == null || !tempCoversNormal.Contains(coverDirection))
 				    && (tempCoversIgnoreMinDist == null || !tempCoversIgnoreMinDist.Contains(coverDirection))
@@ -943,12 +750,6 @@ public class ActorCover : NetworkBehaviour
 					hasCover[(int)coverDirection] = true;
 					hasAnyCover = true;
 				}
-			}
-			else
-			{
-				bool ignoreMinDist = tempCoversIgnoreMinDist != null && tempCoversIgnoreMinDist.Contains(coverDirection);
-				hasCover[(int)coverDirection] = ignoreMinDist;
-				hasAnyCover = hasAnyCover || ignoreMinDist;
 			}
 		}
 		return hasAnyCover;
@@ -986,15 +787,27 @@ public class ActorCover : NetworkBehaviour
 		return IsInCoverWrt(damageOrigin, ref list);
 	}
 
-	public static bool IsInCoverWrt(Vector3 damageOrigin, BoardSquare targetSquare, List<CoverDirections> tempCoverProviders, List<CoverDirections> tempCoversIgnoreMinDist, bool[] coverDirFromBarriers)
+	public static bool IsInCoverWrt(
+		Vector3 damageOrigin,
+		BoardSquare targetSquare,
+		List<CoverDirections> tempCoverProviders,
+		List<CoverDirections> tempCoversIgnoreMinDist,
+		bool[] coverDirFromBarriers)
 	{
 		List<CoverDirections> list = null;
-		return IsInCoverWrt(damageOrigin, targetSquare, ref list, tempCoverProviders, tempCoversIgnoreMinDist, coverDirFromBarriers);
+		return IsInCoverWrt(
+			damageOrigin,
+			targetSquare,
+			ref list,
+			tempCoverProviders,
+			tempCoversIgnoreMinDist,
+			coverDirFromBarriers);
 	}
 
 	public bool IsInCoverWrt(Vector3 damageOrigin, ref List<CoverDirections> coverDirections)
 	{
-		BoardSquare currentBoardSquare = GetComponent<ActorData>().GetCurrentBoardSquare();
+		ActorData component = GetComponent<ActorData>();
+		BoardSquare currentBoardSquare = component.GetCurrentBoardSquare();
 		return IsInCoverWrt(
 			damageOrigin,
 			currentBoardSquare,
@@ -1021,14 +834,14 @@ public class ActorCover : NetworkBehaviour
 		{
 			return false;
 		}
-		Vector3 targetPos = targetSquare.ToVector3();
-		Vector3 vector = damageOrigin - targetPos;
+		Vector3 b = targetSquare.ToVector3();
+		Vector3 vector = damageOrigin - b;
 		vector.y = 0f;
 		float sqrMagnitude = vector.sqrMagnitude;
-		float minDist = GameplayData.Get().m_coverMinDistance * Board.Get().squareSize;
-		float sqrMinDist = minDist * minDist;
-		bool isRanged = sqrMagnitude >= sqrMinDist;
-		if (!isRanged && (tempCoversIgnoreMinDist == null || tempCoversIgnoreMinDist.Count == 0))
+		float num = GameplayData.Get().m_coverMinDistance * Board.Get().squareSize;
+		float num2 = num * num;
+		bool flag = sqrMagnitude >= num2;
+		if (!flag && (tempCoversIgnoreMinDist == null || tempCoversIgnoreMinDist.Count == 0))
 		{
 			return false;
 		}
@@ -1039,43 +852,44 @@ public class ActorCover : NetworkBehaviour
 			tempCoverProviders,
 			tempCoversIgnoreMinDist,
 			coverDirFromBarriers,
-			isRanged);
+			flag);
 		return numCoverSourcesByDirectionOnly > 0;
 	}
 
 	public bool IsInCoverWrtDirectionOnly(Vector3 damageOrigin, BoardSquare targetSquare)
 	{
 		List<CoverDirections> list = null;
-		return GetNumCoverSourcesByDirectionOnly(damageOrigin, targetSquare, ref list, m_tempCoverProviders, m_tempCoverIgnoreMinDist, m_cachedHasCoverFromBarriers, true) > 0;
+		return GetNumCoverSourcesByDirectionOnly(
+			       damageOrigin,
+			       targetSquare,
+			       ref list,
+			       m_tempCoverProviders,
+			       m_tempCoverIgnoreMinDist,
+			       m_cachedHasCoverFromBarriers,
+			       true) >
+		       0;
 	}
 
-	private static int GetNumCoverSourcesByDirectionOnly(
-		Vector3 damageOrigin,
-		BoardSquare targetSquare,
-		ref List<CoverDirections> coverDirections,
-		List<CoverDirections> tempCoverProviders,
-		List<CoverDirections> tempCoverIgnoreMinDist,
-		bool[] coverDirFromBarriers,
-		bool minDistOk)
+	private static int GetNumCoverSourcesByDirectionOnly(Vector3 damageOrigin, BoardSquare targetSquare, ref List<CoverDirections> coverDirections, List<CoverDirections> tempCoverProviders, List<CoverDirections> tempCoverIgnoreMinDist, bool[] coverDirFromBarriers, bool minDistOk)
 	{
 		int num = 0;
-		Vector3 targetPos = targetSquare.ToVector3();
-		bool isXNeg = damageOrigin.x < targetPos.x;
-		bool isXPos = damageOrigin.x > targetPos.x;
-		bool isYNeg = damageOrigin.z < targetPos.z;
-		bool isYPos = damageOrigin.z > targetPos.z;
-		Vector2 vector = new Vector2(damageOrigin.x - targetPos.x, damageOrigin.z - targetPos.z);
-		Vector2 dir = vector.normalized;
-		float halfSquareSize = 0.5f * Board.Get().squareSize;
-		float halfCoverAngle = GameplayData.Get().m_coverProtectionAngle / 2f;
-		CalcCover(out bool[] array, targetSquare, tempCoverProviders, tempCoverIgnoreMinDist, coverDirFromBarriers, minDistOk);
-		if (array[(int)CoverDirections.X_NEG]
-		    && isXNeg
-		    && vector.x < -halfSquareSize)
+		Vector3 vector = targetSquare.ToVector3();
+		bool flag = damageOrigin.x < vector.x;
+		bool flag2 = damageOrigin.x > vector.x;
+		bool flag3 = damageOrigin.z < vector.z;
+		bool flag4 = damageOrigin.z > vector.z;
+		Vector2 vector2 = new Vector2(damageOrigin.x - vector.x, damageOrigin.z - vector.z);
+		Vector2 normalized = vector2.normalized;
+		float num2 = 0.5f * Board.Get().squareSize;
+		float num3 = GameplayData.Get().m_coverProtectionAngle / 2f;
+		bool[] array;
+		CalcCover(out array, targetSquare, tempCoverProviders, tempCoverIgnoreMinDist, coverDirFromBarriers, minDistOk);
+		if (array[1] && flag && vector2.x < -num2)
 		{
-			Vector2 xNegVector = new Vector2(-1f, 0f);
-			float attackAngle = Mathf.Acos(Vector2.Dot(xNegVector, dir)) * Mathf.Rad2Deg; 
-			if (attackAngle <= halfCoverAngle)
+			Vector2 lhs = new Vector2(-1f, 0f);
+			float num4 = Mathf.Acos(Vector2.Dot(lhs, normalized));
+			float num5 = num4 * 57.29578f;
+			if (num5 <= num3)
 			{
 				num++;
 				if (coverDirections != null)
@@ -1084,13 +898,12 @@ public class ActorCover : NetworkBehaviour
 				}
 			}
 		}
-		if (array[(int)CoverDirections.X_POS]
-		    && isXPos
-		    && vector.x > halfSquareSize)
+		if (array[0] && flag2 && vector2.x > num2)
 		{
-			Vector2 xPosVector = new Vector2(1f, 0f);
-			float attackAngle = Mathf.Acos(Vector2.Dot(xPosVector, dir)) * Mathf.Rad2Deg;
-			if (attackAngle <= halfCoverAngle)
+			Vector2 lhs2 = new Vector2(1f, 0f);
+			float num6 = Mathf.Acos(Vector2.Dot(lhs2, normalized));
+			float num7 = num6 * 57.29578f;
+			if (num7 <= num3)
 			{
 				num++;
 				if (coverDirections != null)
@@ -1099,13 +912,12 @@ public class ActorCover : NetworkBehaviour
 				}
 			}
 		}
-		if (array[(int)CoverDirections.Y_NEG]
-		    && isYNeg
-		    && vector.y < -halfSquareSize)
+		if (array[3] && flag3 && vector2.y < -num2)
 		{
-			Vector2 yNegVector = new Vector2(0f, -1f);
-			float attackAngle = Mathf.Acos(Vector2.Dot(yNegVector, dir)) * Mathf.Rad2Deg;
-			if (attackAngle <= halfCoverAngle)
+			Vector2 lhs3 = new Vector2(0f, -1f);
+			float num8 = Mathf.Acos(Vector2.Dot(lhs3, normalized));
+			float num9 = num8 * 57.29578f;
+			if (num9 <= num3)
 			{
 				num++;
 				if (coverDirections != null)
@@ -1114,11 +926,12 @@ public class ActorCover : NetworkBehaviour
 				}
 			}
 		}
-		if (array[(int)CoverDirections.Y_POS] && isYPos && vector.y > halfSquareSize)
+		if (array[2] && flag4 && vector2.y > num2)
 		{
-			Vector2 yPosVector = new Vector2(0f, 1f);
-			float attackAngle = Mathf.Acos(Vector2.Dot(yPosVector, dir)) * Mathf.Rad2Deg;
-			if (attackAngle <= halfCoverAngle)
+			Vector2 lhs4 = new Vector2(0f, 1f);
+			float num10 = Mathf.Acos(Vector2.Dot(lhs4, normalized));
+			float num11 = num10 * 57.29578f;
+			if (num11 <= num3)
 			{
 				num++;
 				if (coverDirections != null)
@@ -1133,20 +946,14 @@ public class ActorCover : NetworkBehaviour
 	public bool IsDirInCover(Vector3 dir)
 	{
 		float angle_deg = VectorUtils.HorizontalAngle_Deg(dir);
-		List<CoverRegion> coveredRegions = GetCoveredRegions();
-		bool result = false;
-		using (List<CoverRegion>.Enumerator enumerator = coveredRegions.GetEnumerator())
+		foreach (CoverRegion coverRegion in GetCoveredRegions())
 		{
-			while (enumerator.MoveNext())
+			if (coverRegion.IsDirInCover(angle_deg))
 			{
-				CoverRegion coverRegion = enumerator.Current;
-				if (coverRegion.IsDirInCover(angle_deg))
-				{
-					return true;
-				}
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 	public List<CoverRegion> GetCoveredRegions()
@@ -1181,63 +988,47 @@ public class ActorCover : NetworkBehaviour
 				list.Add(item);
 			}
 		}
-		if (list.Count != 0)
+		if (list.Count != 0 && list.Count != 1)
 		{
-			if (list.Count != 1)
+			if (list.Count == 4)
 			{
-				if (list.Count == 4)
+				return new List<CoverRegion>
 				{
-					return new List<CoverRegion>
-					{
-						new CoverRegion(center, -720f, 720f)
-					};
-				}
-				if (list.Count == 3)
-				{
-					float num2 = list[0].m_startAngle;
-					float num3 = list[0].m_endAngle;
-					foreach (CoverRegion coverRegion in list)
-					{
-						num2 = Mathf.Min(num2, coverRegion.m_startAngle);
-						num3 = Mathf.Max(num3, coverRegion.m_endAngle);
-					}
-					return new List<CoverRegion>
-					{
-						new CoverRegion(center, num2, num3)
-					};
-				}
-				if (list.Count == 2)
-				{
-					CoverRegion coverRegion2 = list[0];
-					CoverRegion coverRegion3 = list[1];
-					bool flag;
-					if (coverRegion2.m_startAngle <= coverRegion3.m_startAngle)
-					{
-						flag = (coverRegion3.m_startAngle <= coverRegion2.m_endAngle);
-					}
-					else
-					{
-						flag = false;
-					}
-					bool flag2 = flag;
-					bool flag3 = coverRegion2.m_startAngle <= coverRegion3.m_endAngle && coverRegion3.m_endAngle <= coverRegion2.m_endAngle;
-					if (!flag2)
-					{
-						if (!flag3)
-						{
-							return list;
-						}
-					}
-					float startAngle = Mathf.Min(coverRegion2.m_startAngle, coverRegion3.m_startAngle);
-					float endAngle = Mathf.Max(coverRegion2.m_endAngle, coverRegion3.m_endAngle);
-					return new List<CoverRegion>
-					{
-						new CoverRegion(center, startAngle, endAngle)
-					};
-				}
-				Log.Error(string.Concat("Actor ", owner.DisplayName, " in cover in ", list.Count, " directions."));
-				return list;
+					new CoverRegion(center, -720f, 720f)
+				};
 			}
+			if (list.Count == 3)
+			{
+				float num2 = list[0].m_startAngle;
+				float num3 = list[0].m_endAngle;
+				foreach (CoverRegion coverRegion in list)
+				{
+					num2 = Mathf.Min(num2, coverRegion.m_startAngle);
+					num3 = Mathf.Max(num3, coverRegion.m_endAngle);
+				}
+				return new List<CoverRegion>
+				{
+					new CoverRegion(center, num2, num3)
+				};
+			}
+			if (list.Count == 2)
+			{
+				CoverRegion coverRegion2 = list[0];
+				CoverRegion coverRegion3 = list[1];
+				if ((coverRegion2.m_startAngle > coverRegion3.m_startAngle || coverRegion3.m_startAngle > coverRegion2.m_endAngle)
+				    && (coverRegion2.m_startAngle > coverRegion3.m_endAngle || coverRegion3.m_endAngle > coverRegion2.m_endAngle))
+				{
+					return list;
+				}
+				float startAngle = Mathf.Min(coverRegion2.m_startAngle, coverRegion3.m_startAngle);
+				float endAngle = Mathf.Max(coverRegion2.m_endAngle, coverRegion3.m_endAngle);
+				return new List<CoverRegion>
+				{
+					new CoverRegion(center, startAngle, endAngle)
+				};
+			}
+			Log.Error(string.Concat("Actor ", owner.DisplayName, " in cover in ", list.Count, " directions."));
+			return list;
 		}
 		return list;
 	}
@@ -1251,46 +1042,25 @@ public class ActorCover : NetworkBehaviour
 		float angle_deg2 = coneDirAngleDegrees + coneWidthDegrees / 2f;
 		foreach (CoverRegion coverRegion in coveredRegions)
 		{
-			bool flag2 = coverRegion.IsDirInCover(angle_deg);
-			bool flag3 = coverRegion.IsDirInCover(angle_deg2);
-			if (flag2)
+			if (coverRegion.IsDirInCover(angle_deg) && coverRegion.IsDirInCover(angle_deg2))
 			{
-				if (flag3)
-				{
-					flag = true;
-					break;
-				}
+				flag = true;
+				break;
 			}
 		}
 		if (!flag)
 		{
-			using (List<CoverRegion>.Enumerator enumerator2 = coveredRegions.GetEnumerator())
+			foreach (CoverRegion coverRegion2 in coveredRegions)
 			{
-				while (enumerator2.MoveNext())
+				if (coverRegion2.IsDirInCover(coneDirAngleDegrees))
 				{
-					CoverRegion coverRegion2 = enumerator2.Current;
-					bool flag4 = coverRegion2.IsDirInCover(coneDirAngleDegrees);
-					if (flag4)
+					if (coverRegion2.IsDirInCover(angle_deg) && !coverRegion2.IsDirInCover(angle_deg2))
 					{
-						bool flag5 = coverRegion2.IsDirInCover(angle_deg) && !coverRegion2.IsDirInCover(angle_deg2);
-						bool flag6;
-						if (!coverRegion2.IsDirInCover(angle_deg))
-						{
-							flag6 = coverRegion2.IsDirInCover(angle_deg2);
-						}
-						else
-						{
-							flag6 = false;
-						}
-						bool flag7 = flag6;
-						if (flag5)
-						{
-							num = coverRegion2.m_endAngle - coneWidthDegrees / 2f;
-						}
-						else if (flag7)
-						{
-							num = coverRegion2.m_startAngle + coneWidthDegrees / 2f;
-						}
+						num = coverRegion2.m_endAngle - coneWidthDegrees / 2f;
+					}
+					else if (!coverRegion2.IsDirInCover(angle_deg) && coverRegion2.IsDirInCover(angle_deg2))
+					{
+						num = coverRegion2.m_startAngle + coneWidthDegrees / 2f;
 					}
 				}
 			}
