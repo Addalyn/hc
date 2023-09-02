@@ -1,13 +1,10 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class BotController : MonoBehaviour
 {
 	public float m_combatRange = 7f;
-
 	public float m_idealRange = 5f;
-
 	public float m_retreatFromRange = 15f;
 
 	[HideInInspector]
@@ -17,324 +14,226 @@ public class BotController : MonoBehaviour
 
 	private void Start()
 	{
-		ActorData component = base.GetComponent<ActorData>();
+		ActorData component = GetComponent<ActorData>();
 		BotDifficulty botDifficulty = BotDifficulty.Expert;
-		bool flag = false;
+		bool botCanTaunt = false;
 		foreach (LobbyPlayerInfo lobbyPlayerInfo in GameManager.Get().TeamInfo.TeamPlayerInfo)
 		{
-			if (!(component.PlayerData == null))
+			if (component.PlayerData != null
+			    && component.PlayerData.LookupDetails() != null
+			    && lobbyPlayerInfo.PlayerId == component.PlayerData.LookupDetails().m_lobbyPlayerInfoId)
 			{
-				if (component.PlayerData.LookupDetails() == null)
-				{
-				}
-				else if (lobbyPlayerInfo.PlayerId == component.PlayerData.LookupDetails().m_lobbyPlayerInfoId)
-				{
-					botDifficulty = lobbyPlayerInfo.Difficulty;
-					flag = lobbyPlayerInfo.BotCanTaunt;
-					break;
-				}
+				botDifficulty = lobbyPlayerInfo.Difficulty;
+				botCanTaunt = lobbyPlayerInfo.BotCanTaunt;
+				break;
 			}
 		}
-		this.previousBrainStack = new Stack<NPCBrain>();
-		if (base.GetComponent<NPCBrain>() == null)
+		previousBrainStack = new Stack<NPCBrain>();
+		if (GetComponent<NPCBrain>() == null)
 		{
-			if (!(component.GetClassName() == "Sniper") && !(component.GetClassName() == "RageBeast") && !(component.GetClassName() == "Scoundrel"))
+			if (component.GetClassName() != "Sniper"
+			    && component.GetClassName() != "RageBeast"
+			    && component.GetClassName() != "Scoundrel"
+			    && component.GetClassName() != "RobotAnimal"
+			    && component.GetClassName() != "NanoSmith"
+			    && component.GetClassName() != "Thief"
+			    && component.GetClassName() != "BattleMonk"
+			    && component.GetClassName() != "BazookaGirl"
+			    && component.GetClassName() != "SpaceMarine"
+			    && component.GetClassName() != "Gremlins"
+			    && component.GetClassName() != "Tracker"
+			    && component.GetClassName() != "DigitalSorceress"
+			    && component.GetClassName() != "Spark"
+			    && component.GetClassName() != "Claymore"
+			    && component.GetClassName() != "Rampart"
+			    && component.GetClassName() != "Trickster"
+			    && component.GetClassName() != "Blaster"
+			    && component.GetClassName() != "FishMan"
+			    && component.GetClassName() != "Thief"
+			    && component.GetClassName() != "Soldier"
+			    && component.GetClassName() != "Exo"
+			    && component.GetClassName() != "Martyr"
+			    && component.GetClassName() != "Sensei"
+			    && component.GetClassName() != "TeleportingNinja"
+			    && component.GetClassName() != "Manta"
+			    && component.GetClassName() != "Valkyrie"
+			    && component.GetClassName() != "Archer"
+			    && component.GetClassName() != "Samurai"
+			    && component.GetClassName() != "Cleric"
+			    && component.GetClassName() != "Neko"
+			    && component.GetClassName() != "Scamp"
+			    && component.GetClassName() != "Dino"
+			    && component.GetClassName() != "Iceborg"
+			    && component.GetClassName() != "Fireborg")
 			{
-				if (!(component.GetClassName() == "RobotAnimal"))
-				{
-					if (!(component.GetClassName() == "NanoSmith"))
-					{
-						if (!(component.GetClassName() == "Thief"))
-						{
-							if (!(component.GetClassName() == "BattleMonk") && !(component.GetClassName() == "BazookaGirl"))
-							{
-								if (!(component.GetClassName() == "SpaceMarine"))
-								{
-									if (!(component.GetClassName() == "Gremlins"))
-									{
-										if (!(component.GetClassName() == "Tracker"))
-										{
-											if (!(component.GetClassName() == "DigitalSorceress"))
-											{
-												if (!(component.GetClassName() == "Spark") && !(component.GetClassName() == "Claymore") && !(component.GetClassName() == "Rampart"))
-												{
-													if (!(component.GetClassName() == "Trickster"))
-													{
-														if (!(component.GetClassName() == "Blaster"))
-														{
-															if (!(component.GetClassName() == "FishMan"))
-															{
-																if (!(component.GetClassName() == "Thief"))
-																{
-																	if (!(component.GetClassName() == "Soldier"))
-																	{
-																		if (!(component.GetClassName() == "Exo"))
-																		{
-																			if (!(component.GetClassName() == "Martyr") && !(component.GetClassName() == "Sensei"))
-																			{
-																				if (!(component.GetClassName() == "TeleportingNinja") && !(component.GetClassName() == "Manta"))
-																				{
-																					if (!(component.GetClassName() == "Valkyrie"))
-																					{
-																						if (!(component.GetClassName() == "Archer"))
-																						{
-																							if (!(component.GetClassName() == "Samurai"))
-																							{
-																								if (!(component.GetClassName() == "Cleric"))
-																								{
-																									if (!(component.GetClassName() == "Neko"))
-																									{
-																										if (!(component.GetClassName() == "Scamp"))
-																										{
-																											if (!(component.GetClassName() == "Dino"))
-																											{
-																												if (!(component.GetClassName() == "Iceborg"))
-																												{
-																													if (!(component.GetClassName() == "Fireborg"))
-																													{
-																														Log.Info("Using Generic AI for {0}", new object[]
-																														{
-																															component.GetClassName()
-																														});
-																														return;
-																													}
-																												}
-																											}
-																										}
-																									}
-																								}
-																							}
-																						}
-																					}
-																				}
-																			}
-																		}
-																	}
-																}
-															}
-														}
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
+				Log.Info("Using Generic AI for {0}", component.GetClassName());
+				return;
 			}
-			NPCBrain_Adaptive.Create(this, component.transform, botDifficulty, flag);
-			Log.Info("Making Adaptive AI for {0} at difficulty {1}, can taunt: {2}", new object[]
-			{
-				component.GetClassName(),
-				botDifficulty.ToString(),
-				flag
-			});
-			if (this.IAmTheOnlyBotOnATwoPlayerTeam(component))
+			NPCBrain_Adaptive.Create(this, component.transform, botDifficulty, botCanTaunt);
+			Log.Info("Making Adaptive AI for {0} at difficulty {1}, can taunt: {2}",
+				component.GetClassName(), botDifficulty.ToString(), botCanTaunt);
+			if (IAmTheOnlyBotOnATwoPlayerTeam(component))
 			{
 				component.GetComponent<NPCBrain_Adaptive>().SendDecisionToTeamChat(true);
 			}
 		}
 	}
 
-	public unsafe BoardSquare GetClosestEnemyPlayerSquare(bool includeInvisibles, out int numEnemiesInRange)
+	public BoardSquare GetClosestEnemyPlayerSquare(bool includeInvisibles, out int numEnemiesInRange)
 	{
 		numEnemiesInRange = 0;
-		ActorData component = base.GetComponent<ActorData>();
-		List<ActorData> allTeamMembers = GameFlowData.Get().GetAllTeamMembers(component.GetEnemyTeam());
-		BoardSquare currentBoardSquare = component.GetCurrentBoardSquare();
-		BoardSquare boardSquare = null;
-		using (List<ActorData>.Enumerator enumerator = allTeamMembers.GetEnumerator())
+		ActorData actorData = GetComponent<ActorData>();
+		List<ActorData> enemies = GameFlowData.Get().GetAllTeamMembers(actorData.GetEnemyTeam());
+		BoardSquare currentBoardSquare = actorData.GetCurrentBoardSquare();
+		BoardSquare closestEnemySquare = null;
+		foreach (ActorData enemyActor in enemies)
 		{
-			while (enumerator.MoveNext())
+			BoardSquare enemySquare = enemyActor.GetCurrentBoardSquare();
+			if (!enemyActor.IsDead() && enemySquare != null)
 			{
-				ActorData actorData = enumerator.Current;
-				BoardSquare currentBoardSquare2 = actorData.GetCurrentBoardSquare();
-				if (!actorData.IsDead())
+				float distToEnemy = currentBoardSquare.HorizontalDistanceOnBoardTo(enemySquare);
+				if (distToEnemy <= m_combatRange)
 				{
-					if (currentBoardSquare2 == null)
+					numEnemiesInRange++;
+				}
+				if (!includeInvisibles && !actorData.GetFogOfWar().IsVisible(enemySquare))
+				{
+					continue;
+				}
+				if (closestEnemySquare == null)
+				{
+					closestEnemySquare = enemySquare;
+				}
+				else
+				{
+					float dist = currentBoardSquare.HorizontalDistanceOnBoardTo(closestEnemySquare);
+					if (distToEnemy < dist)
 					{
-					}
-					else
-					{
-						float num = currentBoardSquare.HorizontalDistanceOnBoardTo(currentBoardSquare2);
-						if (num <= this.m_combatRange)
-						{
-							numEnemiesInRange++;
-						}
-						if (!includeInvisibles)
-						{
-							if (!component.GetFogOfWar().IsVisible(currentBoardSquare2))
-							{
-								continue;
-							}
-						}
-						if (boardSquare == null)
-						{
-							boardSquare = currentBoardSquare2;
-						}
-						else
-						{
-							float num2 = currentBoardSquare.HorizontalDistanceOnBoardTo(boardSquare);
-							if (num < num2)
-							{
-								boardSquare = currentBoardSquare2;
-							}
-						}
+						closestEnemySquare = enemySquare;
 					}
 				}
 			}
 		}
-		return boardSquare;
+		return closestEnemySquare;
 	}
 
 	public BoardSquare GetRetreatSquare()
 	{
-		ActorData component = base.GetComponent<ActorData>();
-		List<ActorData> allTeamMembers = GameFlowData.Get().GetAllTeamMembers(component.GetEnemyTeam());
-		BoardSquare currentBoardSquare = component.GetCurrentBoardSquare();
-		Vector3 a = new Vector3(0f, 0f, 0f);
-		using (List<ActorData>.Enumerator enumerator = allTeamMembers.GetEnumerator())
+		ActorData actorData = GetComponent<ActorData>();
+		List<ActorData> enemies = GameFlowData.Get().GetAllTeamMembers(actorData.GetEnemyTeam());
+		BoardSquare currentBoardSquare = actorData.GetCurrentBoardSquare();
+		Vector3 dirToEnemies = new Vector3(0f, 0f, 0f);
+		foreach (ActorData enemyActor in enemies)
 		{
-			while (enumerator.MoveNext())
+			BoardSquare enemySquare = enemyActor.GetCurrentBoardSquare();
+			if (!enemyActor.IsDead() && enemySquare != null)
 			{
-				ActorData actorData = enumerator.Current;
-				BoardSquare currentBoardSquare2 = actorData.GetCurrentBoardSquare();
-				if (!actorData.IsDead())
+				float distToEnemy = currentBoardSquare.HorizontalDistanceOnBoardTo(enemySquare);
+				if (distToEnemy <= m_retreatFromRange)
 				{
-					if (currentBoardSquare2 == null)
-					{
-					}
-					else
-					{
-						float num = currentBoardSquare.HorizontalDistanceOnBoardTo(currentBoardSquare2);
-						if (num <= this.m_retreatFromRange)
-						{
-							Vector3 b = currentBoardSquare2.ToVector3() - currentBoardSquare.ToVector3();
-							b.Normalize();
-							a += b;
-						}
-					}
+					Vector3 dirToEnemy = enemySquare.ToVector3() - currentBoardSquare.ToVector3();
+					dirToEnemy.Normalize();
+					dirToEnemies += dirToEnemy;
 				}
 			}
 		}
-		Vector3 a2 = -a;
-		a2.Normalize();
-		Vector3 vector = currentBoardSquare.ToVector3() + a2 * this.m_retreatFromRange;
-		return Board.Get().GetClosestValidForGameplaySquareTo(vector.x, vector.z);
+		Vector3 dirFromEnemies = -dirToEnemies;
+		dirFromEnemies.Normalize();
+		Vector3 retreatPos = currentBoardSquare.ToVector3() + dirFromEnemies * m_retreatFromRange;
+		return Board.Get().GetClosestValidForGameplaySquareTo(retreatPos.x, retreatPos.z);
 	}
 
 	public BoardSquare GetAdvanceSquare()
 	{
-		int num;
-		BoardSquare closestEnemyPlayerSquare = this.GetClosestEnemyPlayerSquare(true, out num);
+		BoardSquare closestEnemyPlayerSquare = GetClosestEnemyPlayerSquare(true, out int numEnemiesInRange);
 		if (closestEnemyPlayerSquare == null)
 		{
 			return null;
 		}
-		Vector3 a = closestEnemyPlayerSquare.ToVector3();
-		ActorData component = base.GetComponent<ActorData>();
-		BoardSquare currentBoardSquare = component.GetCurrentBoardSquare();
-		Vector3 vector = currentBoardSquare.ToVector3();
-		Vector3 vector2 = a - vector;
-		if (num > 1)
+		Vector3 closestEnemyPos = closestEnemyPlayerSquare.ToVector3();
+		ActorData actorData = GetComponent<ActorData>();
+		BoardSquare currentBoardSquare = actorData.GetCurrentBoardSquare();
+		Vector3 currentPos = currentBoardSquare.ToVector3();
+		Vector3 dirToClosestEnemy = closestEnemyPos - currentPos;
+		if (numEnemiesInRange > 1)
 		{
-			float magnitude = vector2.magnitude;
-			if (magnitude > this.m_idealRange)
+			float distToClosestEnemy = dirToClosestEnemy.magnitude;
+			if (distToClosestEnemy > m_idealRange)
 			{
-				vector2.Normalize();
-				vector2 *= this.m_idealRange;
+				dirToClosestEnemy.Normalize();
+				dirToClosestEnemy *= m_idealRange;
 			}
 		}
-		Vector3 vector3 = Vector3.zero;
-		List<ActorData> allTeamMembers = GameFlowData.Get().GetAllTeamMembers(component.GetTeam());
-		using (List<ActorData>.Enumerator enumerator = allTeamMembers.GetEnumerator())
+		Vector3 dirFromAllies = Vector3.zero;
+		List<ActorData> allies = GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam());
+		foreach (ActorData allyActor in allies)
 		{
-			while (enumerator.MoveNext())
+			if (allyActor.IsDead() && allyActor != actorData)
 			{
-				ActorData actorData = enumerator.Current;
-				if (!actorData.IsDead() || actorData == component)
-				{
-					BoardSquare currentBoardSquare2 = actorData.GetCurrentBoardSquare();
-					if (currentBoardSquare2 != null && currentBoardSquare.HorizontalDistanceOnBoardTo(currentBoardSquare2) < this.m_idealRange)
-					{
-						Vector3 a2 = currentBoardSquare2.ToVector3() - vector;
-						a2.Normalize();
-						vector3 -= a2 * 1.5f;
-					}
-				}
+				continue;
+			}
+			BoardSquare allySquare = allyActor.GetCurrentBoardSquare();
+			if (allySquare != null && currentBoardSquare.HorizontalDistanceOnBoardTo(allySquare) < m_idealRange)
+			{
+				Vector3 dirToAlly = allySquare.ToVector3() - currentPos;
+				dirToAlly.Normalize();
+				dirFromAllies -= dirToAlly * 1.5f;
 			}
 		}
-		Vector3 vector4 = vector + vector2 + vector3;
-		BoardSquare boardSquareUnsafe = Board.Get().GetSquareClosestToPos(vector4.x, vector4.z);
-		return Board.Get().GetClosestValidForGameplaySquareTo(boardSquareUnsafe, null);
+		Vector3 advancePos = currentPos + dirToClosestEnemy + dirFromAllies;
+		BoardSquare advanceSquare = Board.Get().GetSquareClosestToPos(advancePos.x, advancePos.z);
+		return Board.Get().GetClosestValidForGameplaySquareTo(advanceSquare);
 	}
 
 	public void SelectBotAbilityMods()
 	{
-		NPCBrain component = base.GetComponent<NPCBrain>();
+		NPCBrain component = GetComponent<NPCBrain>();
 		if (component != null)
 		{
 			component.SelectBotAbilityMods();
 		}
 		else
 		{
-			this.SelectBotAbilityMods_Brainless();
+			SelectBotAbilityMods_Brainless();
 		}
 	}
 
 	public void SelectBotCards()
 	{
-		NPCBrain component = base.GetComponent<NPCBrain>();
+		NPCBrain component = GetComponent<NPCBrain>();
 		if (component != null)
 		{
 			component.SelectBotCards();
 		}
 		else
 		{
-			this.SelectBotCards_Brainless();
+			SelectBotCards_Brainless();
 		}
 	}
 
 	public void SelectBotAbilityMods_Brainless()
 	{
-		ActorData component = base.GetComponent<ActorData>();
-		AbilityData abilityData = component.GetAbilityData();
-		List<Ability> abilitiesAsList = abilityData.GetAbilitiesAsList();
+		ActorData actorData = GetComponent<ActorData>();
 		CharacterModInfo selectedMods = default(CharacterModInfo);
-		int num = 0;
-		using (List<Ability>.Enumerator enumerator = abilitiesAsList.GetEnumerator())
+		int i = 0;
+		foreach (Ability ability in actorData.GetAbilityData().GetAbilitiesAsList())
 		{
-			while (enumerator.MoveNext())
-			{
-				Ability ability = enumerator.Current;
-				AbilityMod defaultModForAbility = AbilityModManager.Get().GetDefaultModForAbility(ability);
-				int num2;
-				if (defaultModForAbility != null)
-				{
-					num2 = defaultModForAbility.m_abilityScopeId;
-				}
-				else
-				{
-					num2 = -1;
-				}
-				int mod = num2;
-				selectedMods.SetModForAbility(num, mod);
-				num++;
-			}
+			AbilityMod defaultModForAbility = AbilityModManager.Get().GetDefaultModForAbility(ability);
+			int mod = defaultModForAbility != null ? defaultModForAbility.m_abilityScopeId : -1;
+			selectedMods.SetModForAbility(i, mod);
+			i++;
 		}
-		component.m_selectedMods = selectedMods;
+		actorData.m_selectedMods = selectedMods;
 	}
 
 	public void SelectBotCards_Brainless()
 	{
-		ActorData component = base.GetComponent<ActorData>();
+		ActorData component = GetComponent<ActorData>();
 		CharacterCardInfo cardInfo = default(CharacterCardInfo);
 		cardInfo.PrepCard = CardManagerData.Get().GetDefaultPrepCardType();
 		cardInfo.CombatCard = CardManagerData.Get().GetDefaultCombatCardType();
 		cardInfo.DashCard = CardManagerData.Get().GetDefaultDashCardType();
-		CardManager.Get().SetDeckAndGiveCards(component, cardInfo, false);
+		CardManager.Get().SetDeckAndGiveCards(component, cardInfo);
 	}
 
 	public bool IAmTheOnlyBotOnATwoPlayerTeam(ActorData actorData)
@@ -344,30 +243,23 @@ public class BotController : MonoBehaviour
 		{
 			return false;
 		}
-		bool flag = false;
-		using (List<LobbyPlayerInfo>.Enumerator enumerator = GameManager.Get().TeamInfo.TeamPlayerInfo.GetEnumerator())
+		bool haveOneTeammate = false;
+		foreach (LobbyPlayerInfo lobbyPlayerInfo in GameManager.Get().TeamInfo.TeamPlayerInfo)
 		{
-			while (enumerator.MoveNext())
+			if (lobbyPlayerInfo.TeamId == actorData.GetTeam()
+			    && lobbyPlayerInfo.PlayerId != playerDetails.m_lobbyPlayerInfoId)
 			{
-				LobbyPlayerInfo lobbyPlayerInfo = enumerator.Current;
-				if (lobbyPlayerInfo.TeamId != actorData.GetTeam())
+				if (haveOneTeammate)
 				{
+					return false;
 				}
-				else if (lobbyPlayerInfo.PlayerId == playerDetails.m_lobbyPlayerInfoId)
+
+				if (lobbyPlayerInfo.IsAIControlled)
 				{
+					return false;
 				}
-				else
-				{
-					if (flag)
-					{
-						return false;
-					}
-					if (lobbyPlayerInfo.IsAIControlled)
-					{
-						return false;
-					}
-					flag = true;
-				}
+
+				haveOneTeammate = true;
 			}
 		}
 		return true;
