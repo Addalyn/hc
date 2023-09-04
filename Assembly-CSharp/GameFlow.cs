@@ -1411,6 +1411,8 @@ public class GameFlow : NetworkBehaviour
 		//{
 		//	PveDialogueManager.Get().OnTurnStart();
 		//}
+		// custom
+		BotManager.Get()?.OnTurnStart();
 		
 		// custom
 		ServerGameManager.Get()?.SaveReplay();
@@ -1905,11 +1907,10 @@ public class GameFlow : NetworkBehaviour
 		{
 			ObjectivePoints.Get().OnTurnEnd();
 		}
-		// TODO BOTS
-		//if (BotManager.Get() != null)
-		//{
-		//	BotManager.Get().OnTurnEnd();
-		//}
+		if (BotManager.Get() != null)
+		{
+			BotManager.Get().OnTurnEnd();
+		}
 		//}
 		if (SinglePlayerManager.Get())
 		{

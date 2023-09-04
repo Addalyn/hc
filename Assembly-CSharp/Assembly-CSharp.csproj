@@ -90,6 +90,7 @@
     <Compile Include="AbilityData.cs" />
     <Compile Include="AbilityGameSummary.cs" />
     <Compile Include="AbilityGridPattern.cs" />
+    <Compile Include="AbilityIndexArrayAttribute.cs" />
     <Compile Include="AbilityInteractions.cs" />
     <Compile Include="AbilityInteractionType.cs" />
     <Compile Include="AbilityMod.cs" />
@@ -295,6 +296,7 @@
     <Compile Include="AbilityTags.cs" />
     <Compile Include="AbilityTarget.cs" />
     <Compile Include="AbilityTauntConfigOverride.cs" />
+    <Compile Include="AbilityTiebreakerType.cs" />
     <Compile Include="AbilityTooltipHelper.cs" />
     <Compile Include="AbilityTooltipNumber.cs" />
     <Compile Include="AbilityTooltipSubject.cs" />
@@ -539,6 +541,7 @@
     <Compile Include="BazookaGirlStickyBomb.cs" />
     <Compile Include="BazookaGirlStickyBombEffect.cs" />
     <Compile Include="BazookaGirl_SyncComponent.cs" />
+    <Compile Include="BehaviorRequirementConditionType.cs" />
     <Compile Include="BestSolutions.cs" />
     <Compile Include="BigPingPanel.cs" />
     <Compile Include="BigPingPanelControlpad.cs" />
@@ -568,6 +571,10 @@
     <Compile Include="BotManager.cs" />
     <Compile Include="BounceBombInfo.cs" />
     <Compile Include="BouncingShotSequence.cs" />
+    <Compile Include="BrainAbility.cs" />
+    <Compile Include="BrainBehavior.cs" />
+    <Compile Include="BrainBehaviorCondition.cs" />
+    <Compile Include="BrainTargetingCondition.cs" />
     <Compile Include="BrushCoordinator.cs" />
     <Compile Include="BrushLocation.cs" />
     <Compile Include="BrushRegion.cs" />
@@ -728,6 +735,7 @@
     <Compile Include="CommonServerConfig.cs" />
     <Compile Include="CompilerExtensions.cs" />
     <Compile Include="CompressResult.cs" />
+    <Compile Include="Condition.cs" />
     <Compile Include="ConditionalQuestRewards.cs" />
     <Compile Include="ConeTargetingInfo.cs" />
     <Compile Include="ConfirmedState.cs" />
@@ -739,6 +747,7 @@
     <Compile Include="ConsoleLog.cs" />
     <Compile Include="ConsoleMessageType.cs" />
     <Compile Include="ConstantLogicOpClass.cs" />
+    <Compile Include="ConstructedChoice.cs" />
     <Compile Include="ConsumeInventoryItemResult.cs" />
     <Compile Include="ContextualReadyState.cs" />
     <Compile Include="ControllerButtonState.cs" />
@@ -1574,6 +1583,8 @@
     <Compile Include="LoreArticle.cs" />
     <Compile Include="LoreWideData.cs" />
     <Compile Include="LOSLookup.cs" />
+    <Compile Include="Malee\ReorderableArray.cs" />
+    <Compile Include="Malee\ReorderableAttribute.cs" />
     <Compile Include="MantaBasicAttack.cs" />
     <Compile Include="MantaConeDirtyFighting.cs" />
     <Compile Include="MantaCreateBarriers.cs" />
@@ -1751,7 +1762,9 @@
     <Compile Include="NonActorTargetInfo.cs" />
     <Compile Include="NonActorTargetInfo_BarrierBlock.cs" />
     <Compile Include="NPCBrain.cs" />
+    <Compile Include="NPCBrainSelector.cs" />
     <Compile Include="NPCBrain_Adaptive.cs" />
+    <Compile Include="NPCBrain_Constructed.cs" />
     <Compile Include="NPCBrain_Dash.cs" />
     <Compile Include="NPCBrain_GotoLocationAndPerformAbility.cs" />
     <Compile Include="NPCBrain_Scripted.cs" />
@@ -2337,7 +2350,9 @@
     <Compile Include="TargeterUtils.cs" />
     <Compile Include="Targeting.cs" />
     <Compile Include="TargetingActionState.cs" />
+    <Compile Include="TargetingConditionType.cs" />
     <Compile Include="TargetingNumberUpdateScratch.cs" />
+    <Compile Include="TargetingPriority.cs" />
     <Compile Include="TargetSelectModBase.cs" />
     <Compile Include="TargetSelectMod_AoeRadius.cs" />
     <Compile Include="TargetSelectMod_ChargeAoE.cs" />

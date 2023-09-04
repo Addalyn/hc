@@ -42,7 +42,10 @@ public static class Log
 		Loading,
 		ActorActions,
 		ActorTurnSM,
-		GameplayMetrics
+		GameplayMetrics,
+#if SERVER
+		AIBrain,
+#endif
 	}
 
 	public struct Message

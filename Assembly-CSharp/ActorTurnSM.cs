@@ -1596,7 +1596,9 @@ public class ActorTurnSM : NetworkBehaviour
 				}
 
 				// reactor
-				bool isWaypoint = Options_UI.Get().GetShiftClickForMovementWaypoints() == InputManager.Get().IsKeyBindingHeld(KeyPreference.MovementWaypointModifier)
+				bool isWaypoint = 
+					Options_UI.Get() == null || InputManager.Get() == null || // custom
+					Options_UI.Get().GetShiftClickForMovementWaypoints() == InputManager.Get().IsKeyBindingHeld(KeyPreference.MovementWaypointModifier)
 					&& FirstTurnMovement.CanWaypoint();
 				// rogues
 				//bool isWaypoint = true;
