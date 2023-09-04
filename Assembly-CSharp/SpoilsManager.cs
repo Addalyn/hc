@@ -255,7 +255,8 @@ public class SpoilsManager : MonoBehaviour, PowerUp.IPowerUpListener
 		}
 		return null;
 	}
-#else
+#endif
+	
 	// reactor
 	public PowerUp GetPowerUpInPos(BoardSquare square)
 	{
@@ -269,7 +270,6 @@ public class SpoilsManager : MonoBehaviour, PowerUp.IPowerUpListener
 		}
 		return result;
 	}
-#endif
 
 	void PowerUp.IPowerUpListener.OnTurnTick()
 	{
