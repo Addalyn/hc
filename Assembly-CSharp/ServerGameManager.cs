@@ -1990,7 +1990,7 @@ public class ServerGameManager : MonoBehaviour
 			// {
 			// 	ClientScene.AddPlayer(serverPlayerState.ConnectionPersistent, 0); // ClientScene.AddPlayer(serverPlayerState.ConnectionPersistent); in rogues
 			// }
-			GameFlow.Get().AddPlayer(serverPlayerState, serverPlayerState.SessionInfo.AccountId < 0);  // custom replay generator flag
+			GameFlow.Get().AddPlayer(serverPlayerState, serverPlayerState.SessionInfo != null && serverPlayerState.SessionInfo.AccountId < 0);  // custom replay generator flag
 		}
 
 		// custom artemis
