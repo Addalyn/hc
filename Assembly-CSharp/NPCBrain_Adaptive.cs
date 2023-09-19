@@ -115,7 +115,8 @@ public class NPCBrain_Adaptive : NPCBrain
 #if SERVER
 		// custom
 		Ability primaryAbility = bot.GetComponent<AbilityData>()?.m_ability0;
-		CharacterType? characterType = bot.GetComponent<ActorData>()?.m_characterType;
+		ActorData actorData = bot.GetComponent<ActorData>();
+		CharacterType? characterType = actorData?.m_characterType;
 		if (primaryAbility != null && Board.Get() != null)
 		{
 			nPCBrain_Adaptive.m_optimalRange = primaryAbility.GetRangeInSquares(0) * Board.Get().squareSize * 0.8f;
@@ -125,16 +126,18 @@ public class NPCBrain_Adaptive : NPCBrain
 		
 		if (characterType.HasValue)
 		{
-			// TODO BOTS get character config
-			CharacterConfig characterConfig = GameManager.Get().GameplayOverrides.GetCharacterConfig(characterType.Value);
-			if (characterConfig == null)
+			CharacterResourceLink characterResourceLink = actorData.GetCharacterResourceLink();
+			if (characterResourceLink == null)
 			{
 				Log.Warning($"Failed to check {characterType}'s role for bot configuration");
 			}
-			else if (characterConfig.CharacterRole == CharacterRole.Support)
+			else
 			{
-				nPCBrain_Adaptive.m_movementType = MovementType.Support;
-				Log.Info($"Setting movement type for {characterType} to {nPCBrain_Adaptive.m_movementType}");
+				if (characterResourceLink.m_characterRole == CharacterRole.Support)
+				{
+					nPCBrain_Adaptive.m_movementType = MovementType.Support;
+					Log.Info($"Setting movement type for {characterType} to {nPCBrain_Adaptive.m_movementType}");
+				}
 			}
 		}
 #endif
