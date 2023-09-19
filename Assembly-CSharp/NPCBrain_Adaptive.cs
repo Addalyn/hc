@@ -177,7 +177,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		for (int i = 0; i < numChecks; i++)
 		{
 			float num4 = i * num3;
-			float num5 = 0.0174532924f * (num2 + num4);
+			float num5 = Mathf.Deg2Rad * (num2 + num4);
 			float num6 = Mathf.Sin(num5);
 			float num7 = Mathf.Cos(num5);
 			Vector3 targetWorldPos = vector;
@@ -191,28 +191,27 @@ public class NPCBrain_Adaptive : NPCBrain
 	// added in rogues
 	public List<AbilityTarget> GeneratePotentialAbilityTargetLocationsCircle(int numDegrees, Vector3 startingPos)
 	{
-		List<AbilityTarget> list = new List<AbilityTarget>();
-		Vector3 vector = GetComponent<ActorData>().GetFreePos();
-		if (startingPos != Vector3.zero)
-		{
-			vector = startingPos;
-		}
+		List<AbilityTarget> result = new List<AbilityTarget>();
+		Vector3 pos = startingPos != Vector3.zero
+			? startingPos
+			: GetComponent<ActorData>().GetFreePos();
+		
 		if (numDegrees <= 0)
 		{
 			numDegrees = 72;
 		}
-		float num = 360f / numDegrees;
+		float step = 360f / numDegrees;
 		for (int i = 0; i < numDegrees; i++)
 		{
-			float num2 = 0.0174532924f * i * num;
-			float num3 = Mathf.Sin(num2);
-			float num4 = Mathf.Cos(num2);
-			Vector3 targetWorldPos = vector;
-			targetWorldPos.x += num3;
-			targetWorldPos.z += num4;
-			list.Add(AbilityTarget.CreateAbilityTargetFromWorldPos(targetWorldPos, vector));
+			float angleRad = Mathf.Deg2Rad * i * step;
+			float sin = Mathf.Sin(angleRad);
+			float cos = Mathf.Cos(angleRad);
+			Vector3 targetWorldPos = pos;
+			targetWorldPos.x += sin;
+			targetWorldPos.z += cos;
+			result.Add(AbilityTarget.CreateAbilityTargetFromWorldPos(targetWorldPos, pos));
 		}
-		return list;
+		return result;
 	}
 
 	// added in rogues
@@ -229,7 +228,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		float num3 = 360f / numDegrees;
 		for (int i = 0; i < numDegrees; i++)
 		{
-			float num4 = 0.0174532924f * i * num3;
+			float num4 = Mathf.Deg2Rad * i * num3;
 			float num5 = Mathf.Sin(num4);
 			float num6 = Mathf.Cos(num4);
 			Vector3 targetWorldPos = freePos;
@@ -266,7 +265,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		float num3 = 360f / numDegreesNear;
 		for (int i = 0; i < numDegreesNear; i++)
 		{
-			float num4 = 0.0174532924f * i * num3;
+			float num4 = Mathf.Deg2Rad * i * num3;
 			float num5 = Mathf.Sin(num4);
 			float num6 = Mathf.Cos(num4);
 			Vector3 targetWorldPos = freePos;
@@ -277,7 +276,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		float num7 = 360f / numDegreesFar;
 		for (int j = 0; j < numDegreesFar; j++)
 		{
-			float num8 = 0.0174532924f * j * num7;
+			float num8 = Mathf.Deg2Rad * j * num7;
 			float num9 = Mathf.Sin(num8);
 			float num10 = Mathf.Cos(num8);
 			Vector3 targetWorldPos2 = freePos;
@@ -308,18 +307,19 @@ public class NPCBrain_Adaptive : NPCBrain
 	}
 
 	// added in rogues
+	// Aim between up to three valid targets
 	public List<AbilityTarget> GeneratePotentialAbilityTargetLocations(float range, bool includeEnemies, bool includeFriendlies, bool includeSelf)
 	{
-		List<AbilityTarget> list = new List<AbilityTarget>();
-		ActorData component = GetComponent<ActorData>();
-		BoardSquare currentBoardSquare = component.GetCurrentBoardSquare();
+		List<AbilityTarget> result = new List<AbilityTarget>();
+		ActorData actorData = GetComponent<ActorData>();
+		BoardSquare currentSquare = actorData.GetCurrentBoardSquare();
 		List<ActorData> potentialTargets = new List<ActorData>();
 		if (includeEnemies)
 		{
-			foreach (ActorData enemyActor in component.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList())
+			foreach (ActorData enemyActor in actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList())
 			{
 				if (GetEnemyPlayerAliveAndVisibleMultiplier(enemyActor) != 0f
-				    && currentBoardSquare.HorizontalDistanceOnBoardTo(enemyActor.GetCurrentBoardSquare()) <= range)
+				    && currentSquare.HorizontalDistanceOnBoardTo(enemyActor.GetCurrentBoardSquare()) <= range)
 				{
 					potentialTargets.Add(enemyActor);
 				}
@@ -327,12 +327,12 @@ public class NPCBrain_Adaptive : NPCBrain
 		}
 		if (includeFriendlies)
 		{
-			foreach (ActorData allyActor in GameFlowData.Get().GetAllTeamMembers(component.GetTeam()))
+			foreach (ActorData allyActor in GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam()))
 			{
-				if (!allyActor.IsDead() && allyActor != component && !allyActor.IgnoreForAbilityHits)
+				if (!allyActor.IsDead() && allyActor != actorData && !allyActor.IgnoreForAbilityHits)
 				{
 					BoardSquare allySquare = allyActor.GetCurrentBoardSquare();
-					if (allySquare != null && currentBoardSquare.HorizontalDistanceOnBoardTo(allySquare) <= range)
+					if (allySquare != null && currentSquare.HorizontalDistanceOnBoardTo(allySquare) <= range)
 					{
 						potentialTargets.Add(allyActor);
 					}
@@ -341,11 +341,11 @@ public class NPCBrain_Adaptive : NPCBrain
 		}
 		if (includeSelf)
 		{
-			potentialTargets.Add(component);
+			potentialTargets.Add(actorData);
 		}
 		foreach (ActorData targetA in potentialTargets)
 		{
-			list.Add(AbilityTarget.CreateAbilityTargetFromBoardSquare(targetA.GetCurrentBoardSquare(), component.GetFreePos()));
+			result.Add(AbilityTarget.CreateAbilityTargetFromBoardSquare(targetA.GetCurrentBoardSquare(), actorData.GetFreePos()));
 			bool skipB = false;
 			foreach (ActorData targetB in potentialTargets)
 			{
@@ -358,13 +358,13 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 				else
 				{
-					foreach (AbilityTarget item in AbilityTarget.CreateAbilityTargetsFromActorDataList(new List<ActorData>
+					foreach (AbilityTarget target in AbilityTarget.CreateAbilityTargetsFromActorDataList(new List<ActorData>
 					{
 						targetA,
 						targetB
-					}, component))
+					}, actorData))
 					{
-						list.Add(item);
+						result.Add(target);
 					}
 					bool skipC = false;
 					foreach (ActorData targetC in potentialTargets)
@@ -378,21 +378,21 @@ public class NPCBrain_Adaptive : NPCBrain
 						}
 						else
 						{
-							foreach (AbilityTarget item2 in AbilityTarget.CreateAbilityTargetsFromActorDataList(new List<ActorData>
+							foreach (AbilityTarget target in AbilityTarget.CreateAbilityTargetsFromActorDataList(new List<ActorData>
 							{
 								targetA,
 								targetB,
 								targetC
-							}, component))
+							}, actorData))
 							{
-								list.Add(item2);
+								result.Add(target);
 							}
 						}
 					}
 				}
 			}
 		}
-		return list;
+		return result;
 	}
 
 	// added in rogues
@@ -581,14 +581,14 @@ public class NPCBrain_Adaptive : NPCBrain
 	// added in rogues
 	protected virtual IEnumerator ScoreZeroTargetAbility(AbilityData.ActionType thisAction)
 	{
-		Ability abilityOfActionType = GetComponent<AbilityData>().GetAbilityOfActionType(thisAction);
-		ActorData component = GetComponent<ActorData>();
-		List<AbilityTarget> list = AbilityTarget.AbilityTargetList(abilityOfActionType.CreateAbilityTargetForSimpleAction(component));
-		AbilityResults tempAbilityResults = new AbilityResults(component, abilityOfActionType, null, s_gatherRealResults, true);
-		abilityOfActionType.GatherAbilityResults(list, component, ref tempAbilityResults);
-		PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, component, true);
-		potentialChoice.freeAction = abilityOfActionType.IsFreeAction();
-		potentialChoice.targetList = list;
+		Ability ability = GetComponent<AbilityData>().GetAbilityOfActionType(thisAction);
+		ActorData actorData = GetComponent<ActorData>();
+		List<AbilityTarget> targets = AbilityTarget.AbilityTargetList(ability.CreateAbilityTargetForSimpleAction(actorData));
+		AbilityResults tempAbilityResults = new AbilityResults(actorData, ability, null, s_gatherRealResults, true);
+		ability.GatherAbilityResults(targets, actorData, ref tempAbilityResults);
+		PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, true);
+		potentialChoice.freeAction = ability.IsFreeAction();
+		potentialChoice.targetList = targets;
 		if (potentialChoice.score != 0f || potentialChoice.freeAction)
 		{
 			m_potentialChoices[thisAction] = potentialChoice;
@@ -599,112 +599,132 @@ public class NPCBrain_Adaptive : NPCBrain
 	// added in rogues
 	protected virtual IEnumerator ScoreSinglePositionTargetAbility(AbilityData.ActionType thisAction)
 	{
-		AbilityData component = GetComponent<AbilityData>();
-		Ability thisAbility = component.GetAbilityOfActionType(thisAction);
+		AbilityData abilityData = GetComponent<AbilityData>();
+		Ability ability = abilityData.GetAbilityOfActionType(thisAction);
 		ActorData actorData = GetComponent<ActorData>();
 		PotentialChoice retVal = null;
 		HydrogenConfig config = HydrogenConfig.Get();
-		List<AbilityTarget> list = null;
-		if (thisAbility.Targeter is AbilityUtil_Targeter_ChargeAoE || thisAbility.Targeter is AbilityUtil_Targeter_Charge || thisAbility.Targeter is AbilityUtil_Targeter_Shape || thisAbility.Targeter is AbilityUtil_Targeter_BazookaGirlDelayedMissile || thisAbility.Targeter is AbilityUtil_Targeter_MultipleShapes)
+		List<AbilityTarget> potentialTargets = null;
+		if (ability.Targeter is AbilityUtil_Targeter_ChargeAoE
+		    || ability.Targeter is AbilityUtil_Targeter_Charge
+		    || ability.Targeter is AbilityUtil_Targeter_Shape
+		    || ability.Targeter is AbilityUtil_Targeter_BazookaGirlDelayedMissile
+		    || ability.Targeter is AbilityUtil_Targeter_MultipleShapes)
 		{
-			float range = thisAbility.m_targetData[0].m_range;
-			float minRange = thisAbility.m_targetData[0].m_minRange;
-			Vector3 vector = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
-			Vector3 position = actorData.transform.position;
-			position.y = 0f;
-			Bounds bounds = new Bounds(position, vector);
+			float range = ability.m_targetData[0].m_range;
+			float minRange = ability.m_targetData[0].m_minRange;
+			Vector3 boundsSize = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
+			Vector3 boundsPosition = actorData.transform.position;
+			boundsPosition.y = 0f;
+			Bounds bounds = new Bounds(boundsPosition, boundsSize);
 			List<BoardSquare> squaresInBox = Board.Get().GetSquaresInBox(bounds);
-			List<AbilityTarget> list2 = new List<AbilityTarget>();
-			using (List<BoardSquare>.Enumerator enumerator = squaresInBox.GetEnumerator())
+			List<AbilityTarget> tempAbilityTargets = new List<AbilityTarget>();
+			foreach (BoardSquare boardSquare in squaresInBox)
 			{
-				while (enumerator.MoveNext())
+				if (boardSquare == actorData.GetCurrentBoardSquare()
+				    && (ability.Targeter is AbilityUtil_Targeter_ChargeAoE
+				        || ability.Targeter is AbilityUtil_Targeter_Charge))
 				{
-					BoardSquare boardSquare = enumerator.Current;
-					if ((!(boardSquare == actorData.GetCurrentBoardSquare()) || (!(thisAbility.Targeter is AbilityUtil_Targeter_ChargeAoE) && !(thisAbility.Targeter is AbilityUtil_Targeter_Charge))) && (boardSquare.HorizontalDistanceInSquaresTo_Squared(actorData.GetCurrentBoardSquare()) > 2f || !(thisAbility.Targeter is AbilityUtil_Targeter_Charge) || !(boardSquare.OccupantActor != null) || boardSquare.OccupantActor.GetTeam() != actorData.GetTeam()) && component.IsTargetSquareInRangeOfAbilityFromSquare(boardSquare, actorData.GetCurrentBoardSquare(), range, minRange))
+					continue;
+				}
+
+				if (boardSquare.HorizontalDistanceInSquaresTo_Squared(actorData.GetCurrentBoardSquare()) <= 2f
+				    && ability.Targeter is AbilityUtil_Targeter_Charge
+				    && boardSquare.OccupantActor != null
+				    && boardSquare.OccupantActor.GetTeam() == actorData.GetTeam())
+				{
+					continue;
+				}
+
+				if (!abilityData.IsTargetSquareInRangeOfAbilityFromSquare(
+					    boardSquare, actorData.GetCurrentBoardSquare(), range, minRange))
+				{
+					continue;
+				}
+
+				AbilityTarget abilityTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
+				if (ability.CustomTargetValidation(actorData, abilityTarget, 0, null))
+				{
+					if (potentialTargets == null)
 					{
-						AbilityTarget abilityTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
-						if (thisAbility.CustomTargetValidation(actorData, abilityTarget, 0, null))
-						{
-							if (list == null)
-							{
-								list = new List<AbilityTarget>();
-							}
-							list2.Clear();
-							list2.Add(abilityTarget);
-							if (component.ValidateActionRequest(thisAction, list2, false))
-							{
-								list.Add(abilityTarget);
-							}
-						}
+						potentialTargets = new List<AbilityTarget>();
+					}
+					tempAbilityTargets.Clear();
+					tempAbilityTargets.Add(abilityTarget);
+					if (abilityData.ValidateActionRequest(thisAction, tempAbilityTargets, false))
+					{
+						potentialTargets.Add(abilityTarget);
 					}
 				}
-				goto IL_374;
 			}
 		}
-		if (thisAbility.Targeter is AbilityUtil_Targeter_AoE_AroundActor)
+		else if (ability.Targeter is AbilityUtil_Targeter_AoE_AroundActor)
 		{
-			List<ActorData> allTeamMembers = GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam());
-			List<AbilityTarget> list3 = new List<AbilityTarget>();
-			foreach (ActorData actorData2 in allTeamMembers)
+			List<ActorData> allies = GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam());
+			List<AbilityTarget> tempAbilityTargets = new List<AbilityTarget>();
+			foreach (ActorData ally in allies)
 			{
-				BoardSquare currentBoardSquare = actorData2.GetCurrentBoardSquare();
-				if (!actorData2.IsDead() && !(currentBoardSquare == null) && !actorData2.IgnoreForAbilityHits)
+				BoardSquare allySquare = ally.GetCurrentBoardSquare();
+				if (!ally.IsDead()
+				    && allySquare != null
+				    && !ally.IgnoreForAbilityHits)
 				{
-					AbilityTarget abilityTarget2 = AbilityTarget.CreateAbilityTargetFromActor(actorData2, actorData);
-					if (thisAbility.CustomTargetValidation(actorData, abilityTarget2, 0, null))
+					AbilityTarget target = AbilityTarget.CreateAbilityTargetFromActor(ally, actorData);
+					if (ability.CustomTargetValidation(actorData, target, 0, null))
 					{
-						if (list == null)
+						if (potentialTargets == null)
 						{
-							list = new List<AbilityTarget>();
+							potentialTargets = new List<AbilityTarget>();
 						}
-						list3.Clear();
-						list3.Add(abilityTarget2);
-						if (component.ValidateActionRequest(thisAction, list3, false))
+						tempAbilityTargets.Clear();
+						tempAbilityTargets.Add(target);
+						if (abilityData.ValidateActionRequest(thisAction, tempAbilityTargets, false))
 						{
-							list.Add(abilityTarget2);
+							potentialTargets.Add(target);
 						}
 					}
 				}
 			}
 		}
-		IL_374:
-		if (list != null)
+		else
+		{
+			Log.Error($"Single position targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})"); // custom
+		}
+		
+		if (potentialTargets != null)
 		{
 			float realtimeSinceStartup = Time.realtimeSinceStartup;
-			foreach (AbilityTarget item in list)
+			foreach (AbilityTarget item in potentialTargets)
 			{
-				List<AbilityTarget> list4 = new List<AbilityTarget>();
-				list4.Add(item);
-				AbilityResults abilityResults = new AbilityResults(actorData, thisAbility, null, s_gatherRealResults, true);
-				thisAbility.GatherAbilityResults(list4, actorData, ref abilityResults);
-				if (thisAbility.m_chainAbilities != null && thisAbility.m_chainAbilities.Length != 0)
+				List<AbilityTarget> targetList = new List<AbilityTarget> { item };
+				AbilityResults abilityResults = new AbilityResults(actorData, ability, null, s_gatherRealResults, true);
+				ability.GatherAbilityResults(targetList, actorData, ref abilityResults);
+				if (!ability.m_chainAbilities.IsNullOrEmpty())
 				{
-					for (int i = 0; i < thisAbility.m_chainAbilities.Length; i++)
+					foreach (Ability chainAbility in ability.m_chainAbilities)
 					{
-						AbilityResults abilityResults2 = new AbilityResults(actorData, thisAbility.m_chainAbilities[i], null, s_gatherRealResults, true);
-						thisAbility.m_chainAbilities[i].GatherAbilityResults(list4, actorData, ref abilityResults2);
-						foreach (KeyValuePair<ActorData, ActorHitResults> keyValuePair in abilityResults2.m_actorToHitResults)
+						AbilityResults chainAbilityResults = new AbilityResults(actorData, chainAbility, null, s_gatherRealResults, true);
+						chainAbility.GatherAbilityResults(targetList, actorData, ref chainAbilityResults);
+						foreach (KeyValuePair<ActorData, ActorHitResults> hitResult in chainAbilityResults.m_actorToHitResults)
 						{
-							abilityResults.m_actorToHitResults.Add(keyValuePair.Key, keyValuePair.Value);
+							abilityResults.m_actorToHitResults.Add(hitResult.Key, hitResult.Value);
 						}
-						foreach (KeyValuePair<ActorData, int> keyValuePair2 in abilityResults2.DamageResults)
+						foreach (KeyValuePair<ActorData, int> damageResult in chainAbilityResults.DamageResults)
 						{
-							if (abilityResults.DamageResults.ContainsKey(keyValuePair2.Key))
+							if (abilityResults.DamageResults.ContainsKey(damageResult.Key))
 							{
-								Dictionary<ActorData, int> damageResults = abilityResults.DamageResults;
-								ActorData key = keyValuePair2.Key;
-								damageResults[key] += keyValuePair2.Value;
+								abilityResults.DamageResults[damageResult.Key] += damageResult.Value;
 							}
 							else
 							{
-								abilityResults.DamageResults[keyValuePair2.Key] = keyValuePair2.Value;
+								abilityResults.DamageResults[damageResult.Key] = damageResult.Value;
 							}
 						}
 					}
 				}
 				PotentialChoice potentialChoice = ScoreResults(abilityResults, actorData, false);
-				potentialChoice.freeAction = thisAbility.IsFreeAction();
-				potentialChoice.targetList = list4;
+				potentialChoice.freeAction = ability.IsFreeAction();
+				potentialChoice.targetList = targetList;
 				if (retVal == null || retVal.score < potentialChoice.score)
 				{
 					retVal = potentialChoice;
@@ -715,14 +735,11 @@ public class NPCBrain_Adaptive : NPCBrain
 					realtimeSinceStartup = Time.realtimeSinceStartup;
 				}
 			}
-			List<AbilityTarget>.Enumerator enumerator3 = default(List<AbilityTarget>.Enumerator);
 		}
 		if (retVal != null && retVal.score > 0f)
 		{
 			m_potentialChoices[thisAction] = retVal;
 		}
-		yield break;
-		yield break;
 	}
 
 	// added in rogues
@@ -734,7 +751,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		ActorData actorData = GetComponent<ActorData>();
 		BoardSquare currentSquare = actorData.GetCurrentBoardSquare();
 		HydrogenConfig config = HydrogenConfig.Get();
-		List<AbilityTarget> list = null;
+		List<AbilityTarget> potentialTargets = null;
 		if (thisAbility.Targeter is AbilityUtil_Targeter_ChargeAoE
 		    || thisAbility.Targeter is AbilityUtil_Targeter_Charge
 		    || thisAbility.Targeter is AbilityUtil_Targeter_Shape
@@ -747,160 +764,179 @@ public class NPCBrain_Adaptive : NPCBrain
 			Vector3 position = actorData.transform.position;
 			position.y = 0f;
 			Bounds bounds = new Bounds(position, vector);
-			using (List<BoardSquare>.Enumerator enumerator = Board.Get().GetSquaresInBox(bounds).GetEnumerator())
+			foreach (BoardSquare boardSquare in Board.Get().GetSquaresInBox(bounds))
 			{
-				while (enumerator.MoveNext())
+				if (boardSquare == actorData.GetCurrentBoardSquare())
 				{
-					BoardSquare boardSquare = enumerator.Current;
-					if (!(boardSquare == actorData.GetCurrentBoardSquare()) && component.IsTargetSquareInRangeOfAbilityFromSquare(boardSquare, actorData.GetCurrentBoardSquare(), range, minRange) && boardSquare.IsValidForGameplay() && (!(thisAbility is SparkEnergized) || actorData.GetComponent<SparkBeamTrackerComponent>().GetBeamActors().Contains(boardSquare.OccupantActor)))
-					{
-						AbilityTarget abilityTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
-						if (thisAbility.CustomTargetValidation(actorData, abilityTarget, 0, null))
-						{
-							if (list == null)
-							{
-								list = new List<AbilityTarget>();
-							}
-							list.Add(abilityTarget);
-						}
-					}
+					continue;
 				}
-				goto IL_57B;
+
+				if (!component.IsTargetSquareInRangeOfAbilityFromSquare(boardSquare,
+					    actorData.GetCurrentBoardSquare(), range, minRange) || !boardSquare.IsValidForGameplay())
+				{
+					continue;
+				}
+
+				if (thisAbility is SparkEnergized
+				    && !actorData.GetComponent<SparkBeamTrackerComponent>().GetBeamActors().Contains(boardSquare.OccupantActor))
+				{
+					continue;
+				}
+				
+				AbilityTarget target = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
+				if (thisAbility.CustomTargetValidation(actorData, target, 0, null))
+				{
+					if (potentialTargets == null)
+					{
+						potentialTargets = new List<AbilityTarget>();
+					}
+					potentialTargets.Add(target);
+				}
 			}
 		}
-		if (thisAbility.Targeter is AbilityUtil_Targeter_TeslaPrison)
+		else if (thisAbility.Targeter is AbilityUtil_Targeter_TeslaPrison targeter)
 		{
-			using (List<ActorData>.Enumerator enumerator2 = actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList().GetEnumerator())
+			List<ActorData> enemies = actorData.GetOtherTeams()
+				.SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam))
+				.ToList();
+			
+			foreach (ActorData enemy in enemies)
 			{
-				while (enumerator2.MoveNext())
+				if (GetEnemyPlayerAliveAndVisibleMultiplier(enemy) == 0f)
 				{
-					ActorData actorData2 = enumerator2.Current;
-					if (GetEnemyPlayerAliveAndVisibleMultiplier(actorData2) != 0f)
+					continue;
+				}
+				
+				AbilityTarget targetOnEnemy = AbilityTarget.CreateAbilityTargetFromBoardSquare(enemy.GetCurrentBoardSquare(), actorData.GetFreePos());
+				List<BoardSquare> squaresInShape = AreaEffectUtils.GetSquaresInShape(targeter.m_shapeForActorHits, targetOnEnemy, true, actorData);
+				foreach (BoardSquare square in squaresInShape)
+				{
+					if (square == null || !square.IsValidForGameplay())
 					{
-						AbilityTarget target = AbilityTarget.CreateAbilityTargetFromBoardSquare(actorData2.GetCurrentBoardSquare(), actorData.GetFreePos());
-						foreach (BoardSquare boardSquare2 in AreaEffectUtils.GetSquaresInShape(((AbilityUtil_Targeter_TeslaPrison)thisAbility.Targeter).m_shapeForActorHits, target, true, actorData))
+						continue;
+					}
+					AbilityTarget target = AbilityTarget.CreateAbilityTargetFromBoardSquare(square, actorData.GetFreePos());
+					if (thisAbility.CustomTargetValidation(actorData, target, 0, AbilityTarget.AbilityTargetList(target)))
+					{
+						if (potentialTargets == null)
 						{
-							if (boardSquare2 != null && boardSquare2.IsValidForGameplay())
-							{
-								AbilityTarget abilityTarget2 = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare2, actorData.GetFreePos());
-								List<AbilityTarget> currentTargets = AbilityTarget.AbilityTargetList(abilityTarget2);
-								if (thisAbility.CustomTargetValidation(actorData, abilityTarget2, 0, currentTargets))
-								{
-									if (list == null)
-									{
-										list = new List<AbilityTarget>();
-									}
-									list.Add(abilityTarget2);
-								}
-							}
+							potentialTargets = new List<AbilityTarget>();
 						}
+						potentialTargets.Add(target);
 					}
 				}
-				goto IL_57B;
 			}
 		}
-		if (thisAbility.Targeter is AbilityUtil_Targeter_TrackerDrone)
+		else if (thisAbility.Targeter is AbilityUtil_Targeter_TrackerDrone)
 		{
-			foreach (AbilityTarget abilityTarget3 in GeneratePotentialAbilityTargetLocations(thisAbility.m_targetData[0].m_range, true, false, false))
+			List<AbilityTarget> targets = GeneratePotentialAbilityTargetLocations(thisAbility.m_targetData[0].m_range, true, false, false);
+			foreach (AbilityTarget target in targets)
 			{
-				List<AbilityTarget> currentTargets2 = AbilityTarget.AbilityTargetList(abilityTarget3);
-				if (thisAbility.CustomTargetValidation(actorData, abilityTarget3, 0, currentTargets2))
+				if (thisAbility.CustomTargetValidation(actorData, target, 0, AbilityTarget.AbilityTargetList(target)))
 				{
-					if (list == null)
+					if (potentialTargets == null)
 					{
-						list = new List<AbilityTarget>();
+						potentialTargets = new List<AbilityTarget>();
 					}
-					list.Add(abilityTarget3);
+					potentialTargets.Add(target);
 				}
 			}
 			if (GameFlowData.Get().CurrentTurn == 1)
 			{
 				int x = Board.Get().GetMaxX() / 2;
 				int y = Board.Get().GetMaxY() / 2;
-				BoardSquare squareFromIndex = Board.Get().GetSquareFromIndex(x, y);
-				if (squareFromIndex != null && squareFromIndex.IsValidForGameplay())
+				BoardSquare centerSquare = Board.Get().GetSquareFromIndex(x, y);
+				if (centerSquare != null && centerSquare.IsValidForGameplay())
 				{
-					AbilityTarget item = AbilityTarget.CreateAbilityTargetFromBoardSquare(squareFromIndex, actorData.GetFreePos());
-					if (list == null)
+					AbilityTarget item = AbilityTarget.CreateAbilityTargetFromBoardSquare(centerSquare, actorData.GetFreePos());
+					if (potentialTargets == null)
 					{
-						list = new List<AbilityTarget>();
+						potentialTargets = new List<AbilityTarget>();
 					}
-					list.Add(item);
+					potentialTargets.Add(item);
 				}
 			}
 		}
 		else if (thisAbility.Targeter is AbilityUtil_Targeter_AoE_AroundActor)
 		{
-			List<ActorData> allTeamMembers = GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam());
-			List<AbilityTarget> list2 = new List<AbilityTarget>();
-			foreach (ActorData actorData3 in allTeamMembers)
+			List<ActorData> allies = GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam());
+			List<AbilityTarget> tempTargetList = new List<AbilityTarget>();
+			foreach (ActorData ally in allies)
 			{
-				BoardSquare currentBoardSquare = actorData3.GetCurrentBoardSquare();
-				if (!actorData3.IsDead() && !(currentBoardSquare == null) && !actorData3.IgnoreForAbilityHits)
+				BoardSquare currentBoardSquare = ally.GetCurrentBoardSquare();
+				if (!ally.IsDead()
+				    && currentBoardSquare != null
+				    && !ally.IgnoreForAbilityHits)
 				{
-					AbilityTarget abilityTarget4 = AbilityTarget.CreateAbilityTargetFromActor(actorData3, actorData);
-					if (thisAbility.CustomTargetValidation(actorData, abilityTarget4, 0, null))
+					AbilityTarget target = AbilityTarget.CreateAbilityTargetFromActor(ally, actorData);
+					if (thisAbility.CustomTargetValidation(actorData, target, 0, null))
 					{
-						if (list == null)
+						if (potentialTargets == null)
 						{
-							list = new List<AbilityTarget>();
+							potentialTargets = new List<AbilityTarget>();
 						}
-						list2.Clear();
-						list2.Add(abilityTarget4);
-						if (component.ValidateActionRequest(thisAction, list2, false))
+						tempTargetList.Clear();
+						tempTargetList.Add(target);
+						if (component.ValidateActionRequest(thisAction, tempTargetList, false))
 						{
-							list.Add(abilityTarget4);
+							potentialTargets.Add(target);
 						}
 					}
 				}
 			}
 		}
-		IL_57B:
-		if (list != null)
+		
+		if (potentialTargets != null)
 		{
 			float realtimeSinceStartup = Time.realtimeSinceStartup;
-			foreach (AbilityTarget abilityTarget5 in list)
+			foreach (AbilityTarget target in potentialTargets)
 			{
-				List<AbilityTarget> list3 = new List<AbilityTarget>();
-				list3.Add(abilityTarget5);
+				List<AbilityTarget> targetList = new List<AbilityTarget> { target };
 				AbilityResults abilityResults = new AbilityResults(actorData, thisAbility, null, s_gatherRealResults, true);
-				thisAbility.GatherAbilityResults(list3, actorData, ref abilityResults);
-				int count = abilityResults.DamageResults.Count;
+				thisAbility.GatherAbilityResults(targetList, actorData, ref abilityResults);
 				PotentialChoice potentialChoice = ScoreResults(abilityResults, actorData, false);
 				potentialChoice.freeAction = thisAbility.IsFreeAction();
-				potentialChoice.targetList = list3;
-				float num = 1f;
-				if (potentialChoice != null && thisAbility.Targeter is AbilityUtil_Targeter_TrackerDrone)
+				potentialChoice.targetList = targetList;
+				float weight = 1f;
+				if (potentialChoice != null
+				    && thisAbility.Targeter is AbilityUtil_Targeter_TrackerDrone)
 				{
-					num = 0.375f;
-					BoardSquare square = Board.Get().GetSquare(abilityTarget5.GridPos);
+					weight = 0.375f;
+					BoardSquare square = Board.Get().GetSquare(target.GridPos);
 					potentialChoice.score += square.HorizontalDistanceInSquaresTo(currentSquare) * 0.05f;
 				}
-				if (potentialChoice != null && (thisAbility.Targeter is AbilityUtil_Targeter_TeslaPrison || thisAbility.Targeter is AbilityUtil_Targeter_TrackerDrone))
+				if (potentialChoice != null
+				    && (thisAbility.Targeter is AbilityUtil_Targeter_TeslaPrison
+				        || thisAbility.Targeter is AbilityUtil_Targeter_TrackerDrone))
 				{
-					BoardSquare square2 = Board.Get().GetSquare(abilityTarget5.GridPos);
-					foreach (ActorData actorData4 in actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList())
+					BoardSquare square = Board.Get().GetSquare(target.GridPos);
+					List<ActorData> enemies = actorData.GetOtherTeams()
+						.SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam))
+						.ToList();
+					foreach (ActorData enemy in enemies)
 					{
-						if (GetEnemyPlayerAliveAndVisibleMultiplier(actorData4) != 0f)
+						if (GetEnemyPlayerAliveAndVisibleMultiplier(enemy) == 0f)
 						{
-							BoardSquare currentBoardSquare2 = actorData4.GetCurrentBoardSquare();
-							float num2 = square2.HorizontalDistanceInSquaresTo(currentBoardSquare2);
-							if (num2 == 0f)
-							{
-								potentialChoice.score += 30f * num;
-							}
-							if (num2 <= 1f)
-							{
-								potentialChoice.score += 35f * num;
-							}
-							else if (num2 < 2f)
-							{
-								potentialChoice.score += 40f * num;
-							}
-							else if (num2 < 3f)
-							{
-								potentialChoice.score += 20f * num;
-							}
+							continue;
+						}
+						
+						BoardSquare enemySquare = enemy.GetCurrentBoardSquare();
+						float dist = square.HorizontalDistanceInSquaresTo(enemySquare);
+						if (dist == 0f)
+						{
+							potentialChoice.score += 30f * weight;
+						}
+						if (dist <= 1f)
+						{
+							potentialChoice.score += 35f * weight;
+						}
+						else if (dist < 2f)
+						{
+							potentialChoice.score += 40f * weight;
+						}
+						else if (dist < 3f)
+						{
+							potentialChoice.score += 20f * weight;
 						}
 					}
 				}
@@ -914,32 +950,28 @@ public class NPCBrain_Adaptive : NPCBrain
 					realtimeSinceStartup = Time.realtimeSinceStartup;
 				}
 			}
-			List<AbilityTarget>.Enumerator enumerator4 = default(List<AbilityTarget>.Enumerator);
 		}
 		if (retVal != null && retVal.score > 0f)
 		{
 			m_potentialChoices[thisAction] = retVal;
 		}
-		yield break;
-		yield break;
 	}
 
 	// added in rogues
 	private bool IsSquareOccupiedByAliveActor(BoardSquare square)
 	{
-		bool result = false;
 		foreach (ActorData actorData in GameFlowData.Get().GetActors())
 		{
 			if (!actorData.IsDead() && square == actorData.CurrentBoardSquare)
 			{
-				result = true;
-				break;
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 	// added in rogues
+	// TODO BOTS unused
 	private PotentialChoice AdjustScoreForEvasion(ActorData actorData, PotentialChoice choice, Ability thisAbility)
 	{
 		AbilityData component = GetComponent<AbilityData>();
@@ -991,66 +1023,69 @@ public class NPCBrain_Adaptive : NPCBrain
 			float num2 = 0f;
 			if (actorData.GetHitPointPercent() < 0.5)
 			{
-				if (thisAbility.GetEvasionTeleportType() != ActorData.TeleportType.NotATeleport && square.IsInBrush() && BrushCoordinator.Get().IsRegionFunctioning(square.BrushRegion))
+				if (thisAbility.GetEvasionTeleportType() != ActorData.TeleportType.NotATeleport
+				    && square.IsInBrush()
+				    && BrushCoordinator.Get().IsRegionFunctioning(square.BrushRegion))
 				{
 					num += 20f;
 				}
 				List<ActorData> list = actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList();
 				foreach (ActorData actorData2 in list)
 				{
-					if (GetEnemyPlayerAliveAndVisibleMultiplier(actorData2) != 0f)
+					if (GetEnemyPlayerAliveAndVisibleMultiplier(actorData2) == 0f)
 					{
-						BoardSquare currentBoardSquare2 = actorData2.GetCurrentBoardSquare();
-						Vector3 vector = currentBoardSquare.transform.position - currentBoardSquare2.transform.position;
-						Vector3 vector2 = square.transform.position - currentBoardSquare2.transform.position;
-						float magnitude = vector.magnitude;
-						float magnitude2 = vector2.magnitude;
-						if (magnitude <= 6f * Board.Get().squareSize)
-						{
-							num2 += 1f;
-						}
-						vector.Normalize();
-						vector2.Normalize();
-						float num3 = Vector3.Dot(vector, vector2);
-						float num4;
-						if (num3 > 0.9f)
-						{
-							num4 = 0.25f;
-						}
-						else if (num3 > 0.25f)
-						{
-							num4 = Mathf.Sqrt(num3);
-						}
-						else if (choice.score > 0f)
-						{
-							num4 = 0.5f;
-						}
-						else
-						{
-							num4 = 0.5f + (num3 + 1f) / 2.5f;
-						}
-						if (actorData.m_characterType == CharacterType.Tracker)
-						{
-							num4 += 1f;
-						}
-						if (choice.score == 0f)
-						{
-							num4 *= 20f;
-						}
-						if (magnitude < 4.5f)
-						{
-							num += 20f * (Mathf.Abs(magnitude2 - magnitude) / 10f) * num4 / (1f * list.Count);
-						}
-						else if (magnitude < 9f)
-						{
-							num += 10f * (Mathf.Abs(magnitude2 - magnitude) / 10f) * num4 / (1f * list.Count);
-						}
-						else
-						{
-							num += 5f * (Mathf.Abs(magnitude2 - magnitude) / 10f) * num4 / (1f * list.Count);
-						}
-						num *= 0.5f;
+						continue;
 					}
+					BoardSquare currentBoardSquare2 = actorData2.GetCurrentBoardSquare();
+					Vector3 vector = currentBoardSquare.transform.position - currentBoardSquare2.transform.position;
+					Vector3 vector2 = square.transform.position - currentBoardSquare2.transform.position;
+					float magnitude = vector.magnitude;
+					float magnitude2 = vector2.magnitude;
+					if (magnitude <= 6f * Board.Get().squareSize)
+					{
+						num2 += 1f;
+					}
+					vector.Normalize();
+					vector2.Normalize();
+					float num3 = Vector3.Dot(vector, vector2);
+					float num4;
+					if (num3 > 0.9f)
+					{
+						num4 = 0.25f;
+					}
+					else if (num3 > 0.25f)
+					{
+						num4 = Mathf.Sqrt(num3);
+					}
+					else if (choice.score > 0f)
+					{
+						num4 = 0.5f;
+					}
+					else
+					{
+						num4 = 0.5f + (num3 + 1f) / 2.5f;
+					}
+					if (actorData.m_characterType == CharacterType.Tracker)
+					{
+						num4 += 1f;
+					}
+					if (choice.score == 0f)
+					{
+						num4 *= 20f;
+					}
+					if (magnitude < 4.5f)
+					{
+						num += 20f * (Mathf.Abs(magnitude2 - magnitude) / 10f) * num4 / (1f * list.Count);
+					}
+					else if (magnitude < 9f)
+					{
+						num += 10f * (Mathf.Abs(magnitude2 - magnitude) / 10f) * num4 / (1f * list.Count);
+					}
+					else
+					{
+						num += 5f * (Mathf.Abs(magnitude2 - magnitude) / 10f) * num4 / (1f * list.Count);
+					}
+					num *= 0.5f;
 				}
 			}
 			foreach (Effect effect in ServerEffectManager.Get().WorldEffects)
@@ -1102,7 +1137,8 @@ public class NPCBrain_Adaptive : NPCBrain
 					choice.reasoning += "Adding score if you are low health and your evade does no damage so you will not shoot and just dodge";
 				}
 				choice.score += num;
-				choice.reasoning += string.Format("Adding {0} based on the quality of the evade (destination position & world effects at start and destination)\n", num);
+				choice.reasoning +=
+					$"Adding {num} based on the quality of the evade (destination position & world effects at start and destination)\n";
 			}
 		}
 		if (actorData.GetCharacterResourceLink().m_characterRole != CharacterRole.Tank && actorData.GetHitPointPercent() > 0.9f && actorData.TechPoints < 100)
@@ -1121,191 +1157,149 @@ public class NPCBrain_Adaptive : NPCBrain
 	// added in rogues
 	protected IEnumerator ScoreSingleDirectionTargetAbility(AbilityData.ActionType thisAction)
 	{
-		AbilityData component = GetComponent<AbilityData>();
-		Ability thisAbility = component.GetAbilityOfActionType(thisAction);
+		AbilityData abilityData = GetComponent<AbilityData>();
+		Ability ability = abilityData.GetAbilityOfActionType(thisAction);
 		ActorData actorData = GetComponent<ActorData>();
 		PotentialChoice retVal = null;
-		HydrogenConfig config = HydrogenConfig.Get();
 		bool includeFriendlies = true;
 		bool includeEnemies = true;
 		bool includeSelf = false;
-		if (thisAbility is TutorialAttack)
+		if (ability is TutorialAttack)
 		{
 			includeFriendlies = false;
 		}
-		List<AbilityTarget> list = null;
-		if (thisAbility.Targeter is AbilityUtil_Targeter_Laser)
+		List<AbilityTarget> potentialTargets = null;
+		switch (ability.Targeter)
 		{
-			if (thisAbility is BlasterDelayedLaser)
-			{
-				list = GeneratePotentialAbilityTargetLocationsCircle(360);
-			}
-			else
-			{
-				AbilityUtil_Targeter_Laser abilityUtil_Targeter_Laser = (AbilityUtil_Targeter_Laser)thisAbility.Targeter;
-				list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_Laser.m_distance, includeEnemies, includeFriendlies, includeSelf);
-			}
+			case AbilityUtil_Targeter_ExoTether targeterExoTether: // custom -- moved up as it was unreachable in rogues
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterExoTether.GetDistance(), includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_Laser targeterLaser:
+				potentialTargets = ability is BlasterDelayedLaser
+					? GeneratePotentialAbilityTargetLocationsCircle(360)
+					: GeneratePotentialAbilityTargetLocations(targeterLaser.m_distance, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_Blindfire targeterBlindfire:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterBlindfire.m_coneLengthRadiusInSquares, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_ChainLightningLaser targeterChainLightningLaser:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterChainLightningLaser.m_distance, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_MultipleCones targeterMultipleCones:
+				potentialTargets = GeneratePotentialAbilityTargetLocationsCircleVolume(targeterMultipleCones.m_maxConeLengthRadius * Board.Get().squareSize, actorData.GetCurrentBoardSquare().transform.position);
+				break;
+			case AbilityUtil_Targeter_ThiefFanLaser targeterThiefFanLaser:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterThiefFanLaser.m_rangeInSquares, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_BounceLaser targeterBounceLaser:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterBounceLaser.m_maxDistancePerBounce, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_BounceActor targeterBounceActor:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterBounceActor.m_maxDistancePerBounce, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_LaserWithCone targeterLaserWithCone:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterLaserWithCone.m_distance, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_DirectionCone targeterDirectionCone:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterDirectionCone.m_coneLengthRadius, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_CrossBeam targeterCrossBeam:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterCrossBeam.m_distanceInSquares, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_ClaymoreKnockbackLaser targeterClaymoreKnockbackLaser:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterClaymoreKnockbackLaser.GetLaserRange(), includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_ClaymoreCharge targeterClaymoreCharge:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterClaymoreCharge.m_dashRangeInSquares, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_ClaymoreSlam targeterClaymoreSlam:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterClaymoreSlam.m_laserRange, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_RampartGrab targeterRampartGrab:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterRampartGrab.m_laserRange, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_TricksterLaser targeterTricksterLaser:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterTricksterLaser.m_distance, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_TricksterCones targeterTricksterCones:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterTricksterCones.m_coneInfo.m_radiusInSquares * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_StretchCone targeterStretchCone:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterStretchCone.m_maxLengthSquares * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_ConeOrLaser _:
+				potentialTargets = ability is SoldierConeOrLaser soldierConeOrLaser
+					? GeneratePotentialAbilityTargetLocationsCircleNearFar_Separate(20, 72, soldierConeOrLaser.m_coneDistThreshold)
+					: GeneratePotentialAbilityTargetLocations(ability.GetRangeInSquares(0) * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			// unreachable in rogues
+			// case AbilityUtil_Targeter_ExoTether targeterExoTether:
+			// 	potentialTargets = GeneratePotentialAbilityTargetLocations(targeterExoTether.GetDistance(), includeEnemies, includeFriendlies, includeSelf);
+			// 	break;
+			case AbilityUtil_Targeter_SweepSingleClickCone targeterSweepSingleClickCone:
+				if (actorData.TechPoints >= 70 || targeterSweepSingleClickCone.m_syncComponent.m_anchored)
+				{
+					potentialTargets = GeneratePotentialAbilityTargetLocations(targeterSweepSingleClickCone.m_rangeInSquares * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
+				}
+				break;
+			case AbilityUtil_Targeter_DashThroughWall targeterDashThroughWall:
+				potentialTargets = GeneratePotentialAbilityTargetLocations((targeterDashThroughWall.m_dashRangeInSquares + targeterDashThroughWall.m_extraTotalDistanceIfThroughWalls) * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_ReverseStretchCone targeterReverseStretchCone:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterReverseStretchCone.m_maxLengthSquares * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_AoE_Smooth_FixedOffset targeterAoESmoothFixedOffset:
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterAoESmoothFixedOffset.m_maxOffsetFromCaster * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			default:
+				Log.Error($"Single direction targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})"); // custom
+				break;
 		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_Blindfire)
-		{
-			AbilityUtil_Targeter_Blindfire abilityUtil_Targeter_Blindfire = (AbilityUtil_Targeter_Blindfire)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_Blindfire.m_coneLengthRadiusInSquares, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_ChainLightningLaser)
-		{
-			AbilityUtil_Targeter_ChainLightningLaser abilityUtil_Targeter_ChainLightningLaser = (AbilityUtil_Targeter_ChainLightningLaser)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_ChainLightningLaser.m_distance, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_MultipleCones)
-		{
-			AbilityUtil_Targeter_MultipleCones abilityUtil_Targeter_MultipleCones = (AbilityUtil_Targeter_MultipleCones)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocationsCircleVolume(abilityUtil_Targeter_MultipleCones.m_maxConeLengthRadius * Board.Get().squareSize, actorData.GetCurrentBoardSquare().transform.position);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_ThiefFanLaser)
-		{
-			AbilityUtil_Targeter_ThiefFanLaser abilityUtil_Targeter_ThiefFanLaser = (AbilityUtil_Targeter_ThiefFanLaser)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_ThiefFanLaser.m_rangeInSquares, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_BounceLaser)
-		{
-			AbilityUtil_Targeter_BounceLaser abilityUtil_Targeter_BounceLaser = (AbilityUtil_Targeter_BounceLaser)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_BounceLaser.m_maxDistancePerBounce, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_BounceActor)
-		{
-			AbilityUtil_Targeter_BounceActor abilityUtil_Targeter_BounceActor = (AbilityUtil_Targeter_BounceActor)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_BounceActor.m_maxDistancePerBounce, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_LaserWithCone)
-		{
-			AbilityUtil_Targeter_LaserWithCone abilityUtil_Targeter_LaserWithCone = (AbilityUtil_Targeter_LaserWithCone)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_LaserWithCone.m_distance, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_DirectionCone)
-		{
-			AbilityUtil_Targeter_DirectionCone abilityUtil_Targeter_DirectionCone = (AbilityUtil_Targeter_DirectionCone)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_DirectionCone.m_coneLengthRadius, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_CrossBeam)
-		{
-			AbilityUtil_Targeter_CrossBeam abilityUtil_Targeter_CrossBeam = (AbilityUtil_Targeter_CrossBeam)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_CrossBeam.m_distanceInSquares, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_ClaymoreKnockbackLaser)
-		{
-			AbilityUtil_Targeter_ClaymoreKnockbackLaser abilityUtil_Targeter_ClaymoreKnockbackLaser = (AbilityUtil_Targeter_ClaymoreKnockbackLaser)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_ClaymoreKnockbackLaser.GetLaserRange(), includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_ClaymoreCharge)
-		{
-			AbilityUtil_Targeter_ClaymoreCharge abilityUtil_Targeter_ClaymoreCharge = (AbilityUtil_Targeter_ClaymoreCharge)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_ClaymoreCharge.m_dashRangeInSquares, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_ClaymoreSlam)
-		{
-			AbilityUtil_Targeter_ClaymoreSlam abilityUtil_Targeter_ClaymoreSlam = (AbilityUtil_Targeter_ClaymoreSlam)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_ClaymoreSlam.m_laserRange, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_RampartGrab)
-		{
-			AbilityUtil_Targeter_RampartGrab abilityUtil_Targeter_RampartGrab = (AbilityUtil_Targeter_RampartGrab)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_RampartGrab.m_laserRange, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_TricksterLaser)
-		{
-			AbilityUtil_Targeter_TricksterLaser abilityUtil_Targeter_TricksterLaser = (AbilityUtil_Targeter_TricksterLaser)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_TricksterLaser.m_distance, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_TricksterCones)
-		{
-			AbilityUtil_Targeter_TricksterCones abilityUtil_Targeter_TricksterCones = (AbilityUtil_Targeter_TricksterCones)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_TricksterCones.m_coneInfo.m_radiusInSquares * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_StretchCone)
-		{
-			AbilityUtil_Targeter_StretchCone abilityUtil_Targeter_StretchCone = (AbilityUtil_Targeter_StretchCone)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_StretchCone.m_maxLengthSquares * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_ConeOrLaser)
-		{
-			if (thisAbility is SoldierConeOrLaser)
-			{
-				SoldierConeOrLaser soldierConeOrLaser = (SoldierConeOrLaser)thisAbility;
-				list = GeneratePotentialAbilityTargetLocationsCircleNearFar_Separate(20, 72, soldierConeOrLaser.m_coneDistThreshold);
-			}
-			else
-			{
-				list = GeneratePotentialAbilityTargetLocations(thisAbility.GetRangeInSquares(0) * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
-			}
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_ExoTether)
-		{
-			AbilityUtil_Targeter_ExoTether abilityUtil_Targeter_ExoTether = (AbilityUtil_Targeter_ExoTether)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_ExoTether.GetDistance(), includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_SweepSingleClickCone)
-		{
-			AbilityUtil_Targeter_SweepSingleClickCone abilityUtil_Targeter_SweepSingleClickCone = (AbilityUtil_Targeter_SweepSingleClickCone)thisAbility.Targeter;
-			if (actorData.TechPoints >= 70 || abilityUtil_Targeter_SweepSingleClickCone.m_syncComponent.m_anchored)
-			{
-				list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_SweepSingleClickCone.m_rangeInSquares * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
-			}
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_DashThroughWall)
-		{
-			AbilityUtil_Targeter_DashThroughWall abilityUtil_Targeter_DashThroughWall = (AbilityUtil_Targeter_DashThroughWall)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations((abilityUtil_Targeter_DashThroughWall.m_dashRangeInSquares + abilityUtil_Targeter_DashThroughWall.m_extraTotalDistanceIfThroughWalls) * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_ReverseStretchCone)
-		{
-			AbilityUtil_Targeter_ReverseStretchCone abilityUtil_Targeter_ReverseStretchCone = (AbilityUtil_Targeter_ReverseStretchCone)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_ReverseStretchCone.m_maxLengthSquares * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_AoE_Smooth_FixedOffset)
-		{
-			AbilityUtil_Targeter_AoE_Smooth_FixedOffset abilityUtil_Targeter_AoE_Smooth_FixedOffset = (AbilityUtil_Targeter_AoE_Smooth_FixedOffset)thisAbility.Targeter;
-			list = GeneratePotentialAbilityTargetLocations(abilityUtil_Targeter_AoE_Smooth_FixedOffset.m_maxOffsetFromCaster * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
-		}
-		if (list != null)
+		
+		if (potentialTargets != null)
 		{
 			float realtimeSinceStartup = Time.realtimeSinceStartup;
-			foreach (AbilityTarget item in list)
+			foreach (AbilityTarget target in potentialTargets)
 			{
-				List<AbilityTarget> list2 = new List<AbilityTarget>();
-				list2.Add(item);
-				AbilityResults tempAbilityResults = new AbilityResults(actorData, thisAbility, null, s_gatherRealResults, true);
-				thisAbility.GatherAbilityResults(list2, actorData, ref tempAbilityResults);
+				List<AbilityTarget> targetList = new List<AbilityTarget> { target };
+				AbilityResults tempAbilityResults = new AbilityResults(actorData, ability, null, s_gatherRealResults, true);
+				ability.GatherAbilityResults(targetList, actorData, ref tempAbilityResults);
 				PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, false);
-				potentialChoice.freeAction = thisAbility.IsFreeAction();
-				potentialChoice.targetList = list2;
+				potentialChoice.freeAction = ability.IsFreeAction();
+				potentialChoice.targetList = targetList;
 				if (retVal == null || retVal.score < potentialChoice.score)
 				{
 					retVal = potentialChoice;
 				}
-				if (realtimeSinceStartup + config.MaxAIIterationTime < Time.realtimeSinceStartup)
+				if (realtimeSinceStartup + HydrogenConfig.Get().MaxAIIterationTime < Time.realtimeSinceStartup)
 				{
 					yield return null;
 					realtimeSinceStartup = Time.realtimeSinceStartup;
 				}
 			}
-			List<AbilityTarget>.Enumerator enumerator = default(List<AbilityTarget>.Enumerator);
 		}
 		if (retVal != null && retVal.score > 0f)
 		{
 			m_potentialChoices[thisAction] = retVal;
 		}
-		yield break;
-		yield break;
 	}
 
 	// added in rogues
 	protected IEnumerator ScoreMultiTargetAbility(AbilityData.ActionType thisAction)
 	{
-		PotentialChoice potentialChoice = null;
-		if (potentialChoice != null)
-		{
-			m_potentialChoices[thisAction] = potentialChoice;
-		}
+		// custom
+		AbilityData abilityData = GetComponent<AbilityData>();
+		Ability ability = abilityData.GetAbilityOfActionType(thisAction);
+		Log.Error($"Multi targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})"); // custom
+		
+		// TODO BOTS broken code
+		// rogues
+		// PotentialChoice potentialChoice = null;
+		// if (potentialChoice != null)
+		// {
+		// 	m_potentialChoices[thisAction] = potentialChoice;
+		// }
+		
 		yield break;
 	}
 
@@ -1313,80 +1307,334 @@ public class NPCBrain_Adaptive : NPCBrain
 	public virtual PotentialChoice ScoreResults(AbilityResults tempAbilityResults, ActorData caster, bool ignoreOverhealing)
 	{
 		Dictionary<ActorData, int> damageResults = tempAbilityResults.DamageResults;
-		PotentialChoice potentialChoice = new PotentialChoice();
-		potentialChoice.damageTotal = 0;
-		potentialChoice.numEnemyTargetsHit = 0;
-		potentialChoice.healingTotal = 0;
-		potentialChoice.numTeamTargetsHit = 0;
-		potentialChoice.score = 0f;
-		potentialChoice.reasoning = "";
-		int currentTurn = GameFlowData.Get().CurrentTurn;
+		PotentialChoice potentialChoice = new PotentialChoice
+		{
+			damageTotal = 0,
+			numEnemyTargetsHit = 0,
+			healingTotal = 0,
+			numTeamTargetsHit = 0,
+			score = 0f,
+			reasoning = ""
+		};
+		// int currentTurn = GameFlowData.Get().CurrentTurn;
 		
 		// rogues
 		// if (tempAbilityResults.Ability.m_additionalAIScore > 0f)
 		// {
 		// 	potentialChoice.score += tempAbilityResults.Ability.m_additionalAIScore;
-		// 	PotentialChoice potentialChoice2 = potentialChoice;
-		// 	potentialChoice2.reasoning += string.Format("Adding {0} for authored additional AI score\n", tempAbilityResults.Ability.m_additionalAIScore);
+		// 	potentialChoice.reasoning += $"Adding {tempAbilityResults.Ability.m_additionalAIScore} for authored additional AI score\n";
 		// }
 		
+		// all was inlined in rogues
+		ScoreDamageAndHealing(tempAbilityResults, caster, ignoreOverhealing, damageResults, potentialChoice);
+		ScoreActorEffects(tempAbilityResults, potentialChoice);
+		ScoreStolenPowerups(tempAbilityResults, caster, potentialChoice);
+		ScoreWorldEffects(tempAbilityResults, caster, potentialChoice);
+		ScoreTargetNum(potentialChoice);
+
+		return potentialChoice;
+	}
+
+	private static void ScoreTargetNum(PotentialChoice potentialChoice)
+	{
+		if (potentialChoice.numEnemyTargetsHit > 1 && potentialChoice.score != 0f)
+		{
+			float score = potentialChoice.score;
+			potentialChoice.score += 0.01f * potentialChoice.numEnemyTargetsHit;
+			float enemiesHitScore = potentialChoice.score - score;
+			potentialChoice.reasoning +=
+				$"Adding a small bonus based on the number of enemy targets hit ({enemiesHitScore}).\n";
+		}
+
+		if (potentialChoice.numTeamTargetsHit > 1 && potentialChoice.score != 0f)
+		{
+			float score = potentialChoice.score;
+			potentialChoice.score += 0.01f * potentialChoice.numTeamTargetsHit;
+			float alliesHitScore = potentialChoice.score - score;
+			potentialChoice.reasoning +=
+				$"Adding a small bonus based on the number of friendly targets hit ({alliesHitScore}).\n";
+		}
+	}
+
+	private void ScoreWorldEffects(AbilityResults tempAbilityResults, ActorData caster, PotentialChoice potentialChoice)
+	{
+		foreach (KeyValuePair<Vector3, PositionHitResults> posToHitResult in tempAbilityResults.m_positionToHitResults)
+		{
+			if (posToHitResult.Value == null || posToHitResult.Value.m_effects == null)
+			{
+				continue;
+			}
+
+			foreach (Effect effect in posToHitResult.Value.m_effects)
+			{
+				if (effect == null)
+				{
+					continue;
+				}
+
+				if (effect is SorceressDamageFieldEffect sorceressDamageFieldEffect)
+				{
+					float score = potentialChoice.score;
+					BoardSquare pos = Board.Get().GetSquareFromVec3(posToHitResult.Key);
+					Vector3 centerOfShape =
+						AreaEffectUtils.GetCenterOfShape(sorceressDamageFieldEffect.m_shape, pos.ToVector3(), pos);
+					List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(
+						sorceressDamageFieldEffect.m_shape,
+						centerOfShape,
+						pos,
+						sorceressDamageFieldEffect.m_penetrateLoS,
+						caster,
+						caster.GetOtherTeams(),
+						null);
+					if (actorsInShape.Count <= 1)
+					{
+						potentialChoice.score -= 10f;
+					}
+					else
+					{
+						foreach (ActorData target in actorsInShape)
+						{
+							potentialChoice.score += ConvertDamageToScore(caster, target, 5);
+						}
+					}
+
+					float damageFieldScore = potentialChoice.score - score;
+					potentialChoice.reasoning += $"Added {damageFieldScore} score for Aurora damage field.\n";
+				}
+				else
+				{
+					Log.Warning($"World effect is not supported by bots: {effect.GetType()} ({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
+				}
+			}
+		}
+	}
+
+	private static void ScoreStolenPowerups(
+		AbilityResults tempAbilityResults,
+		ActorData caster,
+		PotentialChoice potentialChoice)
+	{
+		foreach (KeyValuePair<ActorData, ActorHitResults> actorToHitResult in tempAbilityResults.m_actorToHitResults)
+		{
+			if (actorToHitResult.Value.m_powerUpsToSteal == null)
+			{
+				continue;
+			}
+
+			foreach (ServerAbilityUtils.PowerUpStealData powerUpStealData in actorToHitResult.Value.m_powerUpsToSteal)
+			{
+				if (!powerUpStealData.m_powerUp.TeamAllowedForPickUp(caster.GetTeam()))
+				{
+					continue;
+				}
+
+				if (powerUpStealData.m_powerUp.m_ability is PowerUp_Heal_Ability ability)
+				{
+					potentialChoice.score += ability.m_healAmount;
+					potentialChoice.reasoning += $"Adding {ability.m_healAmount} for stealing a heal power up.\n";
+				}
+				else if (powerUpStealData.m_powerUp.m_ability is PowerUp_Standard_Ability powerUpStandardAbility)
+				{
+					if (powerUpStandardAbility.m_healAmount != 0)
+					{
+						potentialChoice.score += powerUpStandardAbility.m_healAmount;
+						potentialChoice.reasoning +=
+							$"Adding {powerUpStandardAbility.m_healAmount} for stealing a heal power up.\n";
+					}
+					else if (powerUpStandardAbility.m_effect != null
+					         && powerUpStandardAbility.m_effect.m_statusChanges != null
+					         && powerUpStandardAbility.m_effect.m_statusChanges.Length >= 0)
+					{
+						foreach (StatusType status in powerUpStandardAbility.m_effect.m_statusChanges)
+						{
+							switch (status)
+							{
+								case StatusType.Empowered:
+								{
+									potentialChoice.score += 16f;
+									potentialChoice.reasoning += "Adding 16 score for stealing a might power up.\n";
+									break;
+								}
+								case StatusType.Hasted:
+								{
+									potentialChoice.score += 9f;
+									potentialChoice.reasoning += "Adding 9 score for stealing a haste power up.\n";
+									break;
+								}
+								case StatusType.Energized:
+								{
+									potentialChoice.score += 6f;
+									potentialChoice.reasoning += "adding 6 score for stealing an energized power up.\n";
+									break;
+								}
+							}
+						}
+					}
+					else
+					{
+						potentialChoice.score += 5f;
+						potentialChoice.reasoning += "Adding 5 score for stealing an unknown power up.\n";
+					}
+				}
+				else
+				{
+					potentialChoice.score += 5f;
+					potentialChoice.reasoning += "Adding 5 score for stealing an unknown power up.\n";
+				}
+			}
+		}
+	}
+
+	private static void ScoreActorEffects(AbilityResults tempAbilityResults, PotentialChoice potentialChoice)
+	{
+		foreach (KeyValuePair<ActorData, ActorHitResults> actorToHitResult in tempAbilityResults.m_actorToHitResults)
+		{
+			if (actorToHitResult.Value.m_effects == null)
+			{
+				continue;
+			}
+
+			foreach (Effect effect in actorToHitResult.Value.m_effects)
+			{
+				if (!(effect is StandardActorEffect actorEffect))
+				{
+					Log.Warning($"Actor effect is not supported by bots: {effect.GetType()} ({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
+					continue;
+				}
+
+				float absorb = actorEffect.m_data.m_absorbAmount;
+				if (absorb != 0f)
+				{
+					float score = potentialChoice.score;
+					potentialChoice.numTeamTargetsHit++;
+					for (int i = 0; i < actorEffect.m_data.m_duration; i++)
+					{
+						absorb /= 2f;
+						potentialChoice.score += absorb;
+					}
+
+					potentialChoice.score += (1f - actorToHitResult.Key.GetHitPointPercent()) * 0.1f;
+					float shieldScore = potentialChoice.score - score;
+					potentialChoice.reasoning += $"Adding {shieldScore} for generic shielding.\n";
+				}
+
+				if (actorEffect.m_data != null && actorEffect.m_data.m_statusChanges != null &&
+				    actorEffect.m_data.m_statusChanges.Length != 0)
+				{
+					foreach (StatusType status in actorEffect.m_data.m_statusChanges)
+					{
+						switch (status)
+						{
+							case StatusType.InvisibleToEnemies:
+							{
+								potentialChoice.score += 9f;
+								potentialChoice.reasoning += "Adding 9 score for an invisibility effect.\n";
+								break;
+							}
+							case StatusType.Snared:
+							{
+								potentialChoice.score += 2f * actorEffect.m_data.m_duration;
+								potentialChoice.reasoning += "Adding 2 score for a slow effect.\n";
+								break;
+							}
+							case StatusType.Weakened:
+							{
+								potentialChoice.score += 13f * actorEffect.m_data.m_duration;
+								potentialChoice.reasoning += "Adding 13 score for a weakened effect.\n";
+								break;
+							}
+							case StatusType.Empowered:
+							{
+								potentialChoice.score += 13f * actorEffect.m_data.m_duration;
+								potentialChoice.reasoning += "Adding 13 score for a might effect.\n";
+								break;
+							}
+							case StatusType.Unstoppable:
+							{
+								potentialChoice.score += 7f * actorEffect.m_data.m_duration;
+								potentialChoice.reasoning += "Adding 7 score for an Unstoppable effect.\n";
+								break;
+							}
+							case StatusType.Hasted:
+							{
+								potentialChoice.score += 8f * actorEffect.m_data.m_duration;
+								potentialChoice.reasoning += "Adding 8 score for a haste effect.\n";
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private void ScoreDamageAndHealing(
+		AbilityResults tempAbilityResults,
+		ActorData caster,
+		bool ignoreOverhealing,
+		Dictionary<ActorData, int> damageResults,
+		PotentialChoice potentialChoice)
+	{
 		foreach (ActorData actorData in damageResults.Keys)
 		{
-			int num = damageResults[actorData];
-			if (num > 0)
+			int healthDelta = damageResults[actorData];
+			if (healthDelta > 0)
 			{
 				PotentialChoice potentialChoice3 = potentialChoice;
-				potentialChoice3.reasoning += string.Format("This ability does instant healing (amount: {0})\n", num);
-				if (tempAbilityResults.Ability is Card_Standard_Ability)
+				potentialChoice3.reasoning += $"This ability does instant healing (amount: {healthDelta})\n";
+				if (tempAbilityResults.Ability is Card_Standard_Ability cardStandardAbility
+				    && cardStandardAbility.m_applyEffect
+				    && cardStandardAbility.m_effect.m_healingPerTurn > 0
+				    && cardStandardAbility.m_effect.m_duration > 1)
 				{
-					Card_Standard_Ability card_Standard_Ability = (Card_Standard_Ability)tempAbilityResults.Ability;
-					if (card_Standard_Ability.m_applyEffect && card_Standard_Ability.m_effect.m_healingPerTurn > 0 && card_Standard_Ability.m_effect.m_duration > 1)
-					{
-						int num2 = (int)Mathf.Floor(card_Standard_Ability.m_effect.m_healingPerTurn * (card_Standard_Ability.m_effect.m_duration - 1) * 0.5f);
-						PotentialChoice potentialChoice4 = potentialChoice;
-						potentialChoice4.reasoning += string.Format("Adding {0} for heal over time (second wind) to amount.\n", num2);
-						num += num2;
-					}
+					int healOverTimeScore = (int)Mathf.Floor(cardStandardAbility.m_effect.m_healingPerTurn *
+					                                         (cardStandardAbility.m_effect.m_duration - 1) * 0.5f);
+					potentialChoice.reasoning +=
+						$"Adding {healOverTimeScore} for heal over time (second wind) to amount.\n";
+					healthDelta += healOverTimeScore;
 				}
+
 				if (ignoreOverhealing)
 				{
-					int num3 = actorData.GetMaxHitPoints() - actorData.GetHitPointsToDisplay();
-					if (num > num3)
+					int maxHPToRestore = actorData.GetMaxHitPoints() - actorData.GetHitPointsToDisplay();
+					if (healthDelta > maxHPToRestore)
 					{
-						PotentialChoice potentialChoice5 = potentialChoice;
-						potentialChoice5.reasoning += string.Format("Reduce amount by {0} because we're ignoring overhealing.\n", num - num3);
-						num = num3;
+						potentialChoice.reasoning +=
+							$"Reduce amount by {healthDelta - maxHPToRestore} because we're ignoring overhealing.\n";
+						healthDelta = maxHPToRestore;
 					}
 				}
-				float num4 = num * 1f + (1f - actorData.GetHitPointPercent()) * 0.1f;
-				potentialChoice.score += num4;
-				PotentialChoice potentialChoice6 = potentialChoice;
-				potentialChoice6.reasoning += string.Format("Score set to: {0} (added {1})\n", potentialChoice.score, num4);
-				potentialChoice.healingTotal += num;
+
+				float healScore = healthDelta * 1f + (1f - actorData.GetHitPointPercent()) * 0.1f;
+				potentialChoice.score += healScore;
+				potentialChoice.reasoning += $"Score set to: {potentialChoice.score} (added {healScore})\n";
+				potentialChoice.healingTotal += healthDelta;
 				potentialChoice.numTeamTargetsHit++;
 			}
-			else if (num < 0)
+			else if (healthDelta < 0)
 			{
-				if (actorData.GetTeam() != caster.GetTeam() && GetEnemyPlayerAliveAndVisibleMultiplier(actorData) > 0f)
+				if (actorData.GetTeam() == caster.GetTeam() || GetEnemyPlayerAliveAndVisibleMultiplier(actorData) <= 0f)
 				{
-					float num5 = ConvertDamageToScore(caster, actorData, num);
-					potentialChoice.score += num5;
-					PotentialChoice potentialChoice7 = potentialChoice;
-					potentialChoice7.reasoning += string.Format("Added {0} score for damage done.  Score is now: {1} \n", num5, potentialChoice.score);
-					if (actorData.GetHitPointsToDisplay() <= -num)
-					{
-						PotentialChoice potentialChoice8 = potentialChoice;
-						potentialChoice8.reasoning += string.Format("The last add included a fatal damage flat bonus of {0}\n", 2f);
-					}
-					potentialChoice.damageTotal += -num;
-					potentialChoice.numEnemyTargetsHit++;
-					if (tempAbilityResults.Ability is RampartGrab)
-					{
-						float num6 = (actorData.GetFreePos() - caster.GetFreePos()).magnitude / 2f;
-						potentialChoice.score += num6;
-						PotentialChoice potentialChoice9 = potentialChoice;
-						potentialChoice9.reasoning += string.Format("Added distance bonus for pull: {0}\n", num6);
-					}
+					continue;
+				}
+
+				float damageScore = ConvertDamageToScore(caster, actorData, healthDelta);
+				potentialChoice.score += damageScore;
+				potentialChoice.reasoning +=
+					$"Added {damageScore} score for damage done.  Score is now: {potentialChoice.score} \n";
+				if (actorData.GetHitPointsToDisplay() <= -healthDelta)
+				{
+					// applied in ConvertDamageToScore
+					potentialChoice.reasoning += $"The last add included a fatal damage flat bonus of {2f}\n";
+				}
+
+				potentialChoice.damageTotal += -healthDelta;
+				potentialChoice.numEnemyTargetsHit++;
+				if (tempAbilityResults.Ability is RampartGrab)
+				{
+					float pullScore = (actorData.GetFreePos() - caster.GetFreePos()).magnitude / 2f;
+					potentialChoice.score += pullScore;
+					potentialChoice.reasoning += $"Added distance bonus for pull: {pullScore}\n";
 				}
 			}
 			else if (actorData.GetTeam() == caster.GetTeam())
@@ -1398,188 +1646,6 @@ public class NPCBrain_Adaptive : NPCBrain
 				potentialChoice.numEnemyTargetsHit++;
 			}
 		}
-		foreach (KeyValuePair<ActorData, ActorHitResults> keyValuePair in tempAbilityResults.m_actorToHitResults)
-		{
-			if (keyValuePair.Value.m_effects != null)
-			{
-				foreach (Effect effect in keyValuePair.Value.m_effects)
-				{
-					if (effect is StandardActorEffect)
-					{
-						StandardActorEffect standardActorEffect = (StandardActorEffect)effect;
-						float num7 = standardActorEffect.m_data.m_absorbAmount;
-						if (num7 != 0f)
-						{
-							float score = potentialChoice.score;
-							potentialChoice.numTeamTargetsHit++;
-							for (int i = 0; i < standardActorEffect.m_data.m_duration; i++)
-							{
-								num7 /= 2f;
-								potentialChoice.score += num7;
-							}
-							potentialChoice.score += (1f - keyValuePair.Key.GetHitPointPercent()) * 0.1f;
-							float num8 = potentialChoice.score - score;
-							PotentialChoice potentialChoice10 = potentialChoice;
-							potentialChoice10.reasoning += string.Format("Adding {0} for generic shielding.\n", num8);
-						}
-						if (standardActorEffect.m_data != null && standardActorEffect.m_data.m_statusChanges != null && standardActorEffect.m_data.m_statusChanges.Length != 0)
-						{
-							for (int j = 0; j < standardActorEffect.m_data.m_statusChanges.Length; j++)
-							{
-								if (standardActorEffect.m_data.m_statusChanges[j] == StatusType.InvisibleToEnemies)
-								{
-									potentialChoice.score += 9f;
-									PotentialChoice potentialChoice11 = potentialChoice;
-									potentialChoice11.reasoning += "Adding 9 score for an invisibility effect.\n";
-								}
-								else if (standardActorEffect.m_data.m_statusChanges[j] == StatusType.Snared)
-								{
-									potentialChoice.score += 2f * standardActorEffect.m_data.m_duration;
-									PotentialChoice potentialChoice12 = potentialChoice;
-									potentialChoice12.reasoning += "Adding 2 score for a slow effect.\n";
-								}
-								else if (standardActorEffect.m_data.m_statusChanges[j] == StatusType.Weakened)
-								{
-									potentialChoice.score += 13f * standardActorEffect.m_data.m_duration;
-									PotentialChoice potentialChoice13 = potentialChoice;
-									potentialChoice13.reasoning += "Adding 13 score for a weakened effect.\n";
-								}
-								else if (standardActorEffect.m_data.m_statusChanges[j] == StatusType.Empowered)
-								{
-									potentialChoice.score += 13f * standardActorEffect.m_data.m_duration;
-									PotentialChoice potentialChoice14 = potentialChoice;
-									potentialChoice14.reasoning += "Adding 13 score for a might effect.\n";
-								}
-								else if (standardActorEffect.m_data.m_statusChanges[j] == StatusType.Unstoppable)
-								{
-									potentialChoice.score += 7f * standardActorEffect.m_data.m_duration;
-									PotentialChoice potentialChoice15 = potentialChoice;
-									potentialChoice15.reasoning += "Adding 7 score for an Unstoppable effect.\n";
-								}
-								else if (standardActorEffect.m_data.m_statusChanges[j] == StatusType.Hasted)
-								{
-									potentialChoice.score += 8f * standardActorEffect.m_data.m_duration;
-									PotentialChoice potentialChoice16 = potentialChoice;
-									potentialChoice16.reasoning += "Adding 8 score for a haste effect.\n";
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		foreach (KeyValuePair<ActorData, ActorHitResults> keyValuePair2 in tempAbilityResults.m_actorToHitResults)
-		{
-			if (keyValuePair2.Value.m_powerUpsToSteal != null)
-			{
-				foreach (ServerAbilityUtils.PowerUpStealData powerUpStealData in keyValuePair2.Value.m_powerUpsToSteal)
-				{
-					if (powerUpStealData.m_powerUp.TeamAllowedForPickUp(caster.GetTeam()))
-					{
-						if (powerUpStealData.m_powerUp.m_ability is PowerUp_Heal_Ability)
-						{
-							potentialChoice.score += ((PowerUp_Heal_Ability)powerUpStealData.m_powerUp.m_ability).m_healAmount;
-							PotentialChoice potentialChoice17 = potentialChoice;
-							potentialChoice17.reasoning += string.Format("Adding {0} for stealing a heal power up.\n", ((PowerUp_Heal_Ability)powerUpStealData.m_powerUp.m_ability).m_healAmount);
-						}
-						else if (powerUpStealData.m_powerUp.m_ability is PowerUp_Standard_Ability)
-						{
-							PowerUp_Standard_Ability powerUp_Standard_Ability = (PowerUp_Standard_Ability)powerUpStealData.m_powerUp.m_ability;
-							if (powerUp_Standard_Ability.m_healAmount != 0)
-							{
-								potentialChoice.score += powerUp_Standard_Ability.m_healAmount;
-								PotentialChoice potentialChoice18 = potentialChoice;
-								potentialChoice18.reasoning += string.Format("Adding {0} for stealing a heal power up.\n", powerUp_Standard_Ability.m_healAmount);
-							}
-							else if (powerUp_Standard_Ability.m_effect != null && powerUp_Standard_Ability.m_effect.m_statusChanges != null && powerUp_Standard_Ability.m_effect.m_statusChanges.Length >= 0)
-							{
-								for (int k = 0; k < powerUp_Standard_Ability.m_effect.m_statusChanges.Length; k++)
-								{
-									if (powerUp_Standard_Ability.m_effect.m_statusChanges[k] == StatusType.Empowered)
-									{
-										potentialChoice.score += 16f;
-										PotentialChoice potentialChoice19 = potentialChoice;
-										potentialChoice19.reasoning += "Adding 16 score for stealing a might power up.\n";
-									}
-									else if (powerUp_Standard_Ability.m_effect.m_statusChanges[k] == StatusType.Hasted)
-									{
-										potentialChoice.score += 9f;
-										PotentialChoice potentialChoice20 = potentialChoice;
-										potentialChoice20.reasoning += "Adding 9 score for stealing a haste power up.\n";
-									}
-									else if (powerUp_Standard_Ability.m_effect.m_statusChanges[k] == StatusType.Energized)
-									{
-										potentialChoice.score += 6f;
-										PotentialChoice potentialChoice21 = potentialChoice;
-										potentialChoice21.reasoning += "adding 6 score for stealing an energized power up.\n";
-									}
-								}
-							}
-							else
-							{
-								potentialChoice.score += 5f;
-								PotentialChoice potentialChoice22 = potentialChoice;
-								potentialChoice22.reasoning += "Adding 5 score for stealing an unknown power up.\n";
-							}
-						}
-						else
-						{
-							potentialChoice.score += 5f;
-							PotentialChoice potentialChoice23 = potentialChoice;
-							potentialChoice23.reasoning += "Adding 5 score for stealing an unknown power up.\n";
-						}
-					}
-				}
-			}
-		}
-		foreach (KeyValuePair<Vector3, PositionHitResults> keyValuePair3 in tempAbilityResults.m_positionToHitResults)
-		{
-			if (keyValuePair3.Value != null && keyValuePair3.Value.m_effects != null)
-			{
-				foreach (Effect effect2 in keyValuePair3.Value.m_effects)
-				{
-					if (effect2 != null && effect2 is SorceressDamageFieldEffect)
-					{
-						float score2 = potentialChoice.score;
-						BoardSquare squareFromVec = Board.Get().GetSquareFromVec3(keyValuePair3.Key);
-						SorceressDamageFieldEffect sorceressDamageFieldEffect = (SorceressDamageFieldEffect)effect2;
-						Vector3 centerOfShape = AreaEffectUtils.GetCenterOfShape(sorceressDamageFieldEffect.m_shape, squareFromVec.ToVector3(), squareFromVec);
-						List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(sorceressDamageFieldEffect.m_shape, centerOfShape, squareFromVec, sorceressDamageFieldEffect.m_penetrateLoS, caster, caster.GetOtherTeams(), null);
-						if (actorsInShape.Count() <= 1)
-						{
-							potentialChoice.score -= 10f;
-						}
-						else
-						{
-							foreach (ActorData target in actorsInShape)
-							{
-								potentialChoice.score += ConvertDamageToScore(caster, target, 5);
-							}
-						}
-						float num9 = potentialChoice.score - score2;
-						PotentialChoice potentialChoice24 = potentialChoice;
-						potentialChoice24.reasoning += string.Format("Added {0} score for Aurora damage field.\n", num9);
-					}
-				}
-			}
-		}
-		if (potentialChoice.numEnemyTargetsHit > 1 && potentialChoice.score != 0f)
-		{
-			float score3 = potentialChoice.score;
-			potentialChoice.score += 0.01f * potentialChoice.numEnemyTargetsHit;
-			float num10 = potentialChoice.score - score3;
-			PotentialChoice potentialChoice25 = potentialChoice;
-			potentialChoice25.reasoning += string.Format("Adding a small bonus based on the number of enemy targets hit ({0}).\n", num10);
-		}
-		if (potentialChoice.numTeamTargetsHit > 1 && potentialChoice.score != 0f)
-		{
-			float score4 = potentialChoice.score;
-			potentialChoice.score += 0.01f * potentialChoice.numTeamTargetsHit;
-			float num11 = potentialChoice.score - score4;
-			PotentialChoice potentialChoice26 = potentialChoice;
-			potentialChoice26.reasoning += string.Format("Adding a small bonus based on the number of friendly targets hit ({0}).\n", num11);
-		}
-		return potentialChoice;
 	}
 
 	// added in rogues
@@ -1640,6 +1706,7 @@ public class NPCBrain_Adaptive : NPCBrain
 	}
 
 	// added in rogues
+	// TODO BOTS unused
 	private Dictionary<BoardSquare, PowerUp> GetPowerUpsInSquares(ActorData actorData, HashSet<BoardSquare> squares)
 	{
 		Dictionary<BoardSquare, PowerUp> dictionary = new Dictionary<BoardSquare, PowerUp>();
@@ -1663,6 +1730,7 @@ public class NPCBrain_Adaptive : NPCBrain
 	}
 
 	// added in rogues
+	// was used for deciding to attack before moving
 	public bool HasEnemyInRangeWithNoCover(ActorData actorData)
 	{
 		bool result = false;
@@ -1986,14 +2054,11 @@ public class NPCBrain_Adaptive : NPCBrain
 				realtimeSinceStartup = Time.realtimeSinceStartup;
 			}
 		}
-		HashSet<BoardSquare>.Enumerator enumerator = default(HashSet<BoardSquare>.Enumerator);
 		if (bestSquare != startingSquare)
 		{
 			turnSM.SelectMovementSquareForMovement(bestSquare); // , true in rogues
 			BotManager.Get().SelectDestination(actorData, bestSquare);
 		}
-		yield break;
-		yield break;
 	}
 
 	// added in rogues
@@ -2004,17 +2069,20 @@ public class NPCBrain_Adaptive : NPCBrain
 		{
 			return 0f;
 		}
-		ActorData component = GetComponent<ActorData>();
-		ActorStatus component2 = enemyActor.GetComponent<ActorStatus>();
-		bool flag = !component.GetFogOfWar().IsVisible(currentBoardSquare);
-		bool flag2 = enemyActor.IsInBrush();
-		bool flag3 = component2.HasStatus(StatusType.InvisibleToEnemies);
-		bool flag4 = component2.HasStatus(StatusType.Revealed);
-		bool flag5 = component.GetActorStatus().HasStatus(StatusType.SeeInvisible);
-		if ((!flag2 && !flag && (!flag3 || flag5)) || flag4)
+		ActorData actorData = GetComponent<ActorData>();
+		ActorStatus enemyActorStatus = enemyActor.GetComponent<ActorStatus>();
+		if (!enemyActor.IsInBrush()
+		    && actorData.GetFogOfWar().IsVisible(currentBoardSquare)
+		    && (!enemyActorStatus.HasStatus(StatusType.InvisibleToEnemies) || actorData.GetActorStatus().HasStatus(StatusType.SeeInvisible)))
 		{
 			return 1f;
 		}
+
+		if (enemyActorStatus.HasStatus(StatusType.Revealed))
+		{
+			return 1f;
+		}
+
 		Vector3 serverLastKnownPosVec = enemyActor.GetServerLastKnownPosVec();
 		Vector3 position = currentBoardSquare.transform.position;
 		serverLastKnownPosVec.y = 0f;
@@ -2032,28 +2100,28 @@ public class NPCBrain_Adaptive : NPCBrain
 		AbilityData abilityData = actor.GetAbilityData();
 		foreach (AbilityData.AbilityEntry abilityEntry in abilityData.abilityEntries)
 		{
-			int cooldownRemaining = abilityEntry.GetCooldownRemaining();
-			if (abilityEntry != null && abilityEntry.ability != null && abilityEntry.ability.CanRunInPhase(AbilityPriority.Evasion) && cooldownRemaining == 0)
+			if (abilityEntry != null
+			    && abilityEntry.ability != null
+			    && abilityEntry.ability.CanRunInPhase(AbilityPriority.Evasion)
+			    && abilityEntry.GetCooldownRemaining() == 0)
 			{
 				return false;
 			}
 		}
 		Ability abilityOfActionType = abilityData.GetAbilityOfActionType(AbilityData.ActionType.CARD_1);
-		return !includeCards || !(abilityOfActionType != null);
+		return !includeCards || abilityOfActionType == null;
 	}
 
 	// added in rogues
 	protected float ConvertDamageToScore(ActorData caster, ActorData target, int amount)
 	{
 		float num = Mathf.Abs(amount);
-		float num2 = num * 1f;
-		float num3 = (1f - target.GetHitPointPercent()) * 0.1f;
-		num2 += num3;
-		if (target.GetHitPointsToDisplay() <= num)
+		float result = num + (1f - target.GetHitPointPercent()) * 0.1f;
+		if (target.GetHitPointsToDisplay() <= num) // is fatal
 		{
-			num2 += 2f;
+			result += 2f;
 		}
-		return num2;
+		return result;
 	}
 
 	// added in rogues
