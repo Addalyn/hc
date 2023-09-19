@@ -34,7 +34,7 @@ public class ServerActionBuffer : NetworkBehaviour
 
 	private List<MovementRequest> m_removedMovementRequestsFromForceChase;
 
-	internal bool m_gatheringFakeResults;
+	internal bool m_gatheringFakeResults = true; // no default value in rogues
 
 	// custom
 	internal Dictionary<Team, List<BoardSquare>> m_tempReservedSquaresForAbilitySpoil = new Dictionary<Team, List<BoardSquare>>();
@@ -77,7 +77,7 @@ public class ServerActionBuffer : NetworkBehaviour
 		{
 			return m_gatheringFakeResults;
 		}
-		private set
+		set  // private in rogues
 		{
 			if (m_gatheringFakeResults != value)
 			{

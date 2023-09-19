@@ -178,6 +178,9 @@ public class PlayerAction_Ability : PlayerAction
 		}
 		List<ActorAnimation> list = new List<ActorAnimation>();
 		sbyte b = 0;
+
+		ServerActionBuffer.Get().GatheringFakeResults = false;
+		
 		foreach (AbilityRequest abilityRequest3 in m_requests)
 		{
 			if (abilityRequest3.m_caster.GetPassiveData())
@@ -268,6 +271,8 @@ public class PlayerAction_Ability : PlayerAction
 		{
 			ServerActionBuffer.Get().TryRunAbilityRequest(request);
 		}
+		
+		ServerActionBuffer.Get().GatheringFakeResults = true;
 	}
 
 	// public override void OnExecutionComplete(bool isLastAction)
