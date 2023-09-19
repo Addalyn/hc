@@ -893,7 +893,7 @@ public class ServerMovementStabilizer
 				if (flag && pathToCurrentTargetPos == null)
 				{
 					BoardSquare targetCurrentBoardSquare = targetActor.GetCurrentBoardSquare();
-					BoardSquare closestMoveableSquareTo = chaserMovement.GetClosestMoveableSquareTo(targetCurrentBoardSquare);
+					BoardSquare closestMoveableSquareTo = chaserMovement.GetClosestMoveableSquareTo(targetCurrentBoardSquare, true);
 					chaseRequest.m_path = chaserMovement.BuildPathTo(chaser.GetCurrentBoardSquare(), closestMoveableSquareTo);
 					chaseRequest.m_chaseTarget = null;
 					chaseRequest.m_targetSquare = closestMoveableSquareTo;

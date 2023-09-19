@@ -122,11 +122,16 @@ public class NPCBrain_Adaptive : NPCBrain
 			Log.Info($"Setting optimal range for {characterType} to {nPCBrain_Adaptive.m_optimalRange} " +
 			         $"({(nPCBrain_Adaptive.m_optimalRange >= 4.5f ? MovementType.Ranged : MovementType.Melee)})");
 		}
-
+		
 		if (characterType.HasValue)
 		{
+			// TODO BOTS get character config
 			CharacterConfig characterConfig = GameManager.Get().GameplayOverrides.GetCharacterConfig(characterType.Value);
-			if (characterConfig.CharacterRole == CharacterRole.Support)
+			if (characterConfig == null)
+			{
+				Log.Warning($"Failed to check {characterType}'s role for bot configuration");
+			}
+			else if (characterConfig.CharacterRole == CharacterRole.Support)
 			{
 				nPCBrain_Adaptive.m_movementType = MovementType.Support;
 				Log.Info($"Setting movement type for {characterType} to {nPCBrain_Adaptive.m_movementType}");

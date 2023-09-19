@@ -453,6 +453,17 @@ public class AbilityData : NetworkBehaviour
 		m_cooldowns = new Dictionary<string, int>();
 		m_actor = GetComponent<ActorData>();
 
+		// removed in rogues
+		for (int l = 0; l < NUM_CARDS; l++)
+		{
+			m_cachedCardAbilities.Add(null);
+		}
+		m_cooldownsSync.InitializeBehaviour(this, kListm_cooldownsSync);
+		m_consumedStockCount.InitializeBehaviour(this, kListm_consumedStockCount);
+		m_stockRefreshCountdowns.InitializeBehaviour(this, kListm_stockRefreshCountdowns);
+		m_currentCardIds.InitializeBehaviour(this, kListm_currentCardIds);
+		// end removed in rogues
+
 		// added in rogues
 #if SERVER
 		m_interactions = new Dictionary<Ability, AbilityInteractions>();
@@ -463,28 +474,18 @@ public class AbilityData : NetworkBehaviour
 		}
 
 		// called in OnStartServer in reactor
-		//for (int m = 0; m < NUM_ACTIONS; m++)
-		//{
-		//	m_cooldownsSync.Add(0);
-		//	m_consumedStockCount.Add(0);
-		//	m_stockRefreshCountdowns.Add(0);
-		//}
-		//for (int n = 0; n < NUM_CARDS; n++)
-		//{
-		//	m_currentCardIds.Add(-1);
-		//	m_cardUsed.Add(false);
-		//}
-#endif
-
-		// removed in rogues
-		for (int l = 0; l < NUM_CARDS; l++)
+		for (int m = 0; m < NUM_ACTIONS; m++)
 		{
-			m_cachedCardAbilities.Add(null);
+			m_cooldownsSync.Add(0);
+			m_consumedStockCount.Add(0);
+			m_stockRefreshCountdowns.Add(0);
 		}
-		m_cooldownsSync.InitializeBehaviour(this, kListm_cooldownsSync);
-		m_consumedStockCount.InitializeBehaviour(this, kListm_consumedStockCount);
-		m_stockRefreshCountdowns.InitializeBehaviour(this, kListm_stockRefreshCountdowns);
-		m_currentCardIds.InitializeBehaviour(this, kListm_currentCardIds);
+		for (int n = 0; n < NUM_CARDS; n++)
+		{
+			m_currentCardIds.Add(-1);
+			m_cardUsed.Add(false);
+		}
+#endif
 	}
 
 	public void InitAbilitySprites()
@@ -542,7 +543,8 @@ public class AbilityData : NetworkBehaviour
 
 	public override void OnStartServer()
 	{
-		// removed in rogues
+		// moved to Awake in rogues
+#if !SERVER
 		for (int i = 0; i < NUM_ACTIONS; i++)
 		{
 			m_cooldownsSync.Add(0);
@@ -556,8 +558,8 @@ public class AbilityData : NetworkBehaviour
 				m_cardUsed.Add(false);
 #endif
 		}
-		// end removed in rogues
-
+#endif
+		
 		if (GameplayUtils.IsPlayerControlled(this))
 		{
 			int num = GameplayData.Get().m_turnsAbilitiesUnlock.Length;
@@ -2637,11 +2639,11 @@ public class AbilityData : NetworkBehaviour
 		return false;
 	}
 
-	public bool ValidateActionRequest(ActionType actionType, List<AbilityTarget> targets)  // , bool checkIfRequestable = true in rogues
+	public bool ValidateActionRequest(ActionType actionType, List<AbilityTarget> targets, bool checkIfRequestable = true)  // no checkIfRequestable in reactor
 	{
 		bool result = true;
 		Ability abilityOfActionType = GetAbilityOfActionType(actionType);
-		if (!ValidateActionIsRequestable(actionType))  // checkIfRequestable &&  in rogues
+		if (checkIfRequestable && !ValidateActionIsRequestable(actionType))
 		{
 			result = false;
 			Log.Info($"VALIDATION Action {actionType} is not requestable by {m_actor}");

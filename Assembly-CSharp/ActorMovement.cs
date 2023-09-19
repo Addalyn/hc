@@ -292,60 +292,70 @@ public class ActorMovement : MonoBehaviour, IGameEventListener
 		return m_squaresCanMoveTo.Contains(dest);
 	}
 
+	
+
+#if SERVER
+	// rogues
+	public BoardSquare GetClosestMoveableSquareTo(
+		BoardSquare selectedSquare,
+		bool alwaysIncludeMoverSquare,  // no default value in rogues
+		bool useNonSprintSquares = false,  // added in rogues
+		bool excludeDestSquare = false)  // added in rogues
+	{
+	    HashSet<BoardSquare> squaresCanMoveTo = useNonSprintSquares
+	        ? m_squareCanMoveToWithQueuedAbility
+	        : m_squaresCanMoveTo;
+	    BoardSquare currentBoardSquare = m_actor.GetCurrentBoardSquare();
+	    BoardSquare closestSquare = alwaysIncludeMoverSquare ? currentBoardSquare : null;
+	    float minDist = alwaysIncludeMoverSquare ? closestSquare.HorizontalDistanceOnBoardTo(selectedSquare) : 100000f;
+	    float minDistInSquares = alwaysIncludeMoverSquare ? closestSquare.HorizontalDistanceInSquaresTo(currentBoardSquare) : 100000f;  // added in rogues
+	    if (selectedSquare == null)
+	    {
+		    Log.Error("Trying to find the closest moveable square to a null square.  Code error-- tell Danny.");
+		    return closestSquare;
+	    }
+
+	    foreach (BoardSquare square in squaresCanMoveTo)
+	    {
+		    if (!excludeDestSquare || selectedSquare != square)
+		    {
+			    float dist = square.HorizontalDistanceOnBoardTo(selectedSquare);
+			    float distInSquares = square.HorizontalDistanceInSquaresTo(currentBoardSquare);  // added in rogues
+			    if (dist < minDist
+			        || (dist == minDist && distInSquares < minDistInSquares))  // added in rogues
+			    {
+				    minDist = dist;
+				    closestSquare = square;
+				    minDistInSquares = distInSquares;  // added in rogues
+			    }
+		    }
+	    }
+	    return closestSquare;
+	}
+#else
 	// reactor
-	public BoardSquare GetClosestMoveableSquareTo(BoardSquare selectedSquare, bool alwaysIncludeMoverSquare = true) //, bool useNonSprintSquares = false, bool excludeDestSquare = false)  in rogues
+	public BoardSquare GetClosestMoveableSquareTo(BoardSquare selectedSquare, bool alwaysIncludeMoverSquare = true)
 	{
 		BoardSquare closestSquare = alwaysIncludeMoverSquare ? m_actor.GetCurrentBoardSquare() : null;
 		float minDist = alwaysIncludeMoverSquare ? closestSquare.HorizontalDistanceOnBoardTo(selectedSquare) : 100000f;
-		if (selectedSquare != null)
+		if (selectedSquare == null)
 		{
-			foreach (BoardSquare square in m_squaresCanMoveTo)
-			{
-				float dist = square.HorizontalDistanceOnBoardTo(selectedSquare);
-				if (dist <= minDist)
-				{
-					minDist = dist;
-					closestSquare = square;
-				}
-			}
+			Log.Error("Trying to find the closest moveable square to a null square.  Code error-- tell Danny.");
 			return closestSquare;
 		}
-		Log.Error("Trying to find the closest moveable square to a null square.  Code error-- tell Danny.");
+
+		foreach (BoardSquare square in m_squaresCanMoveTo)
+		{
+			float dist = square.HorizontalDistanceOnBoardTo(selectedSquare);
+			if (dist <= minDist)
+			{
+				minDist = dist;
+				closestSquare = square;
+			}
+		}
 		return closestSquare;
 	}
-
-	// rogues
-	// TODO LOW check, might be a bugfix
-	//public BoardSquare GetClosestMoveableSquareTo(BoardSquare selectedSquare, bool alwaysIncludeMoverSquare = true, bool useNonSprintSquares = false, bool excludeDestSquare = false)  // useNonSprintSquares & excludeDestSquare added in rogues
-	//{
-	//    HashSet<BoardSquare> squaresCanMoveTo = useNonSprintSquares
-	//        ? m_squareCanMoveToWithQueuedAbility
-	//        : m_squaresCanMoveTo;
-	//    BoardSquare currentBoardSquare = m_actor.GetCurrentBoardSquare();
-	//    BoardSquare closestSquare = alwaysIncludeMoverSquare ? currentBoardSquare : null;
-	//    float minDist = alwaysIncludeMoverSquare ? closestSquare.HorizontalDistanceOnBoardTo(selectedSquare) : 100000f;
-	//    float minDistInSquares = alwaysIncludeMoverSquare ? closestSquare.HorizontalDistanceInSquaresTo(currentBoardSquare) : 100000f;
-	//    if (selectedSquare != null)
-	//    {
-	//        foreach (BoardSquare square in squaresCanMoveTo)
-	//        {
-	//            if (!excludeDestSquare || selectedSquare != square)
-	//            {
-	//                float dist = square.HorizontalDistanceOnBoardTo(selectedSquare);
-	//                float distInSquares = square.HorizontalDistanceInSquaresTo(currentBoardSquare);
-	//                if (dist < minDist || (dist == minDist && distInSquares < minDistInSquares))
-	//                {
-	//                    minDist = dist;
-	//                    closestSquare = square;
-	//                    minDistInSquares = distInSquares;
-	//                }
-	//            }
-	//        }
-	//        return closestSquare;
-	//    }
-	//    Log.Error("Trying to find the closest moveable square to a null square.  Code error-- tell Danny.");
-	//    return closestSquare;
-	//}
+#endif
 
 	public float CalculateMaxHorizontalMovement(bool forcePostAbility = false, bool calculateAsIfSnared = false)
 	{

@@ -77,7 +77,7 @@ public class RobotAnimalStealth_Charge : Ability
 		if (m_desiredDestination != null && m_desiredDestination.IsValidForGameplay())
 		{
 			caster.GetActorMovement().UpdateSquaresCanMoveTo();
-			BoardSquare closestMoveableSquareTo = caster.GetActorMovement().GetClosestMoveableSquareTo(m_desiredDestination);
+			BoardSquare closestMoveableSquareTo = caster.GetActorMovement().GetClosestMoveableSquareTo(m_desiredDestination, true);
 			if (closestMoveableSquareTo)
 			{
 				ServerActionBuffer.Get().StoreMovementRequest(closestMoveableSquareTo.x, closestMoveableSquareTo.y, caster);
