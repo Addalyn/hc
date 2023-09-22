@@ -1333,6 +1333,14 @@ public class NPCBrain_Adaptive : NPCBrain
 		ScoreActorEffects(tempAbilityResults, potentialChoice);
 		ScoreStolenPowerups(tempAbilityResults, caster, potentialChoice);
 		ScoreWorldEffects(tempAbilityResults, caster, potentialChoice);
+		
+		// custom
+		if (tempAbilityResults.Ability.CanRunInPhase(AbilityPriority.Evasion))
+		{
+			AdjustScoreForEvasion(caster, potentialChoice, tempAbilityResults.Ability);
+		}
+		// end custom
+		
 		ScoreTargetNum(potentialChoice);
 
 		return potentialChoice;
