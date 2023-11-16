@@ -450,7 +450,10 @@ public class NPCBrain_Adaptive : NPCBrain
 					{
 						yield return StartCoroutine(ScoreZeroTargetAbility(actionType2));
 					}
-					else if (abilityOfActionType.GetNumTargets() == 1 || abilityOfActionType is RampartGrab)
+					else if (abilityOfActionType.GetNumTargets() == 1
+					         || abilityOfActionType is RampartGrab
+					         || abilityOfActionType is ThiefBasicAttack  // custom
+					         || abilityOfActionType is FishManCone)  // custom
 					{
 						Ability.TargetingParadigm targetingParadigm = abilityOfActionType.GetTargetingParadigm(0);
 						if (targetingParadigm == Ability.TargetingParadigm.Position)
@@ -612,7 +615,8 @@ public class NPCBrain_Adaptive : NPCBrain
 		    || ability.Targeter is AbilityUtil_Targeter_Charge
 		    || ability.Targeter is AbilityUtil_Targeter_Shape
 		    || ability.Targeter is AbilityUtil_Targeter_BazookaGirlDelayedMissile
-		    || ability.Targeter is AbilityUtil_Targeter_MultipleShapes)
+		    || ability.Targeter is AbilityUtil_Targeter_MultipleShapes
+		    || ability.Targeter is AbilityUtil_Targeter_Grid) // custom TODO BOTS Scoundrel trapwire
 		{
 			float range = ability.m_targetData[0].m_range;
 			float minRange = ability.m_targetData[0].m_minRange;
@@ -974,7 +978,6 @@ public class NPCBrain_Adaptive : NPCBrain
 	}
 
 	// added in rogues
-	// TODO BOTS unused
 	private PotentialChoice AdjustScoreForEvasion(ActorData actorData, PotentialChoice choice, Ability thisAbility)
 	{
 		AbilityData component = GetComponent<AbilityData>();
@@ -1191,7 +1194,7 @@ public class NPCBrain_Adaptive : NPCBrain
 			case AbilityUtil_Targeter_MultipleCones targeterMultipleCones:
 				potentialTargets = GeneratePotentialAbilityTargetLocationsCircleVolume(targeterMultipleCones.m_maxConeLengthRadius * Board.Get().squareSize, actorData.GetCurrentBoardSquare().transform.position);
 				break;
-			case AbilityUtil_Targeter_ThiefFanLaser targeterThiefFanLaser:
+			case AbilityUtil_Targeter_ThiefFanLaser targeterThiefFanLaser: // TODO BOTS Thief's primary cannot hit two targets
 				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterThiefFanLaser.m_rangeInSquares, includeEnemies, includeFriendlies, includeSelf);
 				break;
 			case AbilityUtil_Targeter_BounceLaser targeterBounceLaser:
@@ -1254,6 +1257,15 @@ public class NPCBrain_Adaptive : NPCBrain
 			case AbilityUtil_Targeter_AoE_Smooth_FixedOffset targeterAoESmoothFixedOffset:
 				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterAoESmoothFixedOffset.m_maxOffsetFromCaster * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
 				break;
+			case AbilityUtil_Targeter_SpaceMarineBasicAttack targeterSpaceMarineBasicAttack: // custom
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterSpaceMarineBasicAttack.m_lengthInSquares, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_Line targeterLine: // custom TODO BOTS Sniper drone trap
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterLine.m_lineRange, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_RampartKnockbackBarrier targeterRampartKnockbackBarrier: // custom TODO BOTS Rampart wall
+				potentialTargets = GeneratePotentialAbilityTargetLocations(8f, includeEnemies, includeFriendlies, includeSelf);
+				break;
 			default:
 				Log.Error($"Single direction targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})"); // custom
 				break;
@@ -1293,7 +1305,6 @@ public class NPCBrain_Adaptive : NPCBrain
 		// custom
 		AbilityData abilityData = GetComponent<AbilityData>();
 		Ability ability = abilityData.GetAbilityOfActionType(thisAction);
-		Log.Error($"Multi targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})"); // custom
 		
 		// TODO BOTS broken code
 		// rogues
@@ -1303,7 +1314,223 @@ public class NPCBrain_Adaptive : NPCBrain
 		// 	m_potentialChoices[thisAction] = potentialChoice;
 		// }
 		
-		yield break;
+		// custom
+		ActorData actorData = GetComponent<ActorData>();
+		PotentialChoice retVal = null;
+		bool includeFriendlies = true;
+		bool includeEnemies = true;
+		bool includeSelf = false;
+		List<List<AbilityTarget>> potentialTargets = new List<List<AbilityTarget>>();
+		switch (ability.Targeter)
+		{
+			case AbilityUtil_Targeter_BendingLaser targeterBendingLaser:
+			{
+				List<AbilityTarget> targets = GeneratePotentialAbilityTargetLocationsCircleVolume(
+					targeterBendingLaser.m_maxDistanceBeforeBend,
+					actorData.GetFreePos(),
+					0.1f);
+				List<AbilityTarget> emptyList = new List<AbilityTarget>();
+				foreach (AbilityTarget firstTarget in targets)
+				{
+					if (!ability.CustomTargetValidation(actorData, firstTarget, 0, emptyList))
+					{
+						continue;
+					}
+
+					List<AbilityTarget> secondTargets = GeneratePotentialAbilityTargetLocations(
+						targeterBendingLaser.m_maxTotalDistance,
+						includeEnemies,
+						includeFriendlies,
+						includeSelf);
+					List<AbilityTarget> currentTargets = new List<AbilityTarget> { firstTarget };
+					foreach (AbilityTarget secondTarget in secondTargets)
+					{
+						if (!ability.CustomTargetValidation(actorData, secondTarget, 1, currentTargets))
+						{
+							continue;
+						}
+
+						potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
+					}
+				}
+
+				break;
+			}
+			case AbilityUtil_Targeter_DashAndAim _:
+			{
+				List<BoardSquare> squares = AreaEffectUtils.GetSquaresInRadius(
+					actorData.GetCurrentBoardSquare(),
+					ability.GetRangeInSquares(0),
+					false,
+					actorData);
+				List<AbilityTarget> emptyList = new List<AbilityTarget>();
+				foreach (BoardSquare firstTargetSquare in squares)
+				{
+					AbilityTarget firstTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(firstTargetSquare, actorData.GetFreePos());
+					if (!ability.CustomTargetValidation(actorData, firstTarget, 0, emptyList))
+					{
+						continue;
+					}
+
+					List<AbilityTarget> secondTargets = GeneratePotentialAbilityTargetLocationsCircle(36);
+					foreach (AbilityTarget secondTarget in secondTargets)
+					{
+						potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
+					}
+				}
+
+				break;
+			}
+			case AbilityUtil_Targeter_DirectionCone targeterDirectionCone:
+			{
+				if (ability.Targeters.Count != 2 || !(ability.Targeters[1] is AbilityUtil_Targeter_Laser targeterLaser))
+				{
+					goto default;
+				}
+				
+				List<AbilityTarget> targets = GeneratePotentialAbilityTargetLocations(
+					targeterDirectionCone.m_coneLengthRadius,
+					includeEnemies,
+					includeFriendlies,
+					includeSelf);
+				List<AbilityTarget> secondTargets = GeneratePotentialAbilityTargetLocations(
+					targeterLaser.m_distance,
+					includeEnemies,
+					includeFriendlies,
+					includeSelf);
+				foreach (AbilityTarget firstTarget in targets)
+				{
+					foreach (AbilityTarget secondTarget in secondTargets)
+					{
+						potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
+					}
+				}
+
+				break;
+			}
+			case AbilityUtil_Targeter_ChargeAoE targeterChargeAoE:
+			{
+				if (ability.Targeters.Count != 2)
+				{
+					goto default;
+				}
+
+				if (!(ability.Targeters[1] is AbilityUtil_Targeter_ConeOrLaser)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_ChargeAoE))
+				{
+					goto default;
+				}
+
+				float range = ability.m_targetData[0].m_range;
+				float minRange = ability.m_targetData[0].m_minRange;
+				Vector3 boundsSize = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
+				Vector3 boundsPosition = actorData.transform.position;
+				boundsPosition.y = 0f;
+				Bounds bounds = new Bounds(boundsPosition, boundsSize);
+				List<BoardSquare> squaresInBox = Board.Get().GetSquaresInBox(bounds);
+				foreach (BoardSquare boardSquare in squaresInBox)
+				{
+					if (boardSquare == actorData.GetCurrentBoardSquare())
+					{
+						continue;
+					}
+
+					if (!abilityData.IsTargetSquareInRangeOfAbilityFromSquare(
+						    boardSquare, actorData.GetCurrentBoardSquare(), range, minRange))
+					{
+						continue;
+					}
+
+					AbilityTarget firstTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
+					if (ability.CustomTargetValidation(actorData, firstTarget, 0, null))
+					{
+						if (ability is SoldierDashAndOverwatch soldierDashAndOverwatch)
+						{
+							List<AbilityTarget> secondTargets = GeneratePotentialAbilityTargetLocationsCircleNearFar_Separate(
+								20, 
+								72,
+								soldierDashAndOverwatch.m_coneDistThreshold);
+							foreach (AbilityTarget secondTarget in secondTargets)
+							{
+								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
+							}
+						}
+						else if (ability is ThiefOnTheRun)
+						{
+							float range2 = ability.m_targetData[1].m_range;
+							float minRange2 = ability.m_targetData[1].m_minRange;
+							Vector3 boundsSize2 = new Vector3(range2 * Board.Get().squareSize * 2f, 2f, range2 * Board.Get().squareSize * 2f);
+							Vector3 boundsPosition2 = actorData.transform.position;
+							boundsPosition2.y = 0f;
+							Bounds bounds2 = new Bounds(boundsPosition2, boundsSize2);
+							List<BoardSquare> squaresInBox2 = Board.Get().GetSquaresInBox(bounds2);
+							List<AbilityTarget> currentTargets = new List<AbilityTarget> {firstTarget};
+							foreach (BoardSquare boardSquare2 in squaresInBox2)
+							{
+								if (boardSquare2 == actorData.GetCurrentBoardSquare())
+								{
+									continue;
+								}
+
+								if (!abilityData.IsTargetSquareInRangeOfAbilityFromSquare(
+									    boardSquare2, actorData.GetCurrentBoardSquare(), range, minRange2))
+								{
+									continue;
+								}
+
+								AbilityTarget secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
+								if (ability.CustomTargetValidation(actorData, secondTarget, 1, currentTargets))
+								{
+									potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
+								}
+							}
+						}
+						else
+						{
+							goto default;
+						}
+					}
+				}
+
+				break;
+			}
+			default:
+			{
+				Log.Error($"Multi targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})");
+				break;
+			}
+		}
+		
+		if (potentialTargets.Count > 0)
+		{
+			float realtimeSinceStartup = Time.realtimeSinceStartup;
+			foreach (List<AbilityTarget> targetList in potentialTargets)
+			{
+				if (!abilityData.ValidateActionRequest(thisAction, targetList, false))
+				{
+					continue;
+				}
+				AbilityResults tempAbilityResults = new AbilityResults(actorData, ability, null, s_gatherRealResults, true);
+				ability.GatherAbilityResults(targetList, actorData, ref tempAbilityResults);
+				PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, false);
+				potentialChoice.freeAction = ability.IsFreeAction();
+				potentialChoice.targetList = targetList;
+				if (retVal == null || retVal.score < potentialChoice.score)
+				{
+					retVal = potentialChoice;
+				}
+				if (realtimeSinceStartup + HydrogenConfig.Get().MaxAIIterationTime < Time.realtimeSinceStartup)
+				{
+					yield return null;
+					realtimeSinceStartup = Time.realtimeSinceStartup;
+				}
+			}
+		}
+		if (retVal != null && retVal.score > 0f)
+		{
+			m_potentialChoices[thisAction] = retVal;
+		}
+		// end custom
 	}
 
 	// added in rogues
