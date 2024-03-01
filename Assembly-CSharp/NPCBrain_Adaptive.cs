@@ -493,6 +493,37 @@ public class NPCBrain_Adaptive : NPCBrain
 				potentialChoice = keyValuePair.Value;
 			}
 		}
+
+		// custom
+		for (AbilityData.ActionType j = AbilityData.ActionType.ABILITY_0; j <= AbilityData.ActionType.CARD_2; j++)
+		{
+			if (j == AbilityData.ActionType.ABILITY_5
+			    || j == AbilityData.ActionType.ABILITY_6)
+			{
+				continue;
+			}
+			
+			string abilityName = abilityData.GetAbilityOfActionType(j)?.m_abilityName ?? "N/A";
+			PotentialChoice choice = m_potentialChoices.TryGetValue(j);
+			if (choice != null)
+			{
+				Log.Info("{0} best target for ability {1} - {2} - Reasoning:\n{3}Final score: {4}",
+					actorData.DisplayName,
+					j,
+					abilityName,
+					choice.reasoning,
+					choice.score);
+			}
+			else
+			{
+				Log.Warning("{0} no options for ability {1} - {2}",
+					actorData.DisplayName,
+					j,
+					abilityName);
+			}
+		}
+		// end custom
+		
 		BoardSquare dashTarget = null;
 		if (actionType3 != AbilityData.ActionType.INVALID_ACTION && potentialChoice != null && potentialChoice.score > 0f)
 		{
