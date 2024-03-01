@@ -1338,7 +1338,11 @@ public class GameFlow : NetworkBehaviour
 		if (!flag)
 		{
 			Log.Error("No primary Player for connection playerId: " + playerID.ToString());
-			ObjectivePoints.Get().EndGame();
+			if (playerID.m_accountId != 0)
+			{
+				Log.Error($"Stopping game because account {playerID.m_accountId} failed to load");
+				ObjectivePoints.Get().EndGame();
+			}
 		}
 	}
 
