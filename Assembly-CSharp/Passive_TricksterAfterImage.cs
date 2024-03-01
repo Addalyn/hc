@@ -582,9 +582,13 @@ public class Passive_TricksterAfterImage : Passive
 			actorData.m_abilityVfxSwapInfo = Owner.m_abilityVfxSwapInfo;
 
 			actorData.Initialize(actorSkinPrefabLink, false); // no addMasterSkinVfx in rogues
-			actorData.gameObject.AddComponent<BotController>();
-			actorData.HasBotController = true;
-			actorData.gameObject.AddComponent<NPCBrain>();
+			
+			// TODO BOTS why does afterimage even need a brain?
+			// rogues
+			// actorData.gameObject.AddComponent<BotController>();
+			// actorData.HasBotController = true;
+			// actorData.gameObject.AddComponent<NPCBrain>();
+			
 			ActorBehavior actorBehavior = afterImageGameObject.GetComponent<ActorBehavior>();
 			if (actorBehavior)
 			{
