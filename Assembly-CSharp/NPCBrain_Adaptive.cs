@@ -595,6 +595,12 @@ public class NPCBrain_Adaptive : NPCBrain
 		PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, true);
 		potentialChoice.freeAction = ability.IsFreeAction();
 		potentialChoice.targetList = targets;
+		// custom
+		if (tempAbilityResults.Ability.CanRunInPhase(AbilityPriority.Evasion))
+		{
+			AdjustScoreForEvasion(actorData, potentialChoice, tempAbilityResults.Ability);
+		}
+		// end custom
 		if (potentialChoice.score != 0f || potentialChoice.freeAction)
 		{
 			m_potentialChoices[thisAction] = potentialChoice;
@@ -732,6 +738,12 @@ public class NPCBrain_Adaptive : NPCBrain
 				PotentialChoice potentialChoice = ScoreResults(abilityResults, actorData, false);
 				potentialChoice.freeAction = ability.IsFreeAction();
 				potentialChoice.targetList = targetList;
+				// custom
+				if (abilityResults.Ability.CanRunInPhase(AbilityPriority.Evasion))
+				{
+					AdjustScoreForEvasion(actorData, potentialChoice, abilityResults.Ability);
+				}
+				// end custom
 				if (retVal == null || retVal.score < potentialChoice.score)
 				{
 					retVal = potentialChoice;
@@ -904,6 +916,12 @@ public class NPCBrain_Adaptive : NPCBrain
 				PotentialChoice potentialChoice = ScoreResults(abilityResults, actorData, false);
 				potentialChoice.freeAction = thisAbility.IsFreeAction();
 				potentialChoice.targetList = targetList;
+				// custom
+				if (abilityResults.Ability.CanRunInPhase(AbilityPriority.Evasion))
+				{
+					AdjustScoreForEvasion(actorData, potentialChoice, abilityResults.Ability);
+				}
+				// end custom
 				float weight = 1f;
 				if (potentialChoice != null
 				    && thisAbility.Targeter is AbilityUtil_Targeter_TrackerDrone)
@@ -1282,6 +1300,12 @@ public class NPCBrain_Adaptive : NPCBrain
 				PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, false);
 				potentialChoice.freeAction = ability.IsFreeAction();
 				potentialChoice.targetList = targetList;
+				// custom
+				if (tempAbilityResults.Ability.CanRunInPhase(AbilityPriority.Evasion))
+				{
+					AdjustScoreForEvasion(actorData, potentialChoice, tempAbilityResults.Ability);
+				}
+				// end custom
 				if (retVal == null || retVal.score < potentialChoice.score)
 				{
 					retVal = potentialChoice;
@@ -1515,6 +1539,12 @@ public class NPCBrain_Adaptive : NPCBrain
 				PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, false);
 				potentialChoice.freeAction = ability.IsFreeAction();
 				potentialChoice.targetList = targetList;
+				// custom
+				if (tempAbilityResults.Ability.CanRunInPhase(AbilityPriority.Evasion))
+				{
+					AdjustScoreForEvasion(actorData, potentialChoice, tempAbilityResults.Ability);
+				}
+				// end custom
 				if (retVal == null || retVal.score < potentialChoice.score)
 				{
 					retVal = potentialChoice;
@@ -1560,13 +1590,6 @@ public class NPCBrain_Adaptive : NPCBrain
 		ScoreActorEffects(tempAbilityResults, potentialChoice);
 		ScoreStolenPowerups(tempAbilityResults, caster, potentialChoice);
 		ScoreWorldEffects(tempAbilityResults, caster, potentialChoice);
-		
-		// custom
-		if (tempAbilityResults.Ability.CanRunInPhase(AbilityPriority.Evasion))
-		{
-			AdjustScoreForEvasion(caster, potentialChoice, tempAbilityResults.Ability);
-		}
-		// end custom
 		
 		ScoreTargetNum(potentialChoice);
 
