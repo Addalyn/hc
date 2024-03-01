@@ -2642,11 +2642,15 @@ public class AbilityData : NetworkBehaviour
 	public bool ValidateActionRequest(ActionType actionType, List<AbilityTarget> targets, bool checkIfRequestable = true)  // no checkIfRequestable in reactor
 	{
 		bool result = true;
+		bool isNotBot = m_actor.GetPlayerDetails().IsHumanControlled; // custom
 		Ability abilityOfActionType = GetAbilityOfActionType(actionType);
 		if (checkIfRequestable && !ValidateActionIsRequestable(actionType))
 		{
 			result = false;
-			Log.Info($"VALIDATION Action {actionType} is not requestable by {m_actor}");
+			if (isNotBot)
+			{
+				Log.Info($"VALIDATION Action {actionType} is not requestable by {m_actor}");
+			}
 		}
 		else
 		{
@@ -2655,10 +2659,13 @@ public class AbilityData : NetworkBehaviour
 				AbilityTarget target = targets[i];
 				if (!ValidateAbilityOnTarget(abilityOfActionType, target, i, targets, -1f, -1f))
 				{
-					Log.Info($"VALIDATION Ability {abilityOfActionType.GetNameString()} by {m_actor} has invalid target {i}");
-					for (int j = 0; j < targets.Count; j++)
+					if (isNotBot)
 					{
-						Log.Info($"VALIDATION target {j}: {targets[j].GetDebugString()}");
+						Log.Info($"VALIDATION Ability {abilityOfActionType.GetNameString()} by {m_actor} has invalid target {i}");
+						for (int j = 0; j < targets.Count; j++)
+						{
+							Log.Info($"VALIDATION target {j}: {targets[j].GetDebugString()}");
+						}
 					}
 
 					return false;
