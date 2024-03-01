@@ -750,6 +750,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 			}
 		}
+		else if (ability.Targeter is AbilityUtil_Targeter_RampartKnockbackBarrier)
+		{
+			List<BoardSquare> targetSquares = new List<BoardSquare>(4);
+			BoardSquare boardSquare = actorData.GetCurrentBoardSquare();
+			Board.Get().GetCardinalAdjacentSquares(boardSquare.x, boardSquare.y, ref targetSquares);
+			potentialTargets = new List<AbilityTarget>(4);
+			foreach (BoardSquare secondTargetSquare in targetSquares)
+			{
+				var target = AbilityTarget.CreateAbilityTargetFromBoardSquare(
+					secondTargetSquare, boardSquare.ToVector3());
+				potentialTargets.Add(target);
+			}
+		}
 		else
 		{
 			Log.Error($"Single position targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})"); // custom
@@ -1092,6 +1105,12 @@ public class NPCBrain_Adaptive : NPCBrain
 		{
 			square = Board.Get().GetSquare(choice.targetList[choice.targetList.Count - 1].GridPos);
 		}
+		// custom
+		if (actorData.m_characterType == CharacterType.Neko && choice.targetList.Count > 0)
+		{
+			square = Board.Get().GetSquare(choice.targetList[choice.targetList.Count - 1].GridPos);
+		}
+		// end custom
 		choice.destinationSquare = square;
 		if (!IsSquareOccupiedByAliveActor(square))
 		{
@@ -1486,14 +1505,17 @@ public class NPCBrain_Adaptive : NPCBrain
 			case AbilityUtil_Targeter_ChargeAoE targeterChargeAoE:
 			case AbilityUtil_Targeter_BombingRun targeterBombingRun:
 			{
-				if (ability.Targeters.Count != 2)
+				if (ability.Targeters.Count != 2
+				    && !(ability is TricksterCatchMeIfYouCan && ability.Targeters.Count == 3))
 				{
 					goto default;
 				}
 
 				if (!(ability.Targeters[1] is AbilityUtil_Targeter_ConeOrLaser)
 				    && !(ability.Targeters[1] is AbilityUtil_Targeter_ChargeAoE)
-				    && !(ability.Targeters[1] is AbilityUtil_Targeter_BombingRun))
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_BombingRun)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_RampartKnockbackBarrier)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_Barrier))
 				{
 					goto default;
 				}
@@ -1560,6 +1582,22 @@ public class NPCBrain_Adaptive : NPCBrain
 								{
 									potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
 								}
+							}
+						}
+						else if (ability is TricksterCatchMeIfYouCan)
+						{
+							List<AbilityTarget> firstTargetAsList = AbilityTarget.AbilityTargetList(firstTarget);
+							NestedAddTarget(squaresInBox, actorData, ability, firstTargetAsList, potentialTargets);
+						}
+						else if (ability is RampartDashAndAimShield)
+						{
+							List<BoardSquare> secondTargetSquares = new List<BoardSquare>(4);
+							Board.Get().GetCardinalAdjacentSquares(boardSquare.x, boardSquare.y, ref secondTargetSquares);
+							foreach (BoardSquare secondTargetSquare in secondTargetSquares)
+							{
+								var secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(
+									secondTargetSquare, boardSquare.ToVector3());
+								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
 							}
 						}
 						else
@@ -1673,11 +1711,13 @@ public class NPCBrain_Adaptive : NPCBrain
 
 				break;
 			}
-			case AbilityUtil_Targeter_Shape targeterShape:
-			case AbilityUtil_Targeter_GremlinsBombInCone targeterGremlinsBombInCone:
+			case AbilityUtil_Targeter_Shape _:
+			case AbilityUtil_Targeter_GremlinsBombInCone _:
+			case AbilityUtil_Targeter_CapsuleAoE _:
 			{
 				if (ability.Targeters.Count != 2
 				    && !(ability is ThiefSmokeBomb && ability.Targeters.Count == 3)
+				    && !(ability is ArcherArrowRain && ability.Targeters.Count == 3)
 				    && !(ability is GremlinsMultiTargeterApocolypse && ability.Targeters.Count >= 4))
 				{
 					goto default;
@@ -1687,7 +1727,8 @@ public class NPCBrain_Adaptive : NPCBrain
 				    && !(ability.Targeters[1] is AbilityUtil_Targeter_Barrier)
 				    && !(ability.Targeters[1] is AbilityUtil_Targeter_GremlinsBombInCone)
 				    && !(ability.Targeters[1] is AbilityUtil_Targeter_ChargeAoE)
-				    && !(ability.Targeters[1] is AbilityUtil_Targeter_SoldierCardinalLines)) 
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_SoldierCardinalLines)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_CapsuleAoE)) 
 				{
 					goto default;
 				}
@@ -1776,9 +1817,110 @@ public class NPCBrain_Adaptive : NPCBrain
 								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
 							}
 						}
+						else if (ability is ArcherArrowRain archerArrowRain)
+						{
+							if (ability.GetNumTargets() < 2 || ability.GetNumTargets() > 3)
+							{
+								goto default;
+							}
+							List<BoardSquare> secondTargetSquares = AreaEffectUtils.GetSquaresInRadius(boardSquare, archerArrowRain.GetMaxRangeBetween(), true, actorData);
+							foreach (BoardSquare secondTargetSquare in secondTargetSquares)
+							{
+								float dist = Vector3.Distance(boardSquare.ToVector3(), secondTargetSquare.ToVector3());
+								if (dist >= archerArrowRain.GetMinRangeBetween() * Board.Get().squareSize)
+								{
+									AbilityTarget secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(secondTargetSquare, actorData.GetFreePos());
+									if (ability.CustomTargetValidation(actorData, secondTarget, 1, firstTargetAsList))
+									{
+										List<AbilityTarget> prevTargets = new List<AbilityTarget> { firstTarget, secondTarget };
+
+										if (ability.GetNumTargets() == prevTargets.Count)
+										{
+											potentialTargets.Add(prevTargets);
+										}
+										else
+										{
+											List<BoardSquare> thirdTargetSquares = AreaEffectUtils.GetSquaresInRadius(secondTargetSquare, archerArrowRain.GetMaxRangeBetween(), true, actorData);
+											foreach (BoardSquare thirdTargetSquare in thirdTargetSquares)
+											{
+												float dist2 = Vector3.Distance(secondTargetSquare.ToVector3(), thirdTargetSquare.ToVector3());
+												if (dist2 >= archerArrowRain.GetMinRangeBetween() * Board.Get().squareSize)
+												{
+													AbilityTarget thirdTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(thirdTargetSquare, actorData.GetFreePos());
+													if (ability.CustomTargetValidation(actorData, thirdTarget, 2, prevTargets))
+													{
+														potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget, thirdTarget });
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
 						else
 						{
 							goto default;
+						}
+					}
+				}
+
+				break;
+			}
+			case AbilityUtil_Targeter_Laser targeterLaser:
+			{
+				if (ability.Targeters.Count != 3 || ability.GetTargetData().Length != 2)
+				{
+					goto default;
+				}
+
+				if (!(ability.Targeters[1] is AbilityUtil_Targeter_NekoCharge)) 
+				{
+					goto default;
+				}
+				
+				List<AbilityTarget> potentialFirstTargets = GeneratePotentialAbilityTargetLocations(
+					targeterLaser.m_distance, includeEnemies, false, false);
+				potentialFirstTargets = potentialFirstTargets
+					.Where(t => ability.CustomTargetValidation(actorData, t, 0, null))
+					.ToList();
+				
+				float range = ability.m_targetData[1].m_range;
+				float minRange = ability.m_targetData[1].m_minRange;
+				Vector3 boundsSize = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
+				Vector3 boundsPosition = actorData.transform.position;
+				boundsPosition.y = 0f;
+				Bounds bounds = new Bounds(boundsPosition, boundsSize);
+				List<BoardSquare> squaresInBox = Board.Get().GetSquaresInBox(bounds);
+				List<AbilityTarget> potentialSecondTargets = new List<AbilityTarget>();
+				foreach (BoardSquare boardSquare in squaresInBox)
+				{
+					if (boardSquare == actorData.GetCurrentBoardSquare())
+					{
+						continue;
+					}
+
+					if (!abilityData.IsTargetSquareInRangeOfAbilityFromSquare(
+						    boardSquare, actorData.GetCurrentBoardSquare(), range, minRange))
+					{
+						continue;
+					}
+
+					AbilityTarget secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
+					if (ability.CustomTargetValidation(actorData, secondTarget, 1, null))
+					{
+						potentialSecondTargets.Add(secondTarget);
+					}
+				}
+				
+				foreach (AbilityTarget potentialFirstTarget in potentialFirstTargets)
+				{
+					foreach (AbilityTarget potentialSecondTarget in potentialSecondTargets)
+					{
+						if (ability.CustomTargetValidation(actorData, potentialSecondTarget, 1,
+							    AbilityTarget.AbilityTargetList(potentialFirstTarget)))
+						{
+							potentialTargets.Add(new List<AbilityTarget> { potentialFirstTarget, potentialSecondTarget });
 						}
 					}
 				}
