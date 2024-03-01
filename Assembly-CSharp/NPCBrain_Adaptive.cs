@@ -315,37 +315,7 @@ public class NPCBrain_Adaptive : NPCBrain
 	{
 		List<AbilityTarget> result = new List<AbilityTarget>();
 		ActorData actorData = GetComponent<ActorData>();
-		BoardSquare currentSquare = actorData.GetCurrentBoardSquare();
-		List<ActorData> potentialTargets = new List<ActorData>();
-		if (includeEnemies)
-		{
-			foreach (ActorData enemyActor in actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList())
-			{
-				if (GetEnemyPlayerAliveAndVisibleMultiplier(enemyActor) != 0f
-				    && currentSquare.HorizontalDistanceOnBoardTo(enemyActor.GetCurrentBoardSquare()) <= range)
-				{
-					potentialTargets.Add(enemyActor);
-				}
-			}
-		}
-		if (includeFriendlies)
-		{
-			foreach (ActorData allyActor in GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam()))
-			{
-				if (!allyActor.IsDead() && allyActor != actorData && !allyActor.IgnoreForAbilityHits)
-				{
-					BoardSquare allySquare = allyActor.GetCurrentBoardSquare();
-					if (allySquare != null && currentSquare.HorizontalDistanceOnBoardTo(allySquare) <= range)
-					{
-						potentialTargets.Add(allyActor);
-					}
-				}
-			}
-		}
-		if (includeSelf)
-		{
-			potentialTargets.Add(actorData);
-		}
+		List<ActorData> potentialTargets = GetPotentialTargets(actorData, range, includeEnemies, includeFriendlies, includeSelf);
 		foreach (ActorData targetA in potentialTargets)
 		{
 			result.Add(AbilityTarget.CreateAbilityTargetFromBoardSquare(targetA.GetCurrentBoardSquare(), actorData.GetFreePos()));
@@ -396,6 +366,49 @@ public class NPCBrain_Adaptive : NPCBrain
 			}
 		}
 		return result;
+	}
+
+	// inlined in rogues
+	private List<ActorData> GetPotentialTargets(
+		ActorData actorData,
+		float range,
+		bool includeEnemies,
+		bool includeFriendlies,
+		bool includeSelf)
+	{
+		BoardSquare currentSquare = actorData.GetCurrentBoardSquare();
+		List<ActorData> potentialTargets = new List<ActorData>();
+		if (includeEnemies)
+		{
+			foreach (ActorData enemyActor in actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList())
+			{
+				if (GetEnemyPlayerAliveAndVisibleMultiplier(enemyActor) != 0f
+				    && currentSquare.HorizontalDistanceOnBoardTo(enemyActor.GetCurrentBoardSquare()) <= range)
+				{
+					potentialTargets.Add(enemyActor);
+				}
+			}
+		}
+		if (includeFriendlies)
+		{
+			foreach (ActorData allyActor in GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam()))
+			{
+				if (!allyActor.IsDead() && allyActor != actorData && !allyActor.IgnoreForAbilityHits)
+				{
+					BoardSquare allySquare = allyActor.GetCurrentBoardSquare();
+					if (allySquare != null && currentSquare.HorizontalDistanceOnBoardTo(allySquare) <= range)
+					{
+						potentialTargets.Add(allyActor);
+					}
+				}
+			}
+		}
+		if (includeSelf)
+		{
+			potentialTargets.Add(actorData);
+		}
+
+		return potentialTargets;
 	}
 
 	// added in rogues
@@ -1250,7 +1263,7 @@ public class NPCBrain_Adaptive : NPCBrain
 			case AbilityUtil_Targeter_MultipleCones targeterMultipleCones:
 				potentialTargets = GeneratePotentialAbilityTargetLocationsCircleVolume(targeterMultipleCones.m_maxConeLengthRadius * Board.Get().squareSize, actorData.GetCurrentBoardSquare().transform.position);
 				break;
-			case AbilityUtil_Targeter_ThiefFanLaser targeterThiefFanLaser: // TODO BOTS Thief's primary cannot hit two targets
+			case AbilityUtil_Targeter_ThiefFanLaser targeterThiefFanLaser:
 				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterThiefFanLaser.m_rangeInSquares, includeEnemies, includeFriendlies, includeSelf);
 				break;
 			case AbilityUtil_Targeter_BounceLaser targeterBounceLaser:
@@ -1621,7 +1634,7 @@ public class NPCBrain_Adaptive : NPCBrain
 								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
 							}
 						}
-						else if (ability is SparkDash)
+						else if (ability is SparkDash || ability is SenseiYingYangDash) // TODO BOTS we could optimize first targeter
 						{
 							float range2 = ability.m_targetData[1].m_range;
 							float minRange2 = ability.m_targetData[1].m_minRange;
@@ -1664,26 +1677,54 @@ public class NPCBrain_Adaptive : NPCBrain
 			case AbilityUtil_Targeter_GremlinsBombInCone targeterGremlinsBombInCone:
 			{
 				if (ability.Targeters.Count != 2
-				    && !(ability is ThiefSmokeBomb && ability.Targeters.Count == 3))
+				    && !(ability is ThiefSmokeBomb && ability.Targeters.Count == 3)
+				    && !(ability is GremlinsMultiTargeterApocolypse && ability.Targeters.Count >= 4))
 				{
 					goto default;
 				}
 
 				if (!(ability.Targeters[1] is AbilityUtil_Targeter_Shape)
 				    && !(ability.Targeters[1] is AbilityUtil_Targeter_Barrier)
-				    && !(ability.Targeters[1] is AbilityUtil_Targeter_GremlinsBombInCone))
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_GremlinsBombInCone)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_ChargeAoE)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_SoldierCardinalLines)) 
 				{
 					goto default;
 				}
 
+				ICollection<BoardSquare> targetSquares;
 				float range = ability.m_targetData[0].m_range;
 				float minRange = ability.m_targetData[0].m_minRange;
-				Vector3 boundsSize = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
-				Vector3 boundsPosition = actorData.transform.position;
-				boundsPosition.y = 0f;
-				Bounds bounds = new Bounds(boundsPosition, boundsSize);
-				List<BoardSquare> squaresInBox = Board.Get().GetSquaresInBox(bounds);
-				foreach (BoardSquare boardSquare in squaresInBox)
+				if (ability is GremlinsMultiTargeterApocolypse) // gotta limit the number of squares we operate upon
+				// TODO still to much + coroutinize?
+				{
+					List<ActorData> enemyTargets = GetPotentialTargets(actorData,  range, true, false, false);
+					targetSquares = new HashSet<BoardSquare>();
+					List<BoardSquare> adjacentSquares = new List<BoardSquare>(8);
+					foreach (ActorData enemyTarget in enemyTargets)
+					{
+						adjacentSquares.Clear();
+						BoardSquare enemySquare = enemyTarget.GetCurrentBoardSquare();
+						targetSquares.Add(enemySquare);
+						Board.Get().GetAllAdjacentSquares(enemySquare.x, enemySquare.y, ref adjacentSquares);
+						foreach (BoardSquare adjacentSquare in adjacentSquares)
+						{
+							if (adjacentSquare.IsValidForGameplay())
+							{
+								targetSquares.Add(adjacentSquare);
+							}
+						}
+					}
+				}
+				else
+				{
+					Vector3 boundsSize = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
+					Vector3 boundsPosition = actorData.transform.position;
+					boundsPosition.y = 0f;
+					Bounds bounds = new Bounds(boundsPosition, boundsSize);
+					targetSquares = Board.Get().GetSquaresInBox(bounds);
+				}
+				foreach (BoardSquare boardSquare in targetSquares)
 				{
 					if (boardSquare == actorData.GetCurrentBoardSquare() && !(ability is NanoSmithBarrier))
 					{
@@ -1700,57 +1741,36 @@ public class NPCBrain_Adaptive : NPCBrain
 					List<AbilityTarget> firstTargetAsList = AbilityTarget.AbilityTargetList(firstTarget);
 					if (ability.CustomTargetValidation(actorData, firstTarget, 0, null))
 					{
-						if (ability is ThiefSmokeBomb || ability is GremlinsMultiTargeterBasicAttack)
+						if (ability is ThiefSmokeBomb
+						    || ability is GremlinsMultiTargeterBasicAttack
+						    || ability is GremlinsMultiTargeterApocolypse)
 						{
-							foreach (BoardSquare secondTargetSquare in squaresInBox)
+							if (!NestedAddTarget(targetSquares, actorData, ability, firstTargetAsList, potentialTargets))
 							{
-								if (secondTargetSquare == boardSquare)
+								goto default;
+							}
+						}
+						else if (ability is NanoSmithBarrier 
+						         || ability is SoldierCardinalLine
+						         || ability is NinjaShurikenOrDash)
+						{
+							bool isAllDirections = ability is NinjaShurikenOrDash;
+							bool onlyValid = ability is NinjaShurikenOrDash;
+							List<BoardSquare> secondTargetSquares = new List<BoardSquare>(isAllDirections ? 8 : 4);
+							if (isAllDirections)
+							{
+								Board.Get().GetAllAdjacentSquares(boardSquare.x, boardSquare.y, ref secondTargetSquares);
+							}
+							else
+							{
+								Board.Get().GetCardinalAdjacentSquares(boardSquare.x, boardSquare.y, ref secondTargetSquares);
+							}
+							foreach (BoardSquare secondTargetSquare in secondTargetSquares)
+							{
+								if (onlyValid && !secondTargetSquare.IsValidForGameplay())
 								{
 									continue;
 								}
-								
-								AbilityTarget secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(secondTargetSquare, actorData.GetFreePos());
-								if (ability.CustomTargetValidation(actorData, secondTarget, 1, firstTargetAsList))
-								{
-									List<AbilityTarget> targets = new List<AbilityTarget> { firstTarget, secondTarget };
-									if (ability.Targeters.Count == 2)
-									{
-										potentialTargets.Add(targets);
-									}
-									else
-									{
-										foreach (BoardSquare thirdTargetSquare in squaresInBox)
-										{
-											if (thirdTargetSquare == boardSquare || thirdTargetSquare == secondTargetSquare)
-											{
-												continue;
-											}
-											
-											AbilityTarget thirdTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(thirdTargetSquare, actorData.GetFreePos());
-											if (ability.CustomTargetValidation(actorData, thirdTarget, 2, targets))
-											{
-												if (ability.Targeters.Count == 3)
-												{
-													potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget, thirdTarget });
-												}
-												else
-												{
-													goto default;
-												}
-											}
-										}
-									}
-								}
-								
-							}
-						}
-						else if (ability is NanoSmithBarrier)
-						{
-							List<BoardSquare> secondTargetSquares = new List<BoardSquare>(4);
-							Board.Get().GetCardinalAdjacentSquares(
-								boardSquare.x, boardSquare.y, ref secondTargetSquares);
-							foreach (BoardSquare secondTargetSquare in secondTargetSquares)
-							{
 								var secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(
 									secondTargetSquare, boardSquare.ToVector3());
 								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
@@ -1808,6 +1828,49 @@ public class NPCBrain_Adaptive : NPCBrain
 			m_potentialChoices[thisAction] = retVal;
 		}
 		// end custom
+	}
+	
+	// custom
+	private static bool NestedAddTarget(
+		ICollection<BoardSquare> potentialTargetSquares,
+		ActorData actorData,
+		Ability ability,
+		List<AbilityTarget> prevTargets,
+		List<List<AbilityTarget>> result)
+	{
+		foreach (BoardSquare targetSquare in potentialTargetSquares)
+		{
+			if (prevTargets.Any(t => t.GridPos.Equals(targetSquare.GetGridPos())))
+			{
+				continue;
+			}
+								
+			AbilityTarget target = AbilityTarget.CreateAbilityTargetFromBoardSquare(targetSquare, actorData.GetFreePos());
+			if (ability.CustomTargetValidation(actorData, target, prevTargets.Count, prevTargets))
+			{
+				List<AbilityTarget> targets = new List<AbilityTarget>(prevTargets.Count + 1);
+				targets.AddRange(prevTargets);
+				targets.Add(target);
+				if (ability.Targeters.Count == targets.Count)
+				{
+					result.Add(targets);
+				}
+				else if (ability.Targeters.Count > targets.Count)
+				{
+					if (!NestedAddTarget(potentialTargetSquares, actorData, ability, targets, result))
+					{
+						return false;
+					}
+				}
+				else
+				{
+					Log.Error($"NestedAddTarget for {ability.m_abilityName} is broken!");
+					return false;
+				}
+			}
+		}
+
+		return true;
 	}
 
 	// added in rogues
