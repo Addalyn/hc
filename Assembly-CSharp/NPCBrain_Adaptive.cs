@@ -514,6 +514,13 @@ public class NPCBrain_Adaptive : NPCBrain
 					choice.reasoning,
 					choice.score);
 			}
+			else if (!abilityData.ValidateActionIsRequestable(j))
+			{
+				Log.Info("{0} ability not requestable {1} - {2}",
+					actorData.DisplayName,
+					j,
+					abilityName);
+			}
 			else
 			{
 				Log.Warning("{0} no options for ability {1} - {2}",
