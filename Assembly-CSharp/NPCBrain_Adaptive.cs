@@ -1464,6 +1464,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				break;
 			}
 			case AbilityUtil_Targeter_ChargeAoE targeterChargeAoE:
+			case AbilityUtil_Targeter_BombingRun targeterBombingRun:
 			{
 				if (ability.Targeters.Count != 2)
 				{
@@ -1471,7 +1472,8 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 
 				if (!(ability.Targeters[1] is AbilityUtil_Targeter_ConeOrLaser)
-				    && !(ability.Targeters[1] is AbilityUtil_Targeter_ChargeAoE))
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_ChargeAoE)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_BombingRun))
 				{
 					goto default;
 				}
@@ -1510,7 +1512,7 @@ public class NPCBrain_Adaptive : NPCBrain
 								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
 							}
 						}
-						else if (ability is ThiefOnTheRun)
+						else if (ability is ThiefOnTheRun || ability is GremlinsBombingRun)
 						{
 							float range2 = ability.m_targetData[1].m_range;
 							float minRange2 = ability.m_targetData[1].m_minRange;
@@ -1522,7 +1524,7 @@ public class NPCBrain_Adaptive : NPCBrain
 							List<AbilityTarget> currentTargets = new List<AbilityTarget> {firstTarget};
 							foreach (BoardSquare boardSquare2 in squaresInBox2)
 							{
-								if (boardSquare2 == actorData.GetCurrentBoardSquare())
+								if (boardSquare2 == boardSquare)
 								{
 									continue;
 								}
@@ -1533,8 +1535,110 @@ public class NPCBrain_Adaptive : NPCBrain
 									continue;
 								}
 
-								AbilityTarget secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
+								AbilityTarget secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare2, boardSquare.ToVector3());
 								if (ability.CustomTargetValidation(actorData, secondTarget, 1, currentTargets))
+								{
+									potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
+								}
+							}
+						}
+						else
+						{
+							goto default;
+						}
+					}
+				}
+
+				break;
+			}
+			case AbilityUtil_Targeter_Charge targeterCharge:
+			{
+				if (ability.Targeters.Count != 2)
+				{
+					goto default;
+				}
+
+				if (!(ability.Targeters[1] is AbilityUtil_Targeter_ValkyrieGuard)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_StretchCone)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_Charge))
+				{
+					goto default;
+				}
+
+				float range = ability.m_targetData[0].m_range;
+				float minRange = ability.m_targetData[0].m_minRange;
+				Vector3 boundsSize = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
+				Vector3 boundsPosition = actorData.transform.position;
+				boundsPosition.y = 0f;
+				Bounds bounds = new Bounds(boundsPosition, boundsSize);
+				List<BoardSquare> squaresInBox = Board.Get().GetSquaresInBox(bounds);
+				foreach (BoardSquare boardSquare in squaresInBox)
+				{
+					if (boardSquare == actorData.GetCurrentBoardSquare())
+					{
+						continue;
+					}
+
+					if (!abilityData.IsTargetSquareInRangeOfAbilityFromSquare(
+						    boardSquare, actorData.GetCurrentBoardSquare(), range, minRange))
+					{
+						continue;
+					}
+
+					AbilityTarget firstTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
+					if (ability.CustomTargetValidation(actorData, firstTarget, 0, null))
+					{
+						if (ability is ValkyrieDashAoE)
+						{
+							List<BoardSquare> secondTargetSquares = new List<BoardSquare>(4);
+							Board.Get().GetCardinalAdjacentSquares(
+								boardSquare.x, boardSquare.y, ref secondTargetSquares);
+							foreach (BoardSquare secondTargetSquare in secondTargetSquares)
+							{
+								var secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(
+									secondTargetSquare, boardSquare.ToVector3());
+								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
+							}
+						}
+						else if (ability is BlasterDashAndBlast
+						         && ability.Targeters[1] is AbilityUtil_Targeter_StretchCone targeterStretchCone)
+						{
+							List<AbilityTarget> potentialSecondTargets = GeneratePotentialAbilityTargetLocations(
+								targeterStretchCone.m_maxLengthSquares * Board.Get().squareSize,
+								includeEnemies,
+								includeFriendlies,
+								includeSelf);
+							
+							foreach (AbilityTarget secondTarget in potentialSecondTargets)
+							{
+								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
+							}
+						}
+						else if (ability is SparkDash)
+						{
+							float range2 = ability.m_targetData[1].m_range;
+							float minRange2 = ability.m_targetData[1].m_minRange;
+							Vector3 boundsSize2 = new Vector3(range2 * Board.Get().squareSize * 2f, 2f, range2 * Board.Get().squareSize * 2f);
+							Vector3 boundsPosition2 = boardSquare.ToVector3();
+							boundsPosition2.y = 0f;
+							Bounds bounds2 = new Bounds(boundsPosition2, boundsSize2);
+							List<BoardSquare> squaresInBox2 = Board.Get().GetSquaresInBox(bounds2);
+							List<AbilityTarget> firstTargetAsList = AbilityTarget.AbilityTargetList(firstTarget);
+							foreach (BoardSquare boardSquare2 in squaresInBox2)
+							{
+								if (boardSquare2 == boardSquare)
+								{
+									continue;
+								}
+
+								if (!abilityData.IsTargetSquareInRangeOfAbilityFromSquare(
+									    boardSquare2, boardSquare, range2, minRange2))
+								{
+									continue;
+								}
+								
+								AbilityTarget secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare2, boardSquare.ToVector3());
+								if (ability.CustomTargetValidation(actorData, secondTarget, 1, firstTargetAsList))
 								{
 									potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
 								}
