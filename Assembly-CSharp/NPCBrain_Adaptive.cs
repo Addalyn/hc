@@ -1660,6 +1660,111 @@ public class NPCBrain_Adaptive : NPCBrain
 
 				break;
 			}
+			case AbilityUtil_Targeter_Shape targeterShape:
+			case AbilityUtil_Targeter_GremlinsBombInCone targeterGremlinsBombInCone:
+			{
+				if (ability.Targeters.Count != 2
+				    && !(ability is ThiefSmokeBomb && ability.Targeters.Count == 3))
+				{
+					goto default;
+				}
+
+				if (!(ability.Targeters[1] is AbilityUtil_Targeter_Shape)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_Barrier)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_GremlinsBombInCone))
+				{
+					goto default;
+				}
+
+				float range = ability.m_targetData[0].m_range;
+				float minRange = ability.m_targetData[0].m_minRange;
+				Vector3 boundsSize = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
+				Vector3 boundsPosition = actorData.transform.position;
+				boundsPosition.y = 0f;
+				Bounds bounds = new Bounds(boundsPosition, boundsSize);
+				List<BoardSquare> squaresInBox = Board.Get().GetSquaresInBox(bounds);
+				foreach (BoardSquare boardSquare in squaresInBox)
+				{
+					if (boardSquare == actorData.GetCurrentBoardSquare() && !(ability is NanoSmithBarrier))
+					{
+						continue;
+					}
+
+					if (!abilityData.IsTargetSquareInRangeOfAbilityFromSquare(
+						    boardSquare, actorData.GetCurrentBoardSquare(), range, minRange))
+					{
+						continue;
+					}
+
+					AbilityTarget firstTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
+					List<AbilityTarget> firstTargetAsList = AbilityTarget.AbilityTargetList(firstTarget);
+					if (ability.CustomTargetValidation(actorData, firstTarget, 0, null))
+					{
+						if (ability is ThiefSmokeBomb || ability is GremlinsMultiTargeterBasicAttack)
+						{
+							foreach (BoardSquare secondTargetSquare in squaresInBox)
+							{
+								if (secondTargetSquare == boardSquare)
+								{
+									continue;
+								}
+								
+								AbilityTarget secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(secondTargetSquare, actorData.GetFreePos());
+								if (ability.CustomTargetValidation(actorData, secondTarget, 1, firstTargetAsList))
+								{
+									List<AbilityTarget> targets = new List<AbilityTarget> { firstTarget, secondTarget };
+									if (ability.Targeters.Count == 2)
+									{
+										potentialTargets.Add(targets);
+									}
+									else
+									{
+										foreach (BoardSquare thirdTargetSquare in squaresInBox)
+										{
+											if (thirdTargetSquare == boardSquare || thirdTargetSquare == secondTargetSquare)
+											{
+												continue;
+											}
+											
+											AbilityTarget thirdTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(thirdTargetSquare, actorData.GetFreePos());
+											if (ability.CustomTargetValidation(actorData, thirdTarget, 2, targets))
+											{
+												if (ability.Targeters.Count == 3)
+												{
+													potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget, thirdTarget });
+												}
+												else
+												{
+													goto default;
+												}
+											}
+										}
+									}
+								}
+								
+							}
+						}
+						else if (ability is NanoSmithBarrier)
+						{
+							List<BoardSquare> secondTargetSquares = new List<BoardSquare>(4);
+							Board.Get().GetCardinalAdjacentSquares(
+								boardSquare.x, boardSquare.y, ref secondTargetSquares);
+							foreach (BoardSquare secondTargetSquare in secondTargetSquares)
+							{
+								var secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(
+									secondTargetSquare, boardSquare.ToVector3());
+								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
+							}
+						}
+						else
+						{
+							goto default;
+						}
+					}
+				}
+
+				break;
+			}
 			default:
 			{
 				Log.Error($"Multi targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})");
