@@ -673,7 +673,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		    || ability.Targeter is AbilityUtil_Targeter_Shape
 		    || ability.Targeter is AbilityUtil_Targeter_BazookaGirlDelayedMissile
 		    || ability.Targeter is AbilityUtil_Targeter_MultipleShapes
-		    || ability.Targeter is AbilityUtil_Targeter_Grid) // custom TODO BOTS Scoundrel trapwire
+		    || ability.Targeter is AbilityUtil_Targeter_Grid) // custom
 		{
 			float range = ability.m_targetData[0].m_range;
 			float minRange = ability.m_targetData[0].m_minRange;
@@ -2071,6 +2071,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		ScoreActorEffects(tempAbilityResults, potentialChoice);
 		ScoreStolenPowerups(tempAbilityResults, caster, potentialChoice);
 		ScoreWorldEffects(tempAbilityResults, caster, potentialChoice);
+		ScoreBarriers(tempAbilityResults, caster, potentialChoice); // custom
 		
 		ScoreTargetNum(potentialChoice);
 
@@ -2096,6 +2097,83 @@ public class NPCBrain_Adaptive : NPCBrain
 			potentialChoice.reasoning +=
 				$"Adding a small bonus based on the number of friendly targets hit ({alliesHitScore}).\n";
 		}
+	}
+
+	// custom
+	private void ScoreBarriers(AbilityResults tempAbilityResults, ActorData caster, PotentialChoice potentialChoice)
+	{
+		foreach (KeyValuePair<Vector3, PositionHitResults> posToHitResult in tempAbilityResults.m_positionToHitResults)
+		{
+			if (posToHitResult.Value == null || posToHitResult.Value.m_barriers == null)
+			{
+				continue;
+			}
+
+			HashSet<ActorData> actorsInRange = new HashSet<ActorData>();
+			int maxHits = 1;
+			int damage = 0;
+			foreach (Barrier barrier in posToHitResult.Value.m_barriers)
+			{
+				if (barrier == null)
+				{
+					continue;
+				}
+
+				List<ActorData> actorsInRadiusOfLine = AreaEffectUtils.GetActorsInRadiusOfLine(
+					barrier.GetEndPos1(),
+					barrier.GetEndPos2(),
+					1.5f,
+					1.5f,
+					1.5f,
+					false,
+					caster,
+					caster.GetEnemyTeamAsList(),
+					null);
+				actorsInRange.UnionWith(actorsInRadiusOfLine);
+				maxHits = barrier.MaxHits;
+				damage = barrier.OnEnemyMovedThrough.m_damage;
+			}
+
+			float damageScore = 0;
+			float dashScore = 0;
+			foreach (ActorData target in actorsInRange)
+			{
+				damageScore += ConvertDamageToScore(caster, target, (int)(damage * 0.7f));
+				// TODO BOTS also include barrier.OnEnemyMovedThrough.m_effect
+				
+				ActorCover actorCover = target.GetActorCover();
+				if (actorCover != null)
+				{
+					float exposednessRating = GetExposednessRating(caster, actorCover, target);
+					bool hasNoDashOffCooldown = HasNoDashOffCooldown(target, false);
+					if (!hasNoDashOffCooldown && exposednessRating > 1.5f)
+					{
+						dashScore += 8;
+					}
+				}
+			}
+
+			if (maxHits > 0 && maxHits < actorsInRange.Count)
+			{
+				float factor = maxHits / (actorsInRange.Count - 0.85f);
+				damageScore *= factor;
+				dashScore *= factor;
+			}
+
+			potentialChoice.score += damageScore + dashScore;
+			potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
+			potentialChoice.reasoning += $"Added {dashScore} score for projected dashes.\n";
+		}
+	}
+
+	// custom
+	private static float GetExposednessRating(ActorData caster, ActorCover actorCover, ActorData target)
+	{
+		float coverRating = actorCover.CoverRating(target.GetCurrentBoardSquare());
+		int threatRating = GameFlowData.Get()
+			.GetAllTeamMembers(caster.GetTeam())
+			.Count(a => !a.IsDead() && a.GetCurrentBoardSquare() != null);
+		return threatRating - coverRating;
 	}
 
 	private void ScoreWorldEffects(AbilityResults tempAbilityResults, ActorData caster, PotentialChoice potentialChoice)
@@ -2146,8 +2224,67 @@ public class NPCBrain_Adaptive : NPCBrain
 						potentialChoice.reasoning += $"Added {damageFieldScore} score for Aurora damage field.\n";
 						break;
 					}
+					case StandardGroundEffect standardGroundEffect:
+					{
+						// calculating based on current positioning
+						float additionalScore = 0;
+						float additionalCoverScore = 0;
+						GroundEffectField fieldInfo = standardGroundEffect.m_fieldInfo;
+						
+						ActorCover actorCover = caster.GetComponent<ActorCover>();
+						
+						foreach (BoardSquare affectedSquare in standardGroundEffect.GetAffectedSquares())
+						{
+							if (actorCover.AmountOfCover(affectedSquare) > 1)
+							{
+								additionalCoverScore += 2;
+							}
+							
+							ActorData target = AreaEffectUtils.GetTargetableActorOnSquare(
+								affectedSquare, 
+								fieldInfo.IncludeEnemies(),
+								fieldInfo.IncludeAllies(),
+								caster);
+							
+							if (target == null)
+							{
+								continue;
+							}
+
+							if (target.GetTeam() != caster.GetTeam())
+							{
+								additionalScore += ConvertDamageToScore(caster, target, fieldInfo.damageAmount);
+							}
+						}
+						
+						if (additionalScore == 0)
+						{
+							additionalScore = -10f;
+						}
+
+						potentialChoice.score += additionalScore + additionalCoverScore;
+						potentialChoice.reasoning += $"Added {additionalScore} score for projected damage.\n";
+						potentialChoice.reasoning += $"Added {additionalCoverScore} score for covered squares in cover.\n";
+						break;
+					}
+					case BlasterDelayedLaserEffect blasterDelayedLaserEffect:
+					{
+						float damageFieldScore = 0;
+						foreach (ActorData target in blasterDelayedLaserEffect.FindHitActors(null))
+						{
+							damageFieldScore += ConvertDamageToScore(caster, target, 5);
+						}
+
+						potentialChoice.score += damageFieldScore;
+						potentialChoice.reasoning += $"Added {damageFieldScore} score for Elle's drone.\n";
+						break;
+					}
+					case ThiefSmokeBombEffect _:
+						// TODO BOTS potential additional reasoning
+						break;
 					default:
-						Log.Warning($"World effect is not supported by bots: {effect.GetType()} ({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
+						Log.Warning($"World effect is not supported by bots: {effect.GetType()}" +
+						            $"({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
 						break;
 				}
 			}
@@ -2241,10 +2378,16 @@ public class NPCBrain_Adaptive : NPCBrain
 
 			foreach (Effect effect in actorToHitResult.Value.m_effects)
 			{
+				if (ScoreCustomActorEffect(tempAbilityResults.Caster, tempAbilityResults.Ability, effect, potentialChoice))
+				{
+					continue;
+				}
+				
 				StandardActorEffectData effectData = GetEffectDataFromActorEffect(effect);
 				if (effectData == null)
 				{
-					Log.Warning($"Actor effect is not supported by bots: {effect.GetType()} ({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
+					Log.Warning($"Actor effect is not supported by bots: {effect.GetType()} " +
+					            $"({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
 					continue;
 				}
 				
@@ -2316,13 +2459,74 @@ public class NPCBrain_Adaptive : NPCBrain
 
 	private static StandardActorEffectData GetEffectDataFromActorEffect(Effect effect)
 	{
-		if (!(effect is StandardActorEffect actorEffect))
+		switch (effect)
 		{
-			return null;
+			case StandardActorEffect actorEffect:
+				return actorEffect.m_data;
+			case BazookaGirlStickyBombEffect stickyBombEffect:
+				return stickyBombEffect.m_bombInfo.onExplodeEffect.m_effectData;
+			default:
+				return null;
 		}
+	}
 
-		StandardActorEffectData effectData = actorEffect.m_data;
-		return effectData;
+	private static bool ScoreCustomActorEffect(
+		ActorData caster,
+		Ability ability,
+		Effect effect,
+		PotentialChoice potentialChoice)
+	{
+		ActorData target = effect.Target;
+		if (target == null)
+		{
+			return false;
+		}
+		switch (effect)
+		{
+			case DelayedAoeKnockbackEffect _:
+				if (HasLOSToEnemiesFromSquare(target, target.CurrentBoardSquare))
+				{
+					potentialChoice.score += 10;
+					potentialChoice.reasoning += "Adding 10 score for LOS to enemies.\n";
+				}
+
+				CharacterRole targetRole = target.GetCharacterResourceLink().m_characterRole;
+				if (targetRole == CharacterRole.Tank)
+				{
+					potentialChoice.score += 4;
+					potentialChoice.reasoning += "Adding 4 score for frontline.\n";
+				}
+				else if (targetRole == CharacterRole.Assassin)
+				{
+					potentialChoice.score += 2;
+					potentialChoice.reasoning += "Adding 2 score for firepower.\n";
+				}
+				return true;
+			case NanoSmithWeaponsOfWarEffect _:
+				return true; // TODO BOTS could also add damage estimation to Helio's ult
+			case BlasterOverchargeEffect _:
+				BlasterOvercharge blasterOverchargeAbility = caster.GetAbilityData().m_ability2 as BlasterOvercharge;
+				if (blasterOverchargeAbility == null)
+				{
+					return false;
+				}
+
+				potentialChoice.score += blasterOverchargeAbility.GetExtraDamage();
+				potentialChoice.reasoning += $"Adding {blasterOverchargeAbility.GetExtraDamage()} score for projected damage.\n";
+				return true;
+			case ArcherHealingReactionEffect archerHealingReactionEffect:
+				int numLosToEnemy = GetNumLOSToEnemy(target);
+				if (numLosToEnemy > 1)
+				{
+					float score = numLosToEnemy * archerHealingReactionEffect.ReactionHealing * 0.75f;
+					potentialChoice.score += score;
+					potentialChoice.reasoning += $"Adding {score} score for projected healing.\n";
+				}
+				
+				return false; // also process standard effect data
+			default:
+				return false;
+		}
 	}
 
 	private void ScoreDamageAndHealing(
@@ -2522,7 +2726,7 @@ public class NPCBrain_Adaptive : NPCBrain
 	}
 
 	// added in rogues
-	public bool HasLOSToEnemiesFromSquare(ActorData actorData, BoardSquare square)
+	public static bool HasLOSToEnemiesFromSquare(ActorData actorData, BoardSquare square) // non-static in rogues
 	{
 		bool result = false;
 		if (square != null)
@@ -2535,6 +2739,32 @@ public class NPCBrain_Adaptive : NPCBrain
 					result = true;
 					break;
 				}
+			}
+		}
+		return result;
+	}
+
+	// custom
+	public static int GetNumLOSToEnemy(ActorData enemy)
+	{
+		if (enemy == null)
+		{
+			return 0;
+		}
+		BoardSquare square = enemy.GetCurrentBoardSquare();
+		if (square == null)
+		{
+			return 0;
+		}
+		
+		List<ActorData> allTeamMembers = GameFlowData.Get().GetAllTeamMembers(enemy.GetEnemyTeam());
+		int result = 0;
+		foreach (ActorData actorData in allTeamMembers)
+		{
+			BoardSquare currentBoardSquare = actorData.GetCurrentBoardSquare();
+			if (currentBoardSquare != null && square.GetLOS(currentBoardSquare.x, currentBoardSquare.y))
+			{
+				result++;
 			}
 		}
 		return result;

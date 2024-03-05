@@ -22,6 +22,9 @@ public class ArcherHealingReactionEffect : StandardActorEffect
 	private Dictionary<ActorData, int> m_actorsReactedTo = new Dictionary<ActorData, int>();
 	private int m_totalHealingReactions;
 	private Archer_SyncComponent m_syncComp;
+	
+	// custom
+	public int ReactionHealing => m_reactionHealing;
 
 	public ArcherHealingReactionEffect(
 		EffectSource parent,

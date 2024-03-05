@@ -1,6 +1,7 @@
 ﻿// ROGUES
 // SERVER
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 // server-only, missing in reactor
@@ -41,6 +42,12 @@ public class StandardGroundEffect : Effect
 	public override void OnStart()
 	{
 		CalculateAffectedSquares();
+	}
+
+	// custom
+	public List<BoardSquare> GetAffectedSquares()
+	{
+		return m_affectedSquares.ToList();
 	}
 
 	protected void CalculateAffectedSquares()

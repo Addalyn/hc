@@ -14,7 +14,7 @@ public class PositionHitResults
 	public List<Effect> m_effects;
 	private List<ServerAbilityUtils.EffectRemovalData> m_effectsForRemoval;
 	private List<ServerAbilityUtils.BarrierRemovalData> m_barriersForRemoval;
-	private List<Barrier> m_barriers;
+	public List<Barrier> m_barriers; // private in rogues
 	private List<ServerClientUtils.SequenceEndData> m_sequencesToEnd;
 	// rogues
 	//private Dictionary<BoardSquare, int> m_dynamicGeoForDamage;

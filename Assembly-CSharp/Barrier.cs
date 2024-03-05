@@ -34,6 +34,10 @@ public class Barrier
 	private BarrierResponseOnShot m_responseOnShotBlock;
 	// server-only
 	private BarrierSet m_barrierSetHandler;
+	
+	
+	// custom 
+	public GameplayResponseForActor OnEnemyMovedThrough => m_onEnemyMovedThrough;
 #endif
 
 	public SpoilsSpawnData m_spoilsSpawnOnEnemyMovedThrough;
@@ -56,6 +60,9 @@ public class Barrier
 	private int m_maxHits;
 
 #if SERVER
+	// custom
+	public int MaxHits => m_maxHits;
+	
 	// server-only
 	private List<Barrier> m_linkedBarriers;
 	// server-only
