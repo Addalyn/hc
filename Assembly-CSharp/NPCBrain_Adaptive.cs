@@ -433,77 +433,68 @@ public class NPCBrain_Adaptive : NPCBrain
 		{
 			yield break;
 		}
-		int i;
-		for (int actionType = 6; actionType > -1; actionType = i)
+		for (int abilityIndex = (int)AbilityData.ActionType.ABILITY_6; abilityIndex >= (int)AbilityData.ActionType.ABILITY_0; abilityIndex--)
 		{
-			AbilityData.ActionType actionType2 = (AbilityData.ActionType)actionType;
-			Ability abilityOfActionType = abilityData.GetAbilityOfActionType(actionType2);
-			if (!(abilityOfActionType == null))
+			AbilityData.ActionType actionType = (AbilityData.ActionType)abilityIndex;
+			Ability abilityOfActionType = abilityData.GetAbilityOfActionType(actionType);
+			if (abilityOfActionType == null)
 			{
-				if (m_allowedAbilities != null && m_allowedAbilities.Length != 0)
+				continue;
+			}
+			if (m_allowedAbilities != null
+			    && m_allowedAbilities.Length != 0
+			    && m_allowedAbilities.All(allowedAbility => allowedAbility != abilityIndex))
+			{
+				continue;
+			}
+			if (!abilityData.ValidateActionIsRequestable(actionType))
+			{
+				continue;
+			}
+			
+			if (abilityOfActionType.GetNumTargets() == 0)
+			{
+				yield return StartCoroutine(ScoreZeroTargetAbility(actionType));
+			}
+			else if (abilityOfActionType.GetNumTargets() == 1
+			         || abilityOfActionType is RampartGrab
+			         || abilityOfActionType is ThiefBasicAttack  // custom
+			         || abilityOfActionType is FishManCone)  // custom
+			{
+				Ability.TargetingParadigm targetingParadigm = abilityOfActionType.GetTargetingParadigm(0);
+				if (targetingParadigm == Ability.TargetingParadigm.Position)
 				{
-					bool flag = false;
-					int[] allowedAbilities = m_allowedAbilities;
-					for (i = 0; i < allowedAbilities.Length; i++)
-					{
-						if (allowedAbilities[i] == actionType)
-						{
-							flag = true;
-							break;
-						}
-					}
-					if (!flag)
-					{
-						goto IL_29C;
-					}
+					yield return StartCoroutine(ScoreSinglePositionTargetAbility(actionType));
 				}
-				if (abilityData.ValidateActionIsRequestable(actionType2))
+				else if (targetingParadigm == Ability.TargetingParadigm.BoardSquare)
 				{
-					if (abilityOfActionType.GetNumTargets() == 0)
-					{
-						yield return StartCoroutine(ScoreZeroTargetAbility(actionType2));
-					}
-					else if (abilityOfActionType.GetNumTargets() == 1
-					         || abilityOfActionType is RampartGrab
-					         || abilityOfActionType is ThiefBasicAttack  // custom
-					         || abilityOfActionType is FishManCone)  // custom
-					{
-						Ability.TargetingParadigm targetingParadigm = abilityOfActionType.GetTargetingParadigm(0);
-						if (targetingParadigm == Ability.TargetingParadigm.Position)
-						{
-							yield return StartCoroutine(ScoreSinglePositionTargetAbility(actionType2));
-						}
-						else if (targetingParadigm == Ability.TargetingParadigm.BoardSquare)
-						{
-							yield return StartCoroutine(ScoreSingleBoardSquareTargetAbility(actionType2));
-						}
-						else if (targetingParadigm == Ability.TargetingParadigm.Direction)
-						{
-							yield return StartCoroutine(ScoreSingleDirectionTargetAbility(actionType2));
-						}
-					}
-					else
-					{
-						yield return StartCoroutine(ScoreMultiTargetAbility(actionType2));
-					}
-					if (iterationStartTime + config.MaxAIIterationTime < Time.realtimeSinceStartup)
-					{
-						yield return null;
-						iterationStartTime = Time.realtimeSinceStartup;
-					}
+					yield return StartCoroutine(ScoreSingleBoardSquareTargetAbility(actionType));
+				}
+				else if (targetingParadigm == Ability.TargetingParadigm.Direction)
+				{
+					yield return StartCoroutine(ScoreSingleDirectionTargetAbility(actionType));
 				}
 			}
-			IL_29C:
-			i = actionType - 1;
+			else
+			{
+				yield return StartCoroutine(ScoreMultiTargetAbility(actionType));
+			}
+			if (iterationStartTime + config.MaxAIIterationTime < Time.realtimeSinceStartup)
+			{
+				yield return null;
+				iterationStartTime = Time.realtimeSinceStartup;
+			}
 		}
-		AbilityData.ActionType actionType3 = AbilityData.ActionType.INVALID_ACTION;
-		PotentialChoice potentialChoice = null;
+		AbilityData.ActionType bestPrimaryActionType = AbilityData.ActionType.INVALID_ACTION;
+		PotentialChoice bestPrimaryChoice = null;
 		foreach (KeyValuePair<AbilityData.ActionType, PotentialChoice> keyValuePair in m_potentialChoices)
 		{
-			if (keyValuePair.Value != null && !keyValuePair.Value.freeAction && (potentialChoice == null || keyValuePair.Value.score > potentialChoice.score))
+			if (keyValuePair.Value != null
+			    && !keyValuePair.Value.freeAction
+			    && (bestPrimaryChoice == null || keyValuePair.Value.score > bestPrimaryChoice.score))
 			{
-				actionType3 = keyValuePair.Key;
-				potentialChoice = keyValuePair.Value;
+				bestPrimaryActionType = keyValuePair.Key;
+				bestPrimaryChoice = keyValuePair.Value;
 			}
 		}
 
@@ -545,22 +536,25 @@ public class NPCBrain_Adaptive : NPCBrain
 		// end custom
 		
 		BoardSquare dashTarget = null;
-		if (actionType3 != AbilityData.ActionType.INVALID_ACTION && potentialChoice != null && potentialChoice.score > 0f)
+		if (bestPrimaryActionType != AbilityData.ActionType.INVALID_ACTION
+		    && bestPrimaryChoice != null
+		    && bestPrimaryChoice.score > 0f)
 		{
-			Ability abilityOfActionType2 = abilityData.GetAbilityOfActionType(actionType3);
-			dashTarget = potentialChoice.destinationSquare;
-			int num = (int)(1 + actionType3);
-			if (num > 5)
+			Ability ability = abilityData.GetAbilityOfActionType(bestPrimaryActionType);
+			dashTarget = bestPrimaryChoice.destinationSquare;
+			int abilityVisualId = (int)(1 + bestPrimaryActionType);
+			if (abilityVisualId > 5)
 			{
-				num -= 2;
+				abilityVisualId -= 2;
 			}
 			if (m_logReasoning)
 			{
-				Log.Info("{0} choosing ability {1} - {2} - Reasoning:\n{3}Final score: {4}", actorData.DisplayName, num, abilityOfActionType2.m_abilityName, potentialChoice.reasoning, potentialChoice.score);
+				Log.Info("{0} choosing ability {1} - {2} - Reasoning:\n{3}Final score: {4}",
+					actorData.DisplayName, abilityVisualId, ability.m_abilityName, bestPrimaryChoice.reasoning, bestPrimaryChoice.score);
 			}
 			if (m_sendReasoningToTeamChat)
 			{
-				UIQueueListPanel.UIPhase uiphaseFromAbilityPriority = UIQueueListPanel.GetUIPhaseFromAbilityPriority(abilityOfActionType2.GetRunPriority());
+				UIQueueListPanel.UIPhase uiphaseFromAbilityPriority = UIQueueListPanel.GetUIPhaseFromAbilityPriority(ability.GetRunPriority());
 				string text = "<color=red>";
 				if (uiphaseFromAbilityPriority == UIQueueListPanel.UIPhase.Prep)
 				{
@@ -570,65 +564,55 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					text = "<color=yellow>";
 				}
-				ServerGameManager.Get().SendUnlocalizedConsoleMessage(string.Format("<color=white>{0}</color> choosing ability {5}{1} - {2}</color> - Reasoning:\n{3}Final Score: <color=yellow>{4}</color>", actorData.DisplayName, num, abilityOfActionType2.m_abilityName, potentialChoice.reasoning, potentialChoice.score, text), Team.Invalid, ConsoleMessageType.TeamChat, actorData.DisplayName);
+				ServerGameManager.Get().SendUnlocalizedConsoleMessage(
+					$"<color=white>{actorData.DisplayName}</color> " +
+					$"choosing ability {text}{abilityVisualId} - {ability.m_abilityName}</color> - " +
+					$"Reasoning:\n{bestPrimaryChoice.reasoning}" +
+					$"Final Score: <color=yellow>{bestPrimaryChoice.score}</color>",
+					Team.Invalid,
+					ConsoleMessageType.TeamChat,
+					actorData.DisplayName);
 			}
-			if (abilityOfActionType2.IsSimpleAction())
+			if (ability.IsSimpleAction())
 			{
-				GetComponent<ServerActorController>().ProcessCastSimpleActionRequest(actionType3, true);
+				GetComponent<ServerActorController>().ProcessCastSimpleActionRequest(bestPrimaryActionType, true);
 			}
 			else
 			{
-				botController.RequestAbility(potentialChoice.targetList, actionType3);
+				botController.RequestAbility(bestPrimaryChoice.targetList, bestPrimaryActionType);
 			}
 		}
 		BotManager.Get().BotAIAbilitySelected(actorData, dashTarget, m_optimalRange);
-		foreach (KeyValuePair<AbilityData.ActionType, PotentialChoice> keyValuePair2 in m_potentialChoices)
+		foreach (KeyValuePair<AbilityData.ActionType, PotentialChoice> potentialChoice in m_potentialChoices)
 		{
-			if (keyValuePair2.Value != null && keyValuePair2.Value.freeAction)
+			if (potentialChoice.Value == null || !potentialChoice.Value.freeAction)
 			{
-				if (m_allowedAbilities != null && m_allowedAbilities.Length != 0)
+				continue;
+			}
+			
+			if (m_allowedAbilities != null
+			    && m_allowedAbilities.Length != 0
+			    && m_allowedAbilities.All(allowedAbility => allowedAbility != (int)potentialChoice.Key))
+			{
+				continue;
+			}
+			
+			Ability ability = abilityData.GetAbilityOfActionType(potentialChoice.Key);
+			if (ability == null)
+			{
+				continue;
+			}
+
+			bool castFreeAction = !(ability is RageBeastSelfHeal) || actorData.HitPoints < 65;
+			if (castFreeAction)
+			{
+				if (ability.IsSimpleAction())
 				{
-					bool flag2 = false;
-					int[] allowedAbilities = m_allowedAbilities;
-					for (i = 0; i < allowedAbilities.Length; i++)
-					{
-						if (allowedAbilities[i] == (int)keyValuePair2.Key)
-						{
-							flag2 = true;
-							break;
-						}
-					}
-					if (!flag2)
-					{
-						continue;
-					}
+					GetComponent<ServerActorController>().ProcessCastSimpleActionRequest(potentialChoice.Key, true);
 				}
-				bool flag3 = false;
-				Ability abilityOfActionType3 = abilityData.GetAbilityOfActionType(keyValuePair2.Key);
-				if (!(abilityOfActionType3 == null))
+				else
 				{
-					if (abilityOfActionType3 is RageBeastSelfHeal)
-					{
-						if (actorData.HitPoints < 65)
-						{
-							flag3 = true;
-						}
-					}
-					else
-					{
-						flag3 = true;
-					}
-					if (flag3)
-					{
-						if (abilityOfActionType3.IsSimpleAction())
-						{
-							GetComponent<ServerActorController>().ProcessCastSimpleActionRequest(keyValuePair2.Key, true);
-						}
-						else
-						{
-							botController.RequestAbility(keyValuePair2.Value.targetList, keyValuePair2.Key);
-						}
-					}
+					botController.RequestAbility(potentialChoice.Value.targetList, potentialChoice.Key);
 				}
 			}
 		}
@@ -2853,20 +2837,24 @@ public class NPCBrain_Adaptive : NPCBrain
 	private ActorData GetLinkedActorIfAny(ActorData actor, bool friendly)
 	{
 		List<ActorData> list = null;
-		ActorData result = null;
 		if (actor.m_characterType == CharacterType.Spark)
 		{
 			list = actor.GetComponent<SparkBeamTrackerComponent>().GetBeamActors();
 		}
-		if (list != null)
+		if (list == null)
 		{
-			foreach (ActorData actorData in list)
+			return null;
+		}
+		ActorData result = null;
+		foreach (ActorData actorData in list)
+		{
+			if (actorData != null
+			    && !actorData.IsDead()
+			    && ((friendly && actorData.GetTeam() == actor.GetTeam())
+			        || (!friendly && actorData.GetTeam() != actor.GetTeam())))
 			{
-				if (actorData != null && !actorData.IsDead() && ((friendly && actorData.GetTeam() == actor.GetTeam()) || (!friendly && actorData.GetTeam() != actor.GetTeam())))
-				{
-					result = actorData;
-					break;
-				}
+				result = actorData;
+				break;
 			}
 		}
 		return result;
