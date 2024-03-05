@@ -44,18 +44,18 @@ public class StandardGroundEffect : Effect
 		CalculateAffectedSquares();
 	}
 
-	// custom
-	public List<BoardSquare> GetAffectedSquares()
-	{
-		return m_affectedSquares.ToList();
-	}
-
 	protected void CalculateAffectedSquares()
 	{
-		foreach (BoardSquare square in AreaEffectUtils.GetSquaresInShape(m_fieldInfo.shape, m_shapeFreePos, TargetSquare, m_fieldInfo.penetrateLos, Caster))
+		foreach (BoardSquare square in GetSquaresInShape())
 		{
 			m_affectedSquares.Add(square);
 		}
+	}
+
+	// custom
+	public List<BoardSquare> GetSquaresInShape()
+	{
+		return AreaEffectUtils.GetSquaresInShape(m_fieldInfo.shape, m_shapeFreePos, TargetSquare, m_fieldInfo.penetrateLos, Caster);
 	}
 
 	public void AddToActorsHitThisTurn(List<ActorData> newActorsToExcludeThisTurn)

@@ -8,7 +8,7 @@ using UnityEngine;
 public class StandardMultiAreaGroundEffect : Effect
 {
 	protected List<GroundAreaInfo> m_areaInfoList;
-	protected GroundEffectField m_fieldInfo;
+	public GroundEffectField m_fieldInfo; // protected in rogues
 	protected HashSet<ActorData> m_actorsHitThisTurn;
 	protected HashSet<ActorData> m_actorsHitThisTurn_fake;
 
@@ -58,6 +58,24 @@ public class StandardMultiAreaGroundEffect : Effect
 				Caster);
 			groundAreaInfo.InitAffectedSquares(squaresInShape);
 		}
+	}
+
+	// custom
+	public HashSet<BoardSquare> GetSquaresInShape()
+	{
+		var result = new HashSet<BoardSquare>();
+		foreach (GroundAreaInfo groundAreaInfo in m_areaInfoList)
+		{
+			List<BoardSquare> squaresInShape = AreaEffectUtils.GetSquaresInShape(
+				m_fieldInfo.shape,
+				groundAreaInfo.m_shapeFreePos,
+				groundAreaInfo.m_targetSquare,
+				m_fieldInfo.penetrateLos,
+				Caster);
+			result.UnionWith(squaresInShape);
+		}
+
+		return result;
 	}
 
 	public override void OnEnd()

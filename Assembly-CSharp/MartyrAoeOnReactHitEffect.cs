@@ -9,9 +9,9 @@ public class MartyrAoeOnReactHitEffect : StandardActorEffect
 {
 	private Martyr_SyncComponent m_syncComp;
 	private Passive_Martyr m_passive;
-	private float m_aoeRadius;
-	private bool m_penetrateLos;
-	private int m_damageAmount;
+	public float m_aoeRadius; // private in rogues
+	public bool m_penetrateLos; // private in rogues
+	public int m_damageAmount; // private in rogues
 	private StandardEffectInfo m_enemyHitEffect;
 	private int m_healOnTarget;
 	private int m_energyOnCaster;

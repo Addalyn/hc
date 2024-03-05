@@ -12,7 +12,7 @@ public class ExoTetherEffect : StandardActorEffect
 	private bool m_shouldEnd;
 	private GameObject m_tetherBreakHitSequence;
 	private StandardEffectInfo m_tetherBreakEffect;
-	private int m_baseBreakDamage;
+	public int m_baseBreakDamage; // private in rogues
 	private float m_extraBreakDamagePerMoveDist;
 	private int m_maxExtraBreakDamage;
 	private bool m_breakTetherOnNonGroundMovment;

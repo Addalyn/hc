@@ -2118,6 +2118,12 @@ public class NPCBrain_Adaptive : NPCBrain
 				damage = barrier.OnEnemyMovedThrough.m_damage;
 			}
 
+			if (damage == 0)
+			{
+				Log.Warning($"Barrier is not supported by bots: " +
+				            $"({tempAbilityResults.Ability.GetType()})"); // custom
+			}
+
 			float damageScore = 0;
 			float dashScore = 0;
 			foreach (ActorData target in actorsInRange)
@@ -2125,18 +2131,12 @@ public class NPCBrain_Adaptive : NPCBrain
 				damageScore += ConvertDamageToScore(caster, target, (int)(damage * 0.7f));
 				// TODO BOTS also include barrier.OnEnemyMovedThrough.m_effect
 				
-				ActorCover actorCover = target.GetActorCover();
-				if (actorCover != null)
+				if (IsLikelyToDash(target, false))
 				{
-					float exposednessRating = GetExposednessRating(caster, actorCover, target);
-					bool hasNoDashOffCooldown = HasNoDashOffCooldown(target, false);
-					if (!hasNoDashOffCooldown && exposednessRating > 1.5f)
-					{
-						dashScore += 8;
-					}
+					dashScore += 8;
 				}
 			}
-
+			
 			if (maxHits > 0 && maxHits < actorsInRange.Count)
 			{
 				float factor = maxHits / (actorsInRange.Count - 0.85f);
@@ -2151,11 +2151,25 @@ public class NPCBrain_Adaptive : NPCBrain
 	}
 
 	// custom
-	private static float GetExposednessRating(ActorData caster, ActorCover actorCover, ActorData target)
+	private static bool IsLikelyToDash(ActorData target, bool includeCards, float exposednessThreshold = 1.5f)
 	{
+		// TODO BOTS health?
+		float exposednessRating = GetExposednessRating(target);
+		bool hasNoDashOffCooldown = HasNoDashOffCooldown(target, includeCards);
+		return !hasNoDashOffCooldown && exposednessRating > exposednessThreshold;
+	}
+
+	// custom
+	private static float GetExposednessRating(ActorData target)
+	{
+		ActorCover actorCover = target.GetActorCover();
+		if (actorCover == null)
+		{
+			return 0;
+		}
 		float coverRating = actorCover.CoverRating(target.GetCurrentBoardSquare());
 		int threatRating = GameFlowData.Get()
-			.GetAllTeamMembers(caster.GetTeam())
+			.GetAllTeamMembers(target.GetEnemyTeam())
 			.Count(a => !a.IsDead() && a.GetCurrentBoardSquare() != null);
 		return threatRating - coverRating;
 	}
@@ -2208,16 +2222,63 @@ public class NPCBrain_Adaptive : NPCBrain
 						potentialChoice.reasoning += $"Added {damageFieldScore} score for Aurora damage field.\n";
 						break;
 					}
-					case StandardGroundEffect standardGroundEffect:
+					case BazookaGirlDelayedBombDropsEffect bazookaEffect:
+					{
+						HashSet<BoardSquare> hitSquares = new HashSet<BoardSquare>();
+						BazookaGirlDroppedBombInfo bombInfo = bazookaEffect.m_bombInfo;
+						foreach (ActorData targetActor in bazookaEffect.m_targetActors)
+						{
+							List<BoardSquare> squaresInShape = AreaEffectUtils.GetSquaresInShape(
+								bombInfo.m_shape,
+								targetActor.GetFreePos(),
+								targetActor.GetTravelBoardSquare(),
+								bombInfo.m_penetrateLos,
+								caster);
+							hitSquares.UnionWith(squaresInShape);
+						}
+						foreach (BoardSquare square in hitSquares)
+						{
+							ActorData hitActor = AreaEffectUtils.GetTargetableActorOnSquare(square, true, false, caster);
+							if (hitActor == null)
+							{
+								continue;
+							}
+
+							float factor = IsLikelyToDash(hitActor, true) ? 0.2f : 0.9f;
+							float damageScore = ConvertDamageToScore(caster, hitActor, (int)(bombInfo.m_damageAmount * factor));
+							potentialChoice.score += damageScore;
+							potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
+						}
+						
+						break;
+					}
+					case StandardGroundEffect _:
+					case StandardMultiAreaGroundEffect _:
 					{
 						// calculating based on current positioning
 						float additionalScore = 0;
 						float additionalCoverScore = 0;
-						GroundEffectField fieldInfo = standardGroundEffect.m_fieldInfo;
+
+						GroundEffectField fieldInfo;
+						ICollection<BoardSquare> squaresInShape;
+						if (effect is StandardGroundEffect standardGroundEffect)
+						{
+							fieldInfo = standardGroundEffect.m_fieldInfo;
+							squaresInShape = standardGroundEffect.GetSquaresInShape();
+						}
+						else if (effect is StandardMultiAreaGroundEffect standardMultiAreaGroundEffect)
+						{
+							fieldInfo = standardMultiAreaGroundEffect.m_fieldInfo;
+							squaresInShape = standardMultiAreaGroundEffect.GetSquaresInShape();
+						}
+						else
+						{
+							goto default;
+						}
 						
 						ActorCover actorCover = caster.GetComponent<ActorCover>();
-						
-						foreach (BoardSquare affectedSquare in standardGroundEffect.GetAffectedSquares())
+
+						foreach (BoardSquare affectedSquare in squaresInShape)
 						{
 							if (actorCover.AmountOfCover(affectedSquare) > 1)
 							{
@@ -2263,9 +2324,24 @@ public class NPCBrain_Adaptive : NPCBrain
 						potentialChoice.reasoning += $"Added {damageFieldScore} score for Elle's drone.\n";
 						break;
 					}
-					case ThiefSmokeBombEffect _:
-						// TODO BOTS potential additional reasoning
+					case NekoBoomerangDiscEffect _:
+					{
+						// TODO BOT NEKO
 						break;
+					}
+					case NekoHomingDiscEffect nekoHomingDiscEffect:
+					{
+						ActorData target = AreaEffectUtils.GetTargetableActorOnSquare(nekoHomingDiscEffect.TargetSquare, true, false, caster);
+						if (target != null)
+						{
+							float factor = IsLikelyToDash(target, true) ? 0.8f : 0.3f;
+							float damageScore = ConvertDamageToScore(caster, target, (int)(nekoHomingDiscEffect.m_returnTripDamage * factor));
+							potentialChoice.score += damageScore;
+							potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
+						}
+
+						break;
+					}
 					default:
 						Log.Warning($"World effect is not supported by bots: {effect.GetType()}" +
 						            $"({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
@@ -2468,6 +2544,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		switch (effect)
 		{
 			case DelayedAoeKnockbackEffect _:
+			{
 				if (HasLOSToEnemiesFromSquare(target, target.CurrentBoardSquare))
 				{
 					potentialChoice.score += 10;
@@ -2485,10 +2562,16 @@ public class NPCBrain_Adaptive : NPCBrain
 					potentialChoice.score += 2;
 					potentialChoice.reasoning += "Adding 2 score for firepower.\n";
 				}
+
 				return true;
+			}
 			case NanoSmithWeaponsOfWarEffect _:
+			{
 				return true; // TODO BOTS could also add damage estimation to Helio's ult
+			}
 			case BlasterOverchargeEffect _:
+			{
+				
 				BlasterOvercharge blasterOverchargeAbility = caster.GetAbilityData().m_ability2 as BlasterOvercharge;
 				if (blasterOverchargeAbility == null)
 				{
@@ -2496,9 +2579,12 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 
 				potentialChoice.score += blasterOverchargeAbility.GetExtraDamage();
-				potentialChoice.reasoning += $"Adding {blasterOverchargeAbility.GetExtraDamage()} score for projected damage.\n";
+				potentialChoice.reasoning +=
+					$"Adding {blasterOverchargeAbility.GetExtraDamage()} score for projected damage.\n";
 				return true;
+			}
 			case ArcherHealingReactionEffect archerHealingReactionEffect:
+			{
 				int numLosToEnemy = GetNumLOSToEnemy(target);
 				if (numLosToEnemy > 1)
 				{
@@ -2506,8 +2592,51 @@ public class NPCBrain_Adaptive : NPCBrain
 					potentialChoice.score += score;
 					potentialChoice.reasoning += $"Adding {score} score for projected healing.\n";
 				}
+
+				return false; // also process standard effect data
+			}
+			case MartyrAoeOnReactHitEffect martyrAoeOnReactHitEffect:
+			{
+				List<ActorData> targets = AreaEffectUtils.GetActorsInRadius(
+					target.GetFreePos(),
+					martyrAoeOnReactHitEffect.m_aoeRadius,
+					martyrAoeOnReactHitEffect.m_penetrateLos,
+					caster,
+					caster.GetOtherTeams(),
+					null);
+				float damageScore = 0;
+				foreach (ActorData actorData in targets)
+				{
+					damageScore += ConvertDamageToScore(caster, actorData, martyrAoeOnReactHitEffect.m_damageAmount);
+				}
+
+				potentialChoice.score += damageScore;
+				potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
+				// TODO BOTS martyrAoeOnReactHitEffect.m_enemyHitEffect
+				return false; // also process standard effect data
+			}
+			case ClaymoreDirtyFightingTargetEffect claymoreDirtyFightingTargetEffect:
+			{
+				float damageScore = ConvertDamageToScore(caster, target, claymoreDirtyFightingTargetEffect.m_damageAmount);
+				float dashScore = 0;
+				if (IsLikelyToDash(target, true))
+				{
+					dashScore += 8;
+					potentialChoice.reasoning += $"Added {dashScore} score for predicted dash.\n";
+				}
+				potentialChoice.score += damageScore + dashScore;
+				potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
+				return false; // also process standard effect data
+			}
+			case ExoTetherEffect exoTetherEffect:
+			{
+				float factor = IsLikelyToDash(target, true) ? 0.8f : 0.3f;
+				float damageScore = ConvertDamageToScore(caster, target, (int)(exoTetherEffect.m_baseBreakDamage * factor));
+				potentialChoice.score += damageScore;
+				potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
 				
 				return false; // also process standard effect data
+			}
 			default:
 				return false;
 		}
@@ -3070,7 +3199,7 @@ public class NPCBrain_Adaptive : NPCBrain
 	}
 
 	// added in rogues
-	private bool HasNoDashOffCooldown(ActorData actor, bool includeCards)
+	private static bool HasNoDashOffCooldown(ActorData actor, bool includeCards) // non-static in rogues
 	{
 		AbilityData abilityData = actor.GetAbilityData();
 		foreach (AbilityData.AbilityEntry abilityEntry in abilityData.abilityEntries)
@@ -3088,7 +3217,7 @@ public class NPCBrain_Adaptive : NPCBrain
 	}
 
 	// added in rogues
-	protected float ConvertDamageToScore(ActorData caster, ActorData target, int amount)
+	protected static float ConvertDamageToScore(ActorData caster, ActorData target, int amount) // non-static in rogues
 	{
 		float num = Mathf.Abs(amount);
 		float result = num + (1f - target.GetHitPointPercent()) * 0.1f;

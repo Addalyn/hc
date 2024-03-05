@@ -11,7 +11,7 @@ public abstract class NekoAbstractDiscEffect : Effect
 {
     protected readonly List<BoardSquare> m_targetSquares;
     protected readonly float m_discReturnEndRadius;
-    protected readonly int m_returnTripDamage;
+    public readonly int m_returnTripDamage;
     protected readonly int m_returnTripSubsequentHitDamage;
     protected readonly float m_returnTripExtraDamagePerDist;
     protected readonly StandardEffectInfo m_returnTripEnemyEffect;
