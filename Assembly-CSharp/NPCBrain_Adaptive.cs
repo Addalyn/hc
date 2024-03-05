@@ -835,24 +835,26 @@ public class NPCBrain_Adaptive : NPCBrain
 		BoardSquare currentSquare = actorData.GetCurrentBoardSquare();
 		HydrogenConfig config = HydrogenConfig.Get();
 		List<AbilityTarget> potentialTargets = null;
-		if (thisAbility.Targeter is AbilityUtil_Targeter_ChargeAoE
-		    || thisAbility.Targeter is AbilityUtil_Targeter_Charge
-		    || thisAbility.Targeter is AbilityUtil_Targeter_Shape
-		    || thisAbility.Targeter is AbilityUtil_Targeter_RocketJump
-		    || thisAbility.Targeter is AbilityUtil_Targeter_ScoundrelEvasionRoll)
+		switch (thisAbility.Targeter)
 		{
-			float range = thisAbility.m_targetData[0].m_range;
-			float minRange = thisAbility.m_targetData[0].m_minRange;
-			Vector3 vector = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
-			Vector3 position = actorData.transform.position;
-			position.y = 0f;
-			Bounds bounds = new Bounds(position, vector);
-			foreach (BoardSquare boardSquare in Board.Get().GetSquaresInBox(bounds))
+			case AbilityUtil_Targeter_ChargeAoE _:
+			case AbilityUtil_Targeter_Charge _:
+			case AbilityUtil_Targeter_Shape _:
+			case AbilityUtil_Targeter_RocketJump _:
+			case AbilityUtil_Targeter_ScoundrelEvasionRoll _:
 			{
-				if (boardSquare == actorData.GetCurrentBoardSquare())
+				float range = thisAbility.m_targetData[0].m_range;
+				float minRange = thisAbility.m_targetData[0].m_minRange;
+				Vector3 vector = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
+				Vector3 position = actorData.transform.position;
+				position.y = 0f;
+				Bounds bounds = new Bounds(position, vector);
+				foreach (BoardSquare boardSquare in Board.Get().GetSquaresInBox(bounds))
 				{
-					continue;
-				}
+					if (boardSquare == actorData.GetCurrentBoardSquare())
+					{
+						continue;
+					}
 
 				if (!component.IsTargetSquareInRangeOfAbilityFromSquare(boardSquare,
 					    actorData.GetCurrentBoardSquare(), range, minRange) || !boardSquare.IsValidForGameplay())
@@ -866,39 +868,59 @@ public class NPCBrain_Adaptive : NPCBrain
 					continue;
 				}
 				
-				AbilityTarget target = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
-				if (thisAbility.CustomTargetValidation(actorData, target, 0, null))
-				{
-					if (potentialTargets == null)
+					AbilityTarget target = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
+					if (thisAbility.CustomTargetValidation(actorData, target, 0, null))
 					{
-						potentialTargets = new List<AbilityTarget>();
+						if (potentialTargets == null)
+						{
+							potentialTargets = new List<AbilityTarget>();
+						}
+						potentialTargets.Add(target);
 					}
-					potentialTargets.Add(target);
 				}
+
+				break;
 			}
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_TeslaPrison targeter)
-		{
-			List<ActorData> enemies = actorData.GetOtherTeams()
-				.SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam))
-				.ToList();
-			
-			foreach (ActorData enemy in enemies)
+			case AbilityUtil_Targeter_TeslaPrison targeter:
 			{
-				if (GetEnemyPlayerAliveAndVisibleMultiplier(enemy) == 0f)
+				List<ActorData> enemies = actorData.GetOtherTeams()
+					.SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam))
+					.ToList();
+			
+				foreach (ActorData enemy in enemies)
 				{
-					continue;
-				}
-				
-				AbilityTarget targetOnEnemy = AbilityTarget.CreateAbilityTargetFromBoardSquare(enemy.GetCurrentBoardSquare(), actorData.GetFreePos());
-				List<BoardSquare> squaresInShape = AreaEffectUtils.GetSquaresInShape(targeter.m_shapeForActorHits, targetOnEnemy, true, actorData);
-				foreach (BoardSquare square in squaresInShape)
-				{
-					if (square == null || !square.IsValidForGameplay())
+					if (GetEnemyPlayerAliveAndVisibleMultiplier(enemy) == 0f)
 					{
 						continue;
 					}
-					AbilityTarget target = AbilityTarget.CreateAbilityTargetFromBoardSquare(square, actorData.GetFreePos());
+				
+					AbilityTarget targetOnEnemy = AbilityTarget.CreateAbilityTargetFromBoardSquare(enemy.GetCurrentBoardSquare(), actorData.GetFreePos());
+					List<BoardSquare> squaresInShape = AreaEffectUtils.GetSquaresInShape(targeter.m_shapeForActorHits, targetOnEnemy, true, actorData);
+					foreach (BoardSquare square in squaresInShape)
+					{
+						if (square == null || !square.IsValidForGameplay())
+						{
+							continue;
+						}
+						AbilityTarget target = AbilityTarget.CreateAbilityTargetFromBoardSquare(square, actorData.GetFreePos());
+						if (thisAbility.CustomTargetValidation(actorData, target, 0, AbilityTarget.AbilityTargetList(target)))
+						{
+							if (potentialTargets == null)
+							{
+								potentialTargets = new List<AbilityTarget>();
+							}
+							potentialTargets.Add(target);
+						}
+					}
+				}
+
+				break;
+			}
+			case AbilityUtil_Targeter_TrackerDrone _:
+			{
+				List<AbilityTarget> targets = GeneratePotentialAbilityTargetLocations(thisAbility.m_targetData[0].m_range, true, false, false);
+				foreach (AbilityTarget target in targets)
+				{
 					if (thisAbility.CustomTargetValidation(actorData, target, 0, AbilityTarget.AbilityTargetList(target)))
 					{
 						if (potentialTargets == null)
@@ -908,65 +930,72 @@ public class NPCBrain_Adaptive : NPCBrain
 						potentialTargets.Add(target);
 					}
 				}
-			}
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_TrackerDrone)
-		{
-			List<AbilityTarget> targets = GeneratePotentialAbilityTargetLocations(thisAbility.m_targetData[0].m_range, true, false, false);
-			foreach (AbilityTarget target in targets)
-			{
-				if (thisAbility.CustomTargetValidation(actorData, target, 0, AbilityTarget.AbilityTargetList(target)))
+				if (GameFlowData.Get().CurrentTurn == 1)
 				{
-					if (potentialTargets == null)
+					int x = Board.Get().GetMaxX() / 2;
+					int y = Board.Get().GetMaxY() / 2;
+					BoardSquare centerSquare = Board.Get().GetSquareFromIndex(x, y);
+					if (centerSquare != null && centerSquare.IsValidForGameplay())
 					{
-						potentialTargets = new List<AbilityTarget>();
-					}
-					potentialTargets.Add(target);
-				}
-			}
-			if (GameFlowData.Get().CurrentTurn == 1)
-			{
-				int x = Board.Get().GetMaxX() / 2;
-				int y = Board.Get().GetMaxY() / 2;
-				BoardSquare centerSquare = Board.Get().GetSquareFromIndex(x, y);
-				if (centerSquare != null && centerSquare.IsValidForGameplay())
-				{
-					AbilityTarget item = AbilityTarget.CreateAbilityTargetFromBoardSquare(centerSquare, actorData.GetFreePos());
-					if (potentialTargets == null)
-					{
-						potentialTargets = new List<AbilityTarget>();
-					}
-					potentialTargets.Add(item);
-				}
-			}
-		}
-		else if (thisAbility.Targeter is AbilityUtil_Targeter_AoE_AroundActor)
-		{
-			List<ActorData> allies = GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam());
-			List<AbilityTarget> tempTargetList = new List<AbilityTarget>();
-			foreach (ActorData ally in allies)
-			{
-				BoardSquare currentBoardSquare = ally.GetCurrentBoardSquare();
-				if (!ally.IsDead()
-				    && currentBoardSquare != null
-				    && !ally.IgnoreForAbilityHits)
-				{
-					AbilityTarget target = AbilityTarget.CreateAbilityTargetFromActor(ally, actorData);
-					if (thisAbility.CustomTargetValidation(actorData, target, 0, null))
-					{
+						AbilityTarget item = AbilityTarget.CreateAbilityTargetFromBoardSquare(centerSquare, actorData.GetFreePos());
 						if (potentialTargets == null)
 						{
 							potentialTargets = new List<AbilityTarget>();
 						}
-						tempTargetList.Clear();
-						tempTargetList.Add(target);
-						if (component.ValidateActionRequest(thisAction, tempTargetList, false))
+						potentialTargets.Add(item);
+					}
+				}
+
+				break;
+			}
+			case AbilityUtil_Targeter_AoE_AroundActor _:
+			{
+				List<ActorData> allies = GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam());
+				List<AbilityTarget> tempTargetList = new List<AbilityTarget>();
+				foreach (ActorData ally in allies)
+				{
+					BoardSquare currentBoardSquare = ally.GetCurrentBoardSquare();
+					if (!ally.IsDead()
+					    && currentBoardSquare != null
+					    && !ally.IgnoreForAbilityHits)
+					{
+						AbilityTarget target = AbilityTarget.CreateAbilityTargetFromActor(ally, actorData);
+						if (thisAbility.CustomTargetValidation(actorData, target, 0, null))
 						{
-							potentialTargets.Add(target);
+							if (potentialTargets == null)
+							{
+								potentialTargets = new List<AbilityTarget>();
+							}
+							tempTargetList.Clear();
+							tempTargetList.Add(target);
+							if (component.ValidateActionRequest(thisAction, tempTargetList, false))
+							{
+								potentialTargets.Add(target);
+							}
 						}
 					}
 				}
+
+				break;
 			}
+			case AbilityUtil_Targeter_ValkyrieGuard _:
+			{
+				List<BoardSquare> targetSquares = new List<BoardSquare>(4);
+				BoardSquare boardSquare = actorData.GetCurrentBoardSquare();
+				Board.Get().GetCardinalAdjacentSquares(boardSquare.x, boardSquare.y, ref targetSquares);
+				potentialTargets = new List<AbilityTarget>(4);
+				foreach (BoardSquare secondTargetSquare in targetSquares)
+				{
+					var target = AbilityTarget.CreateAbilityTargetFromBoardSquare(
+						secondTargetSquare, boardSquare.ToVector3());
+					potentialTargets.Add(target);
+				}
+
+				break;
+			}
+			default:
+				Log.Error($"Single board square targeter is not supported by bots: {thisAbility.Targeter.GetType()} ({thisAbility.GetType()})"); // custom
+				break;
 		}
 		
 		if (potentialTargets != null)
