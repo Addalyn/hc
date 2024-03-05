@@ -856,17 +856,17 @@ public class NPCBrain_Adaptive : NPCBrain
 						continue;
 					}
 
-				if (!component.IsTargetSquareInRangeOfAbilityFromSquare(boardSquare,
-					    actorData.GetCurrentBoardSquare(), range, minRange) || !boardSquare.IsValidForGameplay())
-				{
-					continue;
-				}
+					if (!component.IsTargetSquareInRangeOfAbilityFromSquare(boardSquare,
+						    actorData.GetCurrentBoardSquare(), range, minRange) || !boardSquare.IsValidForGameplay())
+					{
+						continue;
+					}
 
-				if (thisAbility is SparkEnergized
-				    && !actorData.GetComponent<SparkBeamTrackerComponent>().GetBeamActors().Contains(boardSquare.OccupantActor))
-				{
-					continue;
-				}
+					if (thisAbility is SparkEnergized
+					    && !actorData.GetComponent<SparkBeamTrackerComponent>().GetBeamActors().Contains(boardSquare.OccupantActor))
+					{
+						continue;
+					}
 				
 					AbilityTarget target = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
 					if (thisAbility.CustomTargetValidation(actorData, target, 0, null))
@@ -2114,38 +2114,41 @@ public class NPCBrain_Adaptive : NPCBrain
 					continue;
 				}
 
-				if (effect is SorceressDamageFieldEffect sorceressDamageFieldEffect)
+				switch (effect)
 				{
-					float score = potentialChoice.score;
-					BoardSquare pos = Board.Get().GetSquareFromVec3(posToHitResult.Key);
-					Vector3 centerOfShape =
-						AreaEffectUtils.GetCenterOfShape(sorceressDamageFieldEffect.m_shape, pos.ToVector3(), pos);
-					List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(
-						sorceressDamageFieldEffect.m_shape,
-						centerOfShape,
-						pos,
-						sorceressDamageFieldEffect.m_penetrateLoS,
-						caster,
-						caster.GetOtherTeams(),
-						null);
-					if (actorsInShape.Count <= 1)
+					case SorceressDamageFieldEffect sorceressDamageFieldEffect:
 					{
-						potentialChoice.score -= 10f;
-					}
-					else
-					{
-						foreach (ActorData target in actorsInShape)
+						float score = potentialChoice.score;
+						BoardSquare pos = Board.Get().GetSquareFromVec3(posToHitResult.Key);
+						Vector3 centerOfShape =
+							AreaEffectUtils.GetCenterOfShape(sorceressDamageFieldEffect.m_shape, pos.ToVector3(), pos);
+						List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(
+							sorceressDamageFieldEffect.m_shape,
+							centerOfShape,
+							pos,
+							sorceressDamageFieldEffect.m_penetrateLoS,
+							caster,
+							caster.GetOtherTeams(),
+							null);
+						if (actorsInShape.Count <= 1)
 						{
-							potentialChoice.score += ConvertDamageToScore(caster, target, 5);
+							potentialChoice.score -= 10f;
 						}
-					}
+						else
+						{
+							foreach (ActorData target in actorsInShape)
+							{
+								potentialChoice.score += ConvertDamageToScore(caster, target, 5);
+							}
+						}
 
-					float damageFieldScore = potentialChoice.score - score;
-					potentialChoice.reasoning += $"Added {damageFieldScore} score for Aurora damage field.\n";
-				}
-				else
-				{
-					Log.Warning($"World effect is not supported by bots: {effect.GetType()} ({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
+						float damageFieldScore = potentialChoice.score - score;
+						potentialChoice.reasoning += $"Added {damageFieldScore} score for Aurora damage field.\n";
+						break;
+					}
+					default:
+						Log.Warning($"World effect is not supported by bots: {effect.GetType()} ({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
+						break;
 				}
 			}
 		}
@@ -2238,18 +2241,19 @@ public class NPCBrain_Adaptive : NPCBrain
 
 			foreach (Effect effect in actorToHitResult.Value.m_effects)
 			{
-				if (!(effect is StandardActorEffect actorEffect))
+				StandardActorEffectData effectData = GetEffectDataFromActorEffect(effect);
+				if (effectData == null)
 				{
 					Log.Warning($"Actor effect is not supported by bots: {effect.GetType()} ({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
 					continue;
 				}
-
-				float absorb = actorEffect.m_data.m_absorbAmount;
+				
+				float absorb = effectData.m_absorbAmount;
 				if (absorb != 0f)
 				{
 					float score = potentialChoice.score;
 					potentialChoice.numTeamTargetsHit++;
-					for (int i = 0; i < actorEffect.m_data.m_duration; i++)
+					for (int i = 0; i < effectData.m_duration; i++)
 					{
 						absorb /= 2f;
 						potentialChoice.score += absorb;
@@ -2260,10 +2264,10 @@ public class NPCBrain_Adaptive : NPCBrain
 					potentialChoice.reasoning += $"Adding {shieldScore} for generic shielding.\n";
 				}
 
-				if (actorEffect.m_data != null && actorEffect.m_data.m_statusChanges != null &&
-				    actorEffect.m_data.m_statusChanges.Length != 0)
+				if (effectData.m_statusChanges != null &&
+				    effectData.m_statusChanges.Length != 0)
 				{
-					foreach (StatusType status in actorEffect.m_data.m_statusChanges)
+					foreach (StatusType status in effectData.m_statusChanges)
 					{
 						switch (status)
 						{
@@ -2275,31 +2279,31 @@ public class NPCBrain_Adaptive : NPCBrain
 							}
 							case StatusType.Snared:
 							{
-								potentialChoice.score += 2f * actorEffect.m_data.m_duration;
+								potentialChoice.score += 2f * effectData.m_duration;
 								potentialChoice.reasoning += "Adding 2 score for a slow effect.\n";
 								break;
 							}
 							case StatusType.Weakened:
 							{
-								potentialChoice.score += 13f * actorEffect.m_data.m_duration;
+								potentialChoice.score += 13f * effectData.m_duration;
 								potentialChoice.reasoning += "Adding 13 score for a weakened effect.\n";
 								break;
 							}
 							case StatusType.Empowered:
 							{
-								potentialChoice.score += 13f * actorEffect.m_data.m_duration;
+								potentialChoice.score += 13f * effectData.m_duration;
 								potentialChoice.reasoning += "Adding 13 score for a might effect.\n";
 								break;
 							}
 							case StatusType.Unstoppable:
 							{
-								potentialChoice.score += 7f * actorEffect.m_data.m_duration;
+								potentialChoice.score += 7f * effectData.m_duration;
 								potentialChoice.reasoning += "Adding 7 score for an Unstoppable effect.\n";
 								break;
 							}
 							case StatusType.Hasted:
 							{
-								potentialChoice.score += 8f * actorEffect.m_data.m_duration;
+								potentialChoice.score += 8f * effectData.m_duration;
 								potentialChoice.reasoning += "Adding 8 score for a haste effect.\n";
 								break;
 							}
@@ -2308,6 +2312,17 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 			}
 		}
+	}
+
+	private static StandardActorEffectData GetEffectDataFromActorEffect(Effect effect)
+	{
+		if (!(effect is StandardActorEffect actorEffect))
+		{
+			return null;
+		}
+
+		StandardActorEffectData effectData = actorEffect.m_data;
+		return effectData;
 	}
 
 	private void ScoreDamageAndHealing(
