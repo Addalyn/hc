@@ -2902,52 +2902,56 @@ public class NPCBrain_Adaptive : NPCBrain
 		ActorMovement actorMovement = actorData.GetActorMovement();
 		ActorTurnSM turnSM = actorData.GetActorTurnSM();
 		HydrogenConfig hydrogenConfig = HydrogenConfig.Get();
-		HashSet<BoardSquare> squaresCanMoveTo = actorMovement.SquaresCanMoveTo;
-		HashSet<BoardSquare> squaresCanMoveToWithQueuedAbility = actorMovement.SquaresCanMoveToWithQueuedAbility;
-		float num = actorMovement.CalculateMaxHorizontalMovement();
-		ActorData actorData2 = null;
-		float num2 = 0f;
+		float maxHorizontalMovement = actorMovement.CalculateMaxHorizontalMovement();
+		ActorData bestEnemy = null;
+		float bestScore = 0f;
 		Vector3 position = actorData.transform.position;
 		position.y = 0f;
 		BoardSquare currentBoardSquare = actorData.GetCurrentBoardSquare();
-		float num3 = CalculateMaxAvailableRangeForActor(actorData);
+		float maxAvailableRange = CalculateMaxAvailableRangeForActor(actorData);
 		BoardSquare bestDestSquare = null;
-		foreach (ActorData actorData3 in actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList())
+		List<ActorData> enemies = actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList();
+		foreach (ActorData enemy in enemies)
 		{
-			if (!actorData3.IsDead() && !(actorData3.GetCurrentBoardSquare() == null) && !actorData3.IgnoreForAbilityHits)
+			if (enemy.IsDead()
+			    || enemy.GetCurrentBoardSquare() == null
+			    || enemy.IgnoreForAbilityHits)
 			{
-				BoardSquare pendingDestinationOrCurrentSquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(actorData3);
-				Vector3 position2 = pendingDestinationOrCurrentSquare.transform.position;
-				position2.y = 0f;
-				float magnitude = (position2 - position).magnitude;
-				float num4 = Mathf.Max(num - magnitude, 0.5f);
-				BoardSquare closestMoveableSquareTo = actorMovement.GetClosestMoveableSquareTo(pendingDestinationOrCurrentSquare, true, true, true);
-				BoardSquare boardSquare;
-				if (closestMoveableSquareTo.HorizontalDistanceOnBoardTo(pendingDestinationOrCurrentSquare) < num3)
+				continue;
+			}
+			BoardSquare enemySquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(enemy);
+			Vector3 enemyPos = enemySquare.transform.position;
+			enemyPos.y = 0f;
+			float magnitude = (enemyPos - position).magnitude;
+			float score = Mathf.Max(maxHorizontalMovement - magnitude, 0.5f);
+			BoardSquare closestSquare = actorMovement.GetClosestMoveableSquareTo(
+				enemySquare, true, true, true);
+			BoardSquare boardSquare;
+			if (closestSquare.HorizontalDistanceOnBoardTo(enemySquare) < maxAvailableRange)
+			{
+				boardSquare = closestSquare;
+				score *= 10f;
+			}
+			else
+			{
+				closestSquare = actorMovement.GetClosestMoveableSquareTo(
+					enemySquare, true, false, true);
+				if (closestSquare.HorizontalDistanceInSquaresTo(currentBoardSquare) < maxAvailableRange)
 				{
-					boardSquare = closestMoveableSquareTo;
-					num4 *= 10f;
+					score *= 1.5f;
 				}
-				else
-				{
-					BoardSquare closestMoveableSquareTo2 = actorMovement.GetClosestMoveableSquareTo(pendingDestinationOrCurrentSquare, true, false, true);
-					if (closestMoveableSquareTo2.HorizontalDistanceInSquaresTo(currentBoardSquare) < num3)
-					{
-						num4 *= 1.5f;
-					}
-					boardSquare = closestMoveableSquareTo2;
-				}
-				float hitPointPercent = actorData3.GetHitPointPercent();
-				if (hitPointPercent < 0.5f && hitPointPercent > 0.1f)
-				{
-					num4 *= hitPointPercent + 1f;
-				}
-				if (actorData2 == null || num4 > num2)
-				{
-					actorData2 = actorData3;
-					num2 = num4;
-					bestDestSquare = boardSquare;
-				}
+				boardSquare = closestSquare;
+			}
+			float hitPointPercent = enemy.GetHitPointPercent();
+			if (hitPointPercent < 0.5f && hitPointPercent > 0.1f)
+			{
+				score *= hitPointPercent + 1f;
+			}
+			if (bestEnemy == null || score > bestScore)
+			{
+				bestEnemy = enemy;
+				bestScore = score;
+				bestDestSquare = boardSquare;
 			}
 		}
 		if (realtimeSinceStartup + hydrogenConfig.MaxAIIterationTime < Time.realtimeSinceStartup)
@@ -2998,40 +3002,44 @@ public class NPCBrain_Adaptive : NPCBrain
 		HydrogenConfig hydrogenConfig = HydrogenConfig.Get();
 		HashSet<BoardSquare> squaresCanMoveTo = actorMovement.SquaresCanMoveTo;
 		HashSet<BoardSquare> squaresCanMoveToWithQueuedAbility = actorMovement.SquaresCanMoveToWithQueuedAbility;
-		float num = actorMovement.CalculateMaxHorizontalMovement();
+		float maxHorizontalMovement = actorMovement.CalculateMaxHorizontalMovement();
 		ActorData bestFriendlyPlayer = GetLinkedActorIfAny(actorData, true);
-		float num2 = 0f;
-		Vector3 position = actorData.transform.position;
-		position.y = 0f;
+		float bestScore = 0f;
+		Vector3 startPos = actorData.transform.position;
+		startPos.y = 0f;
 		if (bestFriendlyPlayer == null)
 		{
-			foreach (ActorData actorData2 in GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam()))
+			foreach (ActorData teammate in GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam()))
 			{
-				if (!actorData2.IsDead() && !(actorData2.GetCurrentBoardSquare() == null) && !(actorData2 == actorData) && actorData2.GetCharacterResourceLink().m_characterRole != CharacterRole.Support)
+				if (teammate.IsDead()
+				    || teammate.GetCurrentBoardSquare() == null
+				    || teammate == actorData
+				    || teammate.GetCharacterResourceLink().m_characterRole == CharacterRole.Support)
 				{
-					BoardSquare pendingDestinationOrCurrentSquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(actorData2);
-					Vector3 position2 = pendingDestinationOrCurrentSquare.transform.position;
-					position2.y = 0f;
-					float magnitude = (position2 - position).magnitude;
-					float num3 = Mathf.Max(num - magnitude, 0.5f);
-					if (squaresCanMoveToWithQueuedAbility.Contains(pendingDestinationOrCurrentSquare))
-					{
-						num3 *= 10f;
-					}
-					if (squaresCanMoveTo.Contains(pendingDestinationOrCurrentSquare))
-					{
-						num3 *= 1.5f;
-					}
-					float hitPointPercent = actorData2.GetHitPointPercent();
-					if (hitPointPercent < 0.5f && hitPointPercent > 0.1f)
-					{
-						num3 *= hitPointPercent + 1f;
-					}
-					if (actorData2 == null || num3 > num2)
-					{
-						bestFriendlyPlayer = actorData2;
-						num2 = num3;
-					}
+					continue;
+				}
+				BoardSquare teammateSquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(teammate);
+				Vector3 teammatePos = teammateSquare.transform.position;
+				teammatePos.y = 0f;
+				float dist = (teammatePos - startPos).magnitude;
+				float score = Mathf.Max(maxHorizontalMovement - dist, 0.5f);
+				if (squaresCanMoveToWithQueuedAbility.Contains(teammateSquare))
+				{
+					score *= 10f;
+				}
+				if (squaresCanMoveTo.Contains(teammateSquare))
+				{
+					score *= 1.5f;
+				}
+				float hitPointPercent = teammate.GetHitPointPercent();
+				if (hitPointPercent < 0.5f && hitPointPercent > 0.1f)
+				{
+					score *= hitPointPercent + 1f;
+				}
+				if (teammate == null || score > bestScore)
+				{
+					bestFriendlyPlayer = teammate;
+					bestScore = score;
 				}
 			}
 			if (realtimeSinceStartup + hydrogenConfig.MaxAIIterationTime < Time.realtimeSinceStartup)
@@ -3040,9 +3048,12 @@ public class NPCBrain_Adaptive : NPCBrain
 				realtimeSinceStartup = Time.realtimeSinceStartup;
 			}
 		}
-		if (actorData.RemainingHorizontalMovement != 0f && !actorData.HasQueuedChase() && bestFriendlyPlayer != null)
+		if (actorData.RemainingHorizontalMovement != 0f
+		    && !actorData.HasQueuedChase()
+		    && bestFriendlyPlayer != null)
 		{
-			BoardSquare closestMoveableSquareTo = actorData.GetActorMovement().GetClosestMoveableSquareTo(bestFriendlyPlayer.GetCurrentBoardSquare(), true, false, false);
+			BoardSquare closestMoveableSquareTo = actorData.GetActorMovement().GetClosestMoveableSquareTo(
+				bestFriendlyPlayer.GetCurrentBoardSquare(), true);
 			turnSM.SelectMovementSquareForMovement(closestMoveableSquareTo); // , true in rogues
 			BotManager.Get().SelectDestination(actorData, closestMoveableSquareTo);
 		}
@@ -3054,8 +3065,6 @@ public class NPCBrain_Adaptive : NPCBrain
 		ActorMovement actorMovement = actorData.GetActorMovement();
 		ActorTurnSM turnSM = actorData.GetActorTurnSM();
 		HydrogenConfig config = HydrogenConfig.Get();
-		float remainingHorizontalMovement = actorData.RemainingHorizontalMovement;
-		HashSet<BoardSquare> squaresCanMoveTo = actorMovement.SquaresCanMoveTo;
 		HashSet<BoardSquare> nonSprintSquares = actorMovement.SquaresCanMoveToWithQueuedAbility;
 		if (optimalRange < 4.5f)
 		{
@@ -3064,92 +3073,96 @@ public class NPCBrain_Adaptive : NPCBrain
 		float bestSquareScore = -99999f;
 		BoardSquare startingSquare = actorData.GetCurrentBoardSquare();
 		BoardSquare bestSquare = startingSquare;
-		List<ActorData> players = GameFlowData.Get().GetActors();
+		List<ActorData> actors = GameFlowData.Get().GetActors();
 		float realtimeSinceStartup = Time.realtimeSinceStartup;
-		foreach (BoardSquare boardSquare in squaresCanMoveTo)
+		foreach (BoardSquare boardSquare in actorMovement.SquaresCanMoveTo)
 		{
-			float num = 0f;
-			float num2 = 0f;
-			float num3 = 99999f;
-			ActorData actorData2 = null;
-			int num4 = 0;
-			bool flag = false;
-			foreach (ActorData actorData3 in players)
+			float score = 0f;
+			float closestEnemyScore = 0f;
+			float closestEnemyDist = 99999f;
+			ActorData closestEnemy = null;
+			int actorsProcessed = 0;
+			bool hasEnemiesWithinOptimalRange = false;
+			foreach (ActorData otherActor in actors)
 			{
-				if (!(actorData3 == actorData) && actorData3 && actorData3.GetCurrentBoardSquare() && !actorData3.IsDead())
+				if (otherActor == actorData
+				    || !otherActor
+				    || !otherActor.GetCurrentBoardSquare()
+				    || otherActor.IsDead())
 				{
-					num4++;
-					float num5 = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(actorData3));
-					if (actorData3.GetTeam() == actorData.GetTeam())
+					continue;
+				}
+				actorsProcessed++;
+				float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor));
+				if (otherActor.GetTeam() == actorData.GetTeam())
+				{
+					if (distanceToActor < optimalRange - 2f)
 					{
-						if (num5 < optimalRange - 2f)
-						{
-							num += 90f * num5 / (1f * optimalRange - 2f);
-						}
-						else if (num5 > optimalRange - 1f)
-						{
-							num += 90f - Mathf.Pow(num5 - (optimalRange - 2f), 1.25f);
-						}
-						else
-						{
-							num += 100f - (optimalRange - 3f) * Mathf.Abs(num5 - (optimalRange - 3f));
-						}
+						score += 90f * distanceToActor / (1f * optimalRange - 2f);
+					}
+					else if (distanceToActor > optimalRange - 1f)
+					{
+						score += 90f - Mathf.Pow(distanceToActor - (optimalRange - 2f), 1.25f);
 					}
 					else
 					{
-						float num6 = 0f;
-						if (num5 < optimalRange - 2.5)
-						{
-							num6 += 75f * num5 / (optimalRange - 2.5f);
-							flag = true;
-						}
-						else if (num5 > optimalRange)
-						{
-							num6 += 90f - Mathf.Pow(num5 - (optimalRange - 1f), 1.25f);
-						}
-						else
-						{
-							num6 += 100f - 3f * Mathf.Abs(num5 - (optimalRange - 2f));
-							flag = true;
-						}
-						num += num6;
-						if (num5 < num3)
-						{
-							num2 = num6;
-							num3 = num5;
-							actorData2 = actorData3;
-						}
+						score += 100f - (optimalRange - 3f) * Mathf.Abs(distanceToActor - (optimalRange - 3f));
+					}
+				}
+				else
+				{
+					float enemyScore = 0f;
+					if (distanceToActor < optimalRange - 2.5)
+					{
+						enemyScore += 75f * distanceToActor / (optimalRange - 2.5f);
+						hasEnemiesWithinOptimalRange = true;
+					}
+					else if (distanceToActor > optimalRange)
+					{
+						enemyScore += 90f - Mathf.Pow(distanceToActor - (optimalRange - 1f), 1.25f);
+					}
+					else
+					{
+						enemyScore += 100f - 3f * Mathf.Abs(distanceToActor - (optimalRange - 2f));
+						hasEnemiesWithinOptimalRange = true;
+					}
+					score += enemyScore;
+					if (distanceToActor < closestEnemyDist)
+					{
+						closestEnemyScore = enemyScore;
+						closestEnemyDist = distanceToActor;
+						closestEnemy = otherActor;
 					}
 				}
 			}
-			if (num4 > 0)
+			if (actorsProcessed > 0)
 			{
-				num /= num4;
+				score /= actorsProcessed;
 			}
 			ActorCover component = actorData.GetComponent<ActorCover>();
 			if (component != null)
 			{
-				num += component.CoverRating(boardSquare) * 40f;  // CoverRating(boardSquare, 100f) in rogues
+				score += component.CoverRating(boardSquare) * 40f;  // CoverRating(boardSquare, 100f) in rogues
 			}
 			if (boardSquare.OccupantActor != null && boardSquare.OccupantActor != actorData)
 			{
-				num -= 300f;
+				score -= 300f;
 			}
 			if (!HasLOSToEnemiesFromSquare(actorData, boardSquare))
 			{
-				num -= 200f;
+				score -= 200f;
 			}
-			if (nonSprintSquares.Contains(boardSquare) && flag)
+			if (nonSprintSquares.Contains(boardSquare) && hasEnemiesWithinOptimalRange)
 			{
-				num += 70f;
+				score += 70f;
 			}
-			if (actorData2 != null)
+			if (closestEnemy != null)
 			{
-				num += num2;
+				score += closestEnemyScore;
 			}
-			if (bestSquareScore < num)
+			if (bestSquareScore < score)
 			{
-				bestSquareScore = num;
+				bestSquareScore = score;
 				bestSquare = boardSquare;
 			}
 			if (realtimeSinceStartup + config.MaxAIIterationTime < Time.realtimeSinceStartup)
