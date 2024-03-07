@@ -433,7 +433,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		{
 			yield break;
 		}
-		for (int abilityIndex = (int)AbilityData.ActionType.ABILITY_6; abilityIndex >= (int)AbilityData.ActionType.ABILITY_0; abilityIndex--)
+		for (int abilityIndex = (int)AbilityData.ActionType.CARD_2; abilityIndex >= (int)AbilityData.ActionType.ABILITY_0; abilityIndex--) // starting with ABILITY_6 in rogues
 		{
 			AbilityData.ActionType actionType = (AbilityData.ActionType)abilityIndex;
 			Ability abilityOfActionType = abilityData.GetAbilityOfActionType(actionType);
