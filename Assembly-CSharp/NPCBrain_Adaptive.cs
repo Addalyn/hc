@@ -1305,14 +1305,16 @@ public class NPCBrain_Adaptive : NPCBrain
 				score -= projectedPosDamage;
 			}
 			// custom
-			foreach (Barrier barrier in BarrierManager.Get().GetAllBarriers())
+			if (!thisAbility.IsTeleport())
 			{
-				if (barrier.Caster == null
-				    || barrier.Caster.GetTeam() != actorData.GetEnemyTeam()
-				    || !barrier.CrossingBarrier(currentBoardSquare.ToVector3(), square.ToVector3()))
+				foreach (Barrier barrier in BarrierManager.Get().GetAllBarriers())
 				{
-					continue;
-				}
+					if (barrier.Caster == null
+					    || barrier.Caster.GetTeam() != actorData.GetEnemyTeam()
+					    || !barrier.CrossingBarrier(currentBoardSquare.ToVector3(), square.ToVector3()))
+					{
+						continue;
+					}
 
 				int projectedDamage = barrier.OnEnemyMovedThrough.m_damage;
 				StandardEffectInfo effect = barrier.OnEnemyMovedThrough.m_effect;
@@ -1329,7 +1331,8 @@ public class NPCBrain_Adaptive : NPCBrain
 					}
 				}
 				
-				score -= projectedDamage;
+					score -= projectedDamage;
+				}
 			}
 			// end custom
 			if (dodgeScore == 0f && choice.score < 10f)
