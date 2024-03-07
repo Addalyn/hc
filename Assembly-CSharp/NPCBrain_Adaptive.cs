@@ -1086,19 +1086,22 @@ public class NPCBrain_Adaptive : NPCBrain
 			choice.score /= 2f;
 			choice.reasoning += "Reduce the score by 50% - don't evade on respawn turns.\n";
 		}
-		bool flag = m_optimalRange > 4.5;
-		if (flag && actorData.GetHitPointPercent() > 0.8)
+		bool amIRanged = m_optimalRange > 4.5;
+		if (amIRanged && actorData.GetHitPointPercent() > 0.8)
 		{
 			choice.score /= 2f;
 			choice.reasoning += "Reduce the score by 50% - ranged characters shouldn't really use their evade at high health even if they will do damage.\n";
 		}
-		ActorCover component2 = actorData.GetComponent<ActorCover>();
-		if (flag && component2 != null && component2.AmountOfCover(actorData.CurrentBoardSquare) > 1 && actorData.GetHitPointPercent() > 0.75f)
+		ActorCover actorCover = actorData.GetComponent<ActorCover>();
+		if (amIRanged
+		    && actorCover != null
+		    && actorCover.AmountOfCover(actorData.CurrentBoardSquare) > 1
+		    && actorData.GetHitPointPercent() > 0.75f)
 		{
 			choice.score /= 2f;
 			choice.reasoning += "Reduce the score by 50% - don't use shift if you have decent cover and a ranged";
 		}
-		float num = 0f;
+		float score = 0f;
 		BoardSquare currentBoardSquare = actorData.GetCurrentBoardSquare();
 		BoardSquare square = Board.Get().GetSquare(choice.targetList[0].GridPos);
 		if (actorData.m_characterType == CharacterType.Spark && choice.targetList.Count == 2)
@@ -1127,125 +1130,133 @@ public class NPCBrain_Adaptive : NPCBrain
 		choice.destinationSquare = square;
 		if (!IsSquareOccupiedByAliveActor(square))
 		{
-			float num2 = 0f;
+			float dodgeScore = 0f;
 			if (actorData.GetHitPointPercent() < 0.5)
 			{
 				if (thisAbility.GetEvasionTeleportType() != ActorData.TeleportType.NotATeleport
 				    && square.IsInBrush()
 				    && BrushCoordinator.Get().IsRegionFunctioning(square.BrushRegion))
 				{
-					num += 20f;
+					score += 20f;
 				}
-				List<ActorData> list = actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList();
-				foreach (ActorData actorData2 in list)
+				List<ActorData> enemies = actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList();
+				foreach (ActorData enemy in enemies)
 				{
-					if (GetEnemyPlayerAliveAndVisibleMultiplier(actorData2) == 0f)
+					if (GetEnemyPlayerAliveAndVisibleMultiplier(enemy) == 0f)
 					{
 						continue;
 					}
-					BoardSquare currentBoardSquare2 = actorData2.GetCurrentBoardSquare();
-					Vector3 vector = currentBoardSquare.transform.position - currentBoardSquare2.transform.position;
-					Vector3 vector2 = square.transform.position - currentBoardSquare2.transform.position;
-					float magnitude = vector.magnitude;
-					float magnitude2 = vector2.magnitude;
-					if (magnitude <= 6f * Board.Get().squareSize)
+					BoardSquare enemySquare = enemy.GetCurrentBoardSquare();
+					Vector3 currentEnemyVector = currentBoardSquare.transform.position - enemySquare.transform.position;
+					Vector3 projectedEnemyVector = square.transform.position - enemySquare.transform.position;
+					float curDistToEnemy = currentEnemyVector.magnitude;
+					float projDistToEnemy = projectedEnemyVector.magnitude;
+					if (curDistToEnemy <= 6f * Board.Get().squareSize)
 					{
-						num2 += 1f;
+						dodgeScore += 1f;
 					}
-					vector.Normalize();
-					vector2.Normalize();
-					float num3 = Vector3.Dot(vector, vector2);
-					float num4;
-					if (num3 > 0.9f)
+					currentEnemyVector.Normalize();
+					projectedEnemyVector.Normalize();
+					float angleChange = Vector3.Dot(currentEnemyVector, projectedEnemyVector);
+					float enemyWeight;
+					if (angleChange > 0.9f)
 					{
-						num4 = 0.25f;
+						enemyWeight = 0.25f;
 					}
-					else if (num3 > 0.25f)
+					else if (angleChange > 0.25f)
 					{
-						num4 = Mathf.Sqrt(num3);
+						enemyWeight = Mathf.Sqrt(angleChange);
 					}
 					else if (choice.score > 0f)
 					{
-						num4 = 0.5f;
+						enemyWeight = 0.5f;
 					}
 					else
 					{
-						num4 = 0.5f + (num3 + 1f) / 2.5f;
+						enemyWeight = 0.5f + (angleChange + 1f) / 2.5f;
 					}
 					if (actorData.m_characterType == CharacterType.Tracker)
 					{
-						num4 += 1f;
+						enemyWeight += 1f;
 					}
 					if (choice.score == 0f)
 					{
-						num4 *= 20f;
+						enemyWeight *= 20f;
 					}
-					if (magnitude < 4.5f)
+					if (curDistToEnemy < 4.5f)
 					{
-						num += 20f * (Mathf.Abs(magnitude2 - magnitude) / 10f) * num4 / (1f * list.Count);
+						score += 20f * (Mathf.Abs(projDistToEnemy - curDistToEnemy) / 10f) * enemyWeight / (1f * enemies.Count);
 					}
-					else if (magnitude < 9f)
+					else if (curDistToEnemy < 9f)
 					{
-						num += 10f * (Mathf.Abs(magnitude2 - magnitude) / 10f) * num4 / (1f * list.Count);
+						score += 10f * (Mathf.Abs(projDistToEnemy - curDistToEnemy) / 10f) * enemyWeight / (1f * enemies.Count);
 					}
 					else
 					{
-						num += 5f * (Mathf.Abs(magnitude2 - magnitude) / 10f) * num4 / (1f * list.Count);
+						score += 5f * (Mathf.Abs(projDistToEnemy - curDistToEnemy) / 10f) * enemyWeight / (1f * enemies.Count);
 					}
-					num *= 0.5f;
+					score *= 0.5f;
 				}
 			}
 			foreach (Effect effect in ServerEffectManager.Get().WorldEffects)
 			{
-				int num5 = 0;
-				int num6 = 0;
-				if (!(effect.Caster == null) && effect.Caster.GetTeam() == actorData.GetEnemyTeam())
+				if (effect.Caster == null
+				    || effect.Caster.GetTeam() != actorData.GetEnemyTeam())
 				{
-					if (effect is SorceressDamageFieldEffect)
+					continue;
+				}
+				int currentPosDamage = 0;
+				int projectedPosDamage = 0;
+				switch (effect)
+				{
+					case SorceressDamageFieldEffect sorceressDamageFieldEffect:
 					{
-						SorceressDamageFieldEffect sorceressDamageFieldEffect = (SorceressDamageFieldEffect)effect;
 						if (sorceressDamageFieldEffect.AffectedSquares.Contains(currentBoardSquare))
 						{
-							num5 = sorceressDamageFieldEffect.m_damage;
+							currentPosDamage = sorceressDamageFieldEffect.m_damage;
 						}
 						if (sorceressDamageFieldEffect.AffectedSquares.Contains(square))
 						{
-							num6 = sorceressDamageFieldEffect.m_damage;
+							projectedPosDamage = sorceressDamageFieldEffect.m_damage;
 						}
+
+						break;
 					}
-					else
+					default:
 					{
 						if (effect.TargetSquare == currentBoardSquare)
 						{
-							num5 = 10;
+							currentPosDamage = 10;
 						}
 						if (effect.TargetSquare == square)
 						{
-							num6 = 10;
+							projectedPosDamage = 10;
 						}
+
+						break;
 					}
-					num += num5;
-					num -= num6;
 				}
+				score += currentPosDamage;
+				score -= projectedPosDamage;
 			}
-			if (num2 == 0f && choice.score < 10f)
+			if (dodgeScore == 0f && choice.score < 10f)
 			{
-				num = 0f;
+				score = 0f;
 			}
-			else if (num2 >= 2f && choice.score < 10f)
+			else if (dodgeScore >= 2f && choice.score < 10f)
 			{
-				num *= 1.25f;
+				score *= 1.25f;
 			}
-			if (num != 0f)
+			if (score != 0f)
 			{
 				if (actorData.GetHitPointPercent() < 0.4f && choice.score == 0f)
 				{
-					choice.score += 20f * num2;
+					choice.score += 20f * dodgeScore;
 					choice.reasoning += "Adding score if you are low health and your evade does no damage so you will not shoot and just dodge";
 				}
-				choice.score += num;
+				choice.score += score;
 				choice.reasoning +=
-					$"Adding {num} based on the quality of the evade (destination position & world effects at start and destination)\n";
+					$"Adding {score} based on the quality of the evade (destination position & world effects at start and destination)\n";
 			}
 		}
 		if (actorData.GetCharacterResourceLink().m_characterRole != CharacterRole.Tank && actorData.GetHitPointPercent() > 0.9f && actorData.TechPoints < 100)
