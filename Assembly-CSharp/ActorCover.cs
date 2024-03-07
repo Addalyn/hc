@@ -301,6 +301,84 @@ public class ActorCover : NetworkBehaviour
 	}
 	
 #if SERVER
+	// custom
+	public float CoverRatingWithTempCover(BoardSquare square, CoverDirections tempCoverDirection, bool tempCoverIgnoreMinDist)
+	{
+		List<ActorData> allTeamMembers = GameFlowData.Get().GetAllTeamMembers(m_owner.GetEnemyTeam());
+		float num = 0f;
+		foreach (ActorData actorData in allTeamMembers)
+		{
+			if (actorData.IsDead() || actorData.GetCurrentBoardSquare() == null)
+			{
+				continue;
+			}
+			Vector3 vector = actorData.GetCurrentBoardSquare().transform.position - square.transform.position;
+			if (vector.magnitude <= Board.Get().squareSize * 1.5f)
+			{
+				if (!tempCoverIgnoreMinDist)
+				{
+					continue;
+				}
+				bool isCoveredByTempCover = Mathf.Abs(vector.x) > Mathf.Abs(vector.z)
+					? vector.x < 0f && tempCoverDirection == CoverDirections.X_NEG
+					  || vector.x > 0f && tempCoverDirection == CoverDirections.X_POS
+					: vector.z < 0f && tempCoverDirection == CoverDirections.Y_NEG
+					  || vector.x > 0f && tempCoverDirection == CoverDirections.Y_POS;
+				if (!isCoveredByTempCover)
+				{
+					continue;
+				}
+			}
+			if (Mathf.Abs(vector.x) > Mathf.Abs(vector.z))
+			{
+				if (vector.x < 0f
+				    && (HasNonThinCover(square, -1, 0, true)
+				        || square.GetThinCover(CoverDirections.X_NEG) == ThinCover.CoverType.Half
+				        || tempCoverDirection == CoverDirections.X_NEG)
+				    || vector.x > 0f
+				    && (HasNonThinCover(square, 1, 0, true)
+				        || square.GetThinCover(CoverDirections.X_POS) == ThinCover.CoverType.Half
+				        || tempCoverDirection == CoverDirections.X_POS))
+				{
+					num += 1f;
+				}
+				else if (vector.x < 0f
+				    && (HasNonThinCover(square, -1, 0, false)
+				        || square.GetThinCover(CoverDirections.X_NEG) == ThinCover.CoverType.Full)
+				    || vector.x > 0f
+				    && (HasNonThinCover(square, 1, 0, false)
+				        || square.GetThinCover(CoverDirections.X_POS) == ThinCover.CoverType.Full))
+				{
+					num += 0.5f;
+				}
+			}
+			else
+			{
+				if (vector.z < 0f
+				    && (HasNonThinCover(square, 0, -1, true)
+				        || square.GetThinCover(CoverDirections.Y_NEG) == ThinCover.CoverType.Half
+				        || tempCoverDirection == CoverDirections.Y_NEG)
+				    || vector.z > 0f
+				    && (HasNonThinCover(square, 0, 1, true)
+				        || square.GetThinCover(CoverDirections.Y_POS) == ThinCover.CoverType.Half
+				        || tempCoverDirection == CoverDirections.Y_POS))
+				{
+					num += 1f;
+				}
+				else if ((vector.z < 0f
+				     && (HasNonThinCover(square, 0, -1, false)
+				         || square.GetThinCover(CoverDirections.Y_NEG) == ThinCover.CoverType.Full))
+				    || vector.z > 0f
+				    && (HasNonThinCover(square, 0, 1, false)
+				        || square.GetThinCover(CoverDirections.Y_POS) == ThinCover.CoverType.Full))
+				{
+					num += 0.5f;
+				}
+			}
+		}
+		return num;
+	}
+	
 	// added in rogues
 	public int AmountOfCover(BoardSquare square)
 	{

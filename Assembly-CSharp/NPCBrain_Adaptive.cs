@@ -43,7 +43,7 @@ public class NPCBrain_Adaptive : NPCBrain
 	[HideInInspector]
 	public bool m_playerEncountered;
 	
-	protected static bool s_gatherRealResults = true; // private in reactor
+	protected static bool s_gatherRealResults = false; // private & true in reactor
 	
 #if SERVER	
 	// added in rogues
@@ -506,8 +506,9 @@ public class NPCBrain_Adaptive : NPCBrain
 			{
 				continue;
 			}
-			
-			string abilityName = abilityData.GetAbilityOfActionType(j)?.m_abilityName ?? "N/A";
+
+			Ability abilityOfActionType = abilityData.GetAbilityOfActionType(j);
+			string abilityName = abilityOfActionType?.m_abilityName ?? "N/A";
 			PotentialChoice choice = m_potentialChoices.TryGetValue(j);
 			if (choice != null)
 			{
@@ -518,7 +519,7 @@ public class NPCBrain_Adaptive : NPCBrain
 					choice.reasoning,
 					choice.score);
 			}
-			else if (!abilityData.ValidateActionIsRequestable(j))
+			else if (abilityOfActionType == null || !abilityData.ValidateActionIsRequestable(j))
 			{
 				Log.Info("{0} ability not requestable {1} - {2}",
 					actorData.DisplayName,
@@ -598,14 +599,24 @@ public class NPCBrain_Adaptive : NPCBrain
 			}
 			
 			Ability ability = abilityData.GetAbilityOfActionType(potentialChoice.Key);
-			if (ability == null)
+			if (ability == null || !abilityData.ValidateActionIsRequestable(potentialChoice.Key))
 			{
+				Log.Info("{0} free {1} is not requestable - {2}",
+					actorData.DisplayName,
+					potentialChoice.Key,
+					ability?.m_abilityName ?? "N/A");
 				continue;
 			}
 
 			bool castFreeAction = !(ability is RageBeastSelfHeal) || actorData.HitPoints < 65;
 			if (castFreeAction)
 			{
+				Log.Info("{0} casting additional free {1} - {2} - Reasoning:\n{3}Final score: {4}",
+					actorData.DisplayName,
+					potentialChoice.Key,
+					ability.m_abilityName,
+					potentialChoice.Value.reasoning,
+					potentialChoice.Value.score);
 				if (ability.IsSimpleAction())
 				{
 					GetComponent<ServerActorController>().ProcessCastSimpleActionRequest(potentialChoice.Key, true);
@@ -742,8 +753,8 @@ public class NPCBrain_Adaptive : NPCBrain
 			potentialTargets = new List<AbilityTarget>(4);
 			foreach (BoardSquare secondTargetSquare in targetSquares)
 			{
-				var target = AbilityTarget.CreateAbilityTargetFromBoardSquare(
-					secondTargetSquare, boardSquare.ToVector3());
+				var target = AbilityTarget.CreateAbilityTargetFromWorldPos(
+					secondTargetSquare.ToVector3() * 0.4f + boardSquare.ToVector3() * 0.6f, boardSquare.ToVector3());
 				potentialTargets.Add(target);
 			}
 		}
@@ -970,8 +981,8 @@ public class NPCBrain_Adaptive : NPCBrain
 				potentialTargets = new List<AbilityTarget>(4);
 				foreach (BoardSquare secondTargetSquare in targetSquares)
 				{
-					var target = AbilityTarget.CreateAbilityTargetFromBoardSquare(
-						secondTargetSquare, boardSquare.ToVector3());
+					var target = AbilityTarget.CreateAbilityTargetFromWorldPos(
+						secondTargetSquare.ToVector3() * 0.4f + boardSquare.ToVector3() * 0.6f, boardSquare.ToVector3());
 					potentialTargets.Add(target);
 				}
 
@@ -1316,20 +1327,20 @@ public class NPCBrain_Adaptive : NPCBrain
 						continue;
 					}
 
-				int projectedDamage = barrier.OnEnemyMovedThrough.m_damage;
-				StandardEffectInfo effect = barrier.OnEnemyMovedThrough.m_effect;
-				if (effect.m_applyEffect)
-				{
-					foreach (StatusType statusChange in effect.m_effectData.m_statusChanges)
+					int projectedDamage = barrier.OnEnemyMovedThrough.m_damage;
+					StandardEffectInfo effect = barrier.OnEnemyMovedThrough.m_effect;
+					if (effect.m_applyEffect)
 					{
-						switch (statusChange)
+						foreach (StatusType statusChange in effect.m_effectData.m_statusChanges)
 						{
-							case StatusType.Weakened:
-								projectedDamage += 13 * effect.m_effectData.m_duration;
-								break;
+							switch (statusChange)
+							{
+								case StatusType.Weakened:
+									projectedDamage += 13 * effect.m_effectData.m_duration;
+									break;
+							}
 						}
 					}
-				}
 				
 					score -= projectedDamage;
 				}
@@ -1715,8 +1726,8 @@ public class NPCBrain_Adaptive : NPCBrain
 							Board.Get().GetCardinalAdjacentSquares(boardSquare.x, boardSquare.y, ref secondTargetSquares);
 							foreach (BoardSquare secondTargetSquare in secondTargetSquares)
 							{
-								var secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(
-									secondTargetSquare, boardSquare.ToVector3());
+								var secondTarget = AbilityTarget.CreateAbilityTargetFromWorldPos(
+									secondTargetSquare.ToVector3() * 0.4f + boardSquare.ToVector3() * 0.6f, boardSquare.ToVector3());
 								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
 							}
 						}
@@ -1773,8 +1784,8 @@ public class NPCBrain_Adaptive : NPCBrain
 								boardSquare.x, boardSquare.y, ref secondTargetSquares);
 							foreach (BoardSquare secondTargetSquare in secondTargetSquares)
 							{
-								var secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(
-									secondTargetSquare, boardSquare.ToVector3());
+								var secondTarget = AbilityTarget.CreateAbilityTargetFromWorldPos(
+									secondTargetSquare.ToVector3() * 0.4f + boardSquare.ToVector3() * 0.6f, boardSquare.ToVector3());
 								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
 							}
 						}
@@ -1911,8 +1922,18 @@ public class NPCBrain_Adaptive : NPCBrain
 								goto default;
 							}
 						}
-						else if (ability is NanoSmithBarrier 
-						         || ability is SoldierCardinalLine
+						else if (ability is NanoSmithBarrier)
+						{
+							List<BoardSquare> secondTargetSquares = new List<BoardSquare>(4);
+							Board.Get().GetCardinalAdjacentSquares(boardSquare.x, boardSquare.y, ref secondTargetSquares);
+							foreach (BoardSquare secondTargetSquare in secondTargetSquares)
+							{
+								var secondTarget = AbilityTarget.CreateAbilityTargetFromWorldPos(
+									secondTargetSquare.ToVector3() * 0.4f + boardSquare.ToVector3() * 0.6f, boardSquare.ToVector3());
+								potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
+							}
+						}
+						else if (ability is SoldierCardinalLine
 						         || ability is NinjaShurikenOrDash)
 						{
 							bool isAllDirections = ability is NinjaShurikenOrDash;
@@ -2744,6 +2765,37 @@ public class NPCBrain_Adaptive : NPCBrain
 				
 				return false; // also process standard effect data
 			}
+			case ValkyrieGuardEndingEffect valkyrieGuardEndingEffect:
+			{
+				ActorCover actorCover = caster.GetActorCover();
+				if (actorCover == null)
+				{
+					return false;
+				}
+				if (ability is ValkyrieGuard)
+				{
+					float coverRatingWithoutShield = actorCover.CoverRating(caster.GetCurrentBoardSquare());
+					float coverRatingWithShield = actorCover.CoverRatingWithTempCover(
+						caster.GetCurrentBoardSquare(),
+						valkyrieGuardEndingEffect.CoverDirection,
+						valkyrieGuardEndingEffect.CoverIgnoresMinDist);
+					float coverImprovement = coverRatingWithShield - coverRatingWithoutShield;
+					if (coverImprovement < 0.5f)
+					{
+						float scoreDelta = 50;
+						potentialChoice.score -= scoreDelta;
+						potentialChoice.reasoning += $"Subtracted {scoreDelta} score for bad cover.\n";
+					}
+					else if (coverImprovement > 1.0f)
+					{
+						float scoreDelta = coverImprovement * 30;
+						potentialChoice.score += scoreDelta;
+						potentialChoice.reasoning += $"Added {scoreDelta} score for good cover.\n";
+					}
+				}
+				// TODO BOTS VALKYRIE evaluate dash cover?
+				return true;
+			}
 			default:
 				return false;
 		}
@@ -3251,10 +3303,10 @@ public class NPCBrain_Adaptive : NPCBrain
 			{
 				score += component.CoverRating(boardSquare) * 40f;  // CoverRating(boardSquare, 100f) in rogues
 			}
-			if (boardSquare.OccupantActor != null && boardSquare.OccupantActor != actorData)
-			{
-				score -= 300f;
-			}
+			// if (boardSquare.OccupantActor != null && boardSquare.OccupantActor != actorData)
+			// {
+			// 	score -= 300f;
+			// }
 			if (!HasLOSToEnemiesFromSquare(actorData, boardSquare))
 			{
 				score -= 200f;

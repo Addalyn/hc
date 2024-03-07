@@ -17,6 +17,11 @@ public class ValkyrieGuardEndingEffect : StandardActorEffect
 	private Passive_Valkyrie m_passive;
 	private bool m_triggeredReactionOnce;
 	private bool m_readyToEnd;
+	
+	// custom
+	public ActorCover.CoverDirections CoverDirection => m_shieldFacing;
+	// custom
+	public bool CoverIgnoresMinDist => m_shieldCoverIgnoreMinDist;
 
 	public ValkyrieGuardEndingEffect(
 		EffectSource parent,
