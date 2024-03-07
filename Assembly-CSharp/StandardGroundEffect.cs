@@ -51,6 +51,9 @@ public class StandardGroundEffect : Effect
 			m_affectedSquares.Add(square);
 		}
 	}
+	
+	// custom
+	public HashSet<BoardSquare> AffectedSquares => m_affectedSquares;
 
 	// custom
 	public List<BoardSquare> GetSquaresInShape()

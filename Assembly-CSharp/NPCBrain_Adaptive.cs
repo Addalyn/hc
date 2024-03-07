@@ -1139,6 +1139,20 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					score += 20f;
 				}
+				// custom
+				if (actorCover != null)
+				{
+					float destCoverRating = actorCover.CoverRating(square);
+					if (destCoverRating > 1.5f)
+					{
+						score += 25f;
+					}
+					else if (destCoverRating > 1.0f)
+					{
+						score += 20f;
+					}
+				}
+				// end custom
 				List<ActorData> enemies = actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList();
 				foreach (ActorData enemy in enemies)
 				{
@@ -1222,6 +1236,57 @@ public class NPCBrain_Adaptive : NPCBrain
 
 						break;
 					}
+					// custom
+					case StandardGroundEffect _:
+					case StandardMultiAreaGroundEffect _:
+					{
+						if (effect is ThiefHiddenTrapEffect)
+						{
+							break;
+						}
+						
+						ICollection<BoardSquare> squaresInShape;
+						int damage;
+						if (effect is StandardGroundEffect standardGroundEffect)
+						{
+							damage = standardGroundEffect.m_fieldInfo.damageAmount;
+							squaresInShape = standardGroundEffect.AffectedSquares;
+						}
+						else if (effect is StandardMultiAreaGroundEffect standardMultiAreaGroundEffect)
+						{
+							damage = standardMultiAreaGroundEffect.m_fieldInfo.damageAmount;
+							squaresInShape = standardMultiAreaGroundEffect.GetSquaresInShape();
+						}
+						else
+						{
+							break;
+						}
+						
+						if (squaresInShape.Contains(currentBoardSquare))
+						{
+							currentPosDamage = damage;
+						}
+						if (squaresInShape.Contains(square))
+						{
+							projectedPosDamage = damage;
+						}
+						break;
+					}
+					case NekoBoomerangDiscEffect _:
+					{
+						// TODO BOT dodge catarangs
+						break;
+					}
+					case NekoHomingDiscEffect nekoHomingDiscEffect:
+					{
+						// TODO BOT dodge catarangs
+						if (nekoHomingDiscEffect.HomingTarget == actorData)
+						{
+							currentPosDamage = nekoHomingDiscEffect.m_returnTripDamage;
+						}
+						break;
+					}
+					// end custom
 					default:
 					{
 						if (effect.TargetSquare == currentBoardSquare)
@@ -1239,6 +1304,34 @@ public class NPCBrain_Adaptive : NPCBrain
 				score += currentPosDamage;
 				score -= projectedPosDamage;
 			}
+			// custom
+			foreach (Barrier barrier in BarrierManager.Get().GetAllBarriers())
+			{
+				if (barrier.Caster == null
+				    || barrier.Caster.GetTeam() != actorData.GetEnemyTeam()
+				    || !barrier.CrossingBarrier(currentBoardSquare.ToVector3(), square.ToVector3()))
+				{
+					continue;
+				}
+
+				int projectedDamage = barrier.OnEnemyMovedThrough.m_damage;
+				StandardEffectInfo effect = barrier.OnEnemyMovedThrough.m_effect;
+				if (effect.m_applyEffect)
+				{
+					foreach (StatusType statusChange in effect.m_effectData.m_statusChanges)
+					{
+						switch (statusChange)
+						{
+							case StatusType.Weakened:
+								projectedDamage += 13 * effect.m_effectData.m_duration;
+								break;
+						}
+					}
+				}
+				
+				score -= projectedDamage;
+			}
+			// end custom
 			if (dodgeScore == 0f && choice.score < 10f)
 			{
 				score = 0f;

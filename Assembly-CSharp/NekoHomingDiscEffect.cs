@@ -11,6 +11,8 @@ public class NekoHomingDiscEffect : NekoAbstractDiscEffect
     private ActorData m_homingTarget;
     private int m_noHitsCdr;
     private Vector3 m_discEndPos = Vector3.zero;
+
+    public ActorData HomingTarget => m_homingTarget;
     
     public NekoHomingDiscEffect(
         EffectSource parent,
