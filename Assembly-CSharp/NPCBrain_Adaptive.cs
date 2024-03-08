@@ -429,10 +429,10 @@ public class NPCBrain_Adaptive : NPCBrain
 		{
 			m_potentialChoices = new Dictionary<AbilityData.ActionType, PotentialChoice>();
 		}
-		if (GetLinkedActorIfAny(actorData, true))
-		{
-			yield break;
-		}
+		// if (GetLinkedActorIfAny(actorData, true))
+		// {
+		// 	yield break;
+		// }
 		for (int abilityIndex = (int)AbilityData.ActionType.CARD_2; abilityIndex >= (int)AbilityData.ActionType.ABILITY_0; abilityIndex--) // starting with ABILITY_6 in rogues
 		{
 			AbilityData.ActionType actionType = (AbilityData.ActionType)abilityIndex;
@@ -771,29 +771,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				List<AbilityTarget> targetList = new List<AbilityTarget> { item };
 				AbilityResults abilityResults = new AbilityResults(actorData, ability, null, s_gatherRealResults, true);
 				ability.GatherAbilityResults(targetList, actorData, ref abilityResults);
-				if (!ability.m_chainAbilities.IsNullOrEmpty())
-				{
-					foreach (Ability chainAbility in ability.m_chainAbilities)
-					{
-						AbilityResults chainAbilityResults = new AbilityResults(actorData, chainAbility, null, s_gatherRealResults, true);
-						chainAbility.GatherAbilityResults(targetList, actorData, ref chainAbilityResults);
-						foreach (KeyValuePair<ActorData, ActorHitResults> hitResult in chainAbilityResults.m_actorToHitResults)
-						{
-							abilityResults.m_actorToHitResults.Add(hitResult.Key, hitResult.Value);
-						}
-						foreach (KeyValuePair<ActorData, int> damageResult in chainAbilityResults.DamageResults)
-						{
-							if (abilityResults.DamageResults.ContainsKey(damageResult.Key))
-							{
-								abilityResults.DamageResults[damageResult.Key] += damageResult.Value;
-							}
-							else
-							{
-								abilityResults.DamageResults[damageResult.Key] = damageResult.Value;
-							}
-						}
-					}
-				}
+				GatherChainAbilityResults(ability, actorData, targetList, abilityResults);
 				PotentialChoice potentialChoice = ScoreResults(abilityResults, actorData, false);
 				potentialChoice.freeAction = ability.IsFreeAction();
 				potentialChoice.targetList = targetList;
@@ -817,6 +795,39 @@ public class NPCBrain_Adaptive : NPCBrain
 		if (retVal != null && retVal.score > 0f)
 		{
 			m_potentialChoices[thisAction] = retVal;
+		}
+	}
+
+	// custom, was inlined in rogues
+	private static void GatherChainAbilityResults(
+		Ability ability,
+		ActorData actorData,
+		List<AbilityTarget> targetList,
+		AbilityResults abilityResults)
+	{
+		if (ability.m_chainAbilities.IsNullOrEmpty())
+		{
+			return;
+		}
+		foreach (Ability chainAbility in ability.m_chainAbilities)
+		{
+			AbilityResults chainAbilityResults = new AbilityResults(actorData, chainAbility, null, s_gatherRealResults, true);
+			chainAbility.GatherAbilityResults(targetList, actorData, ref chainAbilityResults);
+			foreach (KeyValuePair<ActorData, ActorHitResults> hitResult in chainAbilityResults.m_actorToHitResults)
+			{
+				abilityResults.m_actorToHitResults.Add(hitResult.Key, hitResult.Value);
+			}
+			foreach (KeyValuePair<ActorData, int> damageResult in chainAbilityResults.DamageResults)
+			{
+				if (abilityResults.DamageResults.ContainsKey(damageResult.Key))
+				{
+					abilityResults.DamageResults[damageResult.Key] += damageResult.Value;
+				}
+				else
+				{
+					abilityResults.DamageResults[damageResult.Key] = damageResult.Value;
+				}
+			}
 		}
 	}
 
@@ -1001,6 +1012,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				List<AbilityTarget> targetList = new List<AbilityTarget> { target };
 				AbilityResults abilityResults = new AbilityResults(actorData, thisAbility, null, s_gatherRealResults, true);
 				thisAbility.GatherAbilityResults(targetList, actorData, ref abilityResults);
+				GatherChainAbilityResults(thisAbility, actorData, targetList, abilityResults);
 				PotentialChoice potentialChoice = ScoreResults(abilityResults, actorData, false);
 				potentialChoice.freeAction = thisAbility.IsFreeAction();
 				potentialChoice.targetList = targetList;
@@ -1498,6 +1510,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				List<AbilityTarget> targetList = new List<AbilityTarget> { target };
 				AbilityResults tempAbilityResults = new AbilityResults(actorData, ability, null, s_gatherRealResults, true);
 				ability.GatherAbilityResults(targetList, actorData, ref tempAbilityResults);
+				GatherChainAbilityResults(ability, actorData, targetList, tempAbilityResults);
 				PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, false);
 				potentialChoice.freeAction = ability.IsFreeAction();
 				potentialChoice.targetList = targetList;
@@ -2086,6 +2099,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 				AbilityResults tempAbilityResults = new AbilityResults(actorData, ability, null, s_gatherRealResults, true);
 				ability.GatherAbilityResults(targetList, actorData, ref tempAbilityResults);
+				GatherChainAbilityResults(ability, actorData, targetList, tempAbilityResults);
 				PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, false);
 				potentialChoice.freeAction = ability.IsFreeAction();
 				potentialChoice.targetList = targetList;
@@ -2800,6 +2814,23 @@ public class NPCBrain_Adaptive : NPCBrain
 				// TODO BOTS VALKYRIE evaluate dash cover?
 				return true;
 			}
+			case SparkHealingBeamEffect healingBeamEffect:
+			{
+				ActorData tetheredAlly = GetLinkedActorIfAny(caster, true);
+				if (tetheredAlly != null)
+				{
+					// TODO BOTS SPARK could be more sophisticated
+					float tetheredHP = tetheredAlly.GetHitPointPercent();
+					float newHP = healingBeamEffect.Target.GetHitPointPercent();
+					if (tetheredHP < 0.8f || (newHP > 0.8f && tetheredHP < 1.0f))
+					{
+						float scoreDelta = 50;
+						potentialChoice.score -= scoreDelta;
+						potentialChoice.reasoning += $"Subtracted {scoreDelta} score for losing good tether.\n";
+					}
+				}
+				return false; // also process standard effect data
+			}
 			default:
 				return false;
 		}
@@ -3129,8 +3160,8 @@ public class NPCBrain_Adaptive : NPCBrain
 		}
 	}
 
-	// added in rogues
-	private ActorData GetLinkedActorIfAny(ActorData actor, bool friendly)
+	// added in rogues, non-static in rogues
+	private static ActorData GetLinkedActorIfAny(ActorData actor, bool friendly)
 	{
 		List<ActorData> list = null;
 		if (actor.m_characterType == CharacterType.Spark)
