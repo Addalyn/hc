@@ -811,6 +811,11 @@ public class NPCBrain_Adaptive : NPCBrain
 		}
 		foreach (Ability chainAbility in ability.m_chainAbilities)
 		{
+			if (chainAbility is SamuraiAfterimageStrike) // relies on running main ability first, we evaluate SamuraiMarkEffect instead
+			{
+				continue;
+			}
+			
 			AbilityResults chainAbilityResults = new AbilityResults(actorData, chainAbility, null, s_gatherRealResults, true);
 			chainAbility.GatherAbilityResults(targetList, actorData, ref chainAbilityResults);
 			foreach (KeyValuePair<ActorData, ActorHitResults> hitResult in chainAbilityResults.m_actorToHitResults)
@@ -2676,7 +2681,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		}
 	}
 
-	private static bool ScoreCustomActorEffect(
+	private bool ScoreCustomActorEffect(
 		ActorData caster,
 		Ability ability,
 		Effect effect,
@@ -2763,24 +2768,31 @@ public class NPCBrain_Adaptive : NPCBrain
 			}
 			case ClaymoreDirtyFightingTargetEffect claymoreDirtyFightingTargetEffect:
 			{
-				float damageScore = ConvertDamageToScore(caster, target, claymoreDirtyFightingTargetEffect.m_damageAmount);
-				float dashScore = 0;
-				if (IsLikelyToDash(target, true))
+				if (GetEnemyPlayerAliveAndVisibleMultiplier(target) > 0f)
 				{
-					dashScore += 8;
-					potentialChoice.reasoning += $"Added {dashScore} score for predicted dash.\n";
+					float damageScore = ConvertDamageToScore(caster, target, claymoreDirtyFightingTargetEffect.m_damageAmount);
+					float dashScore = 0;
+					if (IsLikelyToDash(target, true))
+					{
+						dashScore += 8;
+						potentialChoice.reasoning += $"Added {dashScore} score for predicted dash.\n";
+					}
+					potentialChoice.score += damageScore + dashScore;
+					potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
 				}
-				potentialChoice.score += damageScore + dashScore;
-				potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
 				return false; // also process standard effect data
 			}
 			case ExoTetherEffect exoTetherEffect:
 			{
-				float factor = IsLikelyToDash(target, true) ? 0.8f : 0.3f;
-				float damageScore = ConvertDamageToScore(caster, target, (int)(exoTetherEffect.m_baseBreakDamage * factor));
-				potentialChoice.score += damageScore;
-				potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
-				
+				if (GetEnemyPlayerAliveAndVisibleMultiplier(target) > 0f)
+				{
+					float factor = IsLikelyToDash(target, true) ? 0.8f : 0.3f;
+					float damageScore = ConvertDamageToScore(caster, target,
+						(int)(exoTetherEffect.m_baseBreakDamage * factor));
+					potentialChoice.score += damageScore;
+					potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
+				}
+
 				return false; // also process standard effect data
 			}
 			case ValkyrieGuardEndingEffect valkyrieGuardEndingEffect:
@@ -2814,6 +2826,18 @@ public class NPCBrain_Adaptive : NPCBrain
 				// TODO BOTS VALKYRIE evaluate dash cover?
 				return true;
 			}
+			case SparkBasicAttackEffect attackEffect:
+			{
+				// TODO BOTS SPARK could be more sophisticated
+				ActorData tetheredEnemy = GetLinkedActorIfAny(caster, false);
+				if (tetheredEnemy != null)
+				{
+					float scoreDelta = 20;
+					potentialChoice.score -= scoreDelta;
+					potentialChoice.reasoning += $"Subtracted {scoreDelta} score for losing good tether.\n";
+				}
+				return false; // also process standard effect data
+			}
 			case SparkHealingBeamEffect healingBeamEffect:
 			{
 				ActorData tetheredAlly = GetLinkedActorIfAny(caster, true);
@@ -2830,6 +2854,23 @@ public class NPCBrain_Adaptive : NPCBrain
 					}
 				}
 				return false; // also process standard effect data
+			}
+			case SamuraiMarkEffect _:
+			{
+				if (GetEnemyPlayerAliveAndVisibleMultiplier(target) <= 0f)
+				{
+					return false;
+				}
+				SamuraiSwordDash baseAbility = caster.GetAbilityData()?.m_ability4 as SamuraiSwordDash;
+				if (baseAbility == null)
+				{
+					return false;
+				}
+				float factor = IsLikelyToDash(target, true) ? 0.3f : 1f;
+				float damageScore = ConvertDamageToScore(caster, target, (int)(baseAbility.m_knockbackDamage * factor));
+				potentialChoice.score += damageScore;
+				potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
+				return true;
 			}
 			default:
 				return false;
@@ -2960,7 +3001,7 @@ public class NPCBrain_Adaptive : NPCBrain
 			yield return StartCoroutine(DoRangedMovement(actorData, m_optimalRange));
 			break;
 		case MovementType.Support:
-			yield return StartCoroutine(DoSupportMovement(actorData, m_optimalRange));
+			yield return StartCoroutine(DoSupportMovement2(actorData, m_optimalRange)); // DoSupportMovement in rogues
 			break;
 		case MovementType.Melee:
 			yield return StartCoroutine(DoMeleeMovement(actorData, m_optimalRange));
@@ -3049,6 +3090,25 @@ public class NPCBrain_Adaptive : NPCBrain
 			}
 		}
 		return result;
+	}
+
+	// custom
+	public static bool WillHaveLOSToAlliesFromSquare(ActorData actorData, BoardSquare square)
+	{
+		if (square == null)
+		{
+			return false;
+		}
+		foreach (ActorData ally in GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam()))
+		{
+			BoardSquare allySquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(ally);
+			if (allySquare != null && square.GetLOS(allySquare.x, allySquare.y))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	// custom
@@ -3250,6 +3310,103 @@ public class NPCBrain_Adaptive : NPCBrain
 				bestFriendlyPlayer.GetCurrentBoardSquare(), true);
 			turnSM.SelectMovementSquareForMovement(closestMoveableSquareTo); // , true in rogues
 			BotManager.Get().SelectDestination(actorData, closestMoveableSquareTo);
+		}
+	}
+
+	// custom
+	public IEnumerator DoSupportMovement2(ActorData actorData, float optimalRange)
+	{
+		if (actorData.m_characterType == CharacterType.Spark)
+		{
+			yield return DoSupportMovement(actorData, optimalRange);
+			yield break;
+		}
+		
+		ActorMovement actorMovement = actorData.GetActorMovement();
+		ActorTurnSM turnSM = actorData.GetActorTurnSM();
+		HydrogenConfig config = HydrogenConfig.Get();
+		float bestSquareScore = -99999f;
+		BoardSquare startingSquare = actorData.GetCurrentBoardSquare();
+		BoardSquare bestSquare = startingSquare;
+		List<ActorData> actors = GameFlowData.Get().GetActors();
+		float realtimeSinceStartup = Time.realtimeSinceStartup;
+		foreach (BoardSquare boardSquare in actorMovement.SquaresCanMoveTo)
+		{
+			float score = 0f;
+			int actorsProcessed = 0;
+			foreach (ActorData otherActor in actors)
+			{
+				if (otherActor == actorData
+				    || !otherActor
+				    || !otherActor.GetCurrentBoardSquare()
+				    || otherActor.IsDead())
+				{
+					continue;
+				}
+				actorsProcessed++;
+				if (otherActor.GetTeam() == actorData.GetTeam())
+				{
+					float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor));
+					if (distanceToActor < optimalRange - 2f)
+					{
+						score += 90f * distanceToActor / (1f * optimalRange - 2f);
+					}
+					else if (distanceToActor > optimalRange - 1f)
+					{
+						score += 90f - Mathf.Pow(distanceToActor - (optimalRange - 2f), 1.25f);
+					}
+					else
+					{
+						score += 100f - (optimalRange - 3f) * Mathf.Abs(distanceToActor - (optimalRange - 3f));
+					}
+				}
+				else
+				{
+					float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(otherActor.CurrentBoardSquare);
+					float enemyScore = 0f;
+					if (distanceToActor < optimalRange - 2.5)
+					{
+						enemyScore -= 35f * distanceToActor / (optimalRange - 2.5f);
+					}
+					else if (distanceToActor > optimalRange)
+					{
+						enemyScore += 90f - Mathf.Pow(distanceToActor - (optimalRange - 1f), 1.25f);
+					}
+					else
+					{
+						enemyScore += 50f - 3f * Mathf.Abs(distanceToActor - (optimalRange - 2f));
+					}
+					score += enemyScore;
+				}
+			}
+			if (actorsProcessed > 0)
+			{
+				score /= actorsProcessed;
+			}
+			ActorCover component = actorData.GetComponent<ActorCover>();
+			if (component != null)
+			{
+				score += component.CoverRating(boardSquare) * 70f;  // CoverRating(boardSquare, 100f) in rogues
+			}
+			if (!WillHaveLOSToAlliesFromSquare(actorData, boardSquare))
+			{
+				score -= 100f;
+			}
+			if (bestSquareScore < score)
+			{
+				bestSquareScore = score;
+				bestSquare = boardSquare;
+			}
+			if (realtimeSinceStartup + config.MaxAIIterationTime < Time.realtimeSinceStartup)
+			{
+				yield return null;
+				realtimeSinceStartup = Time.realtimeSinceStartup;
+			}
+		}
+		if (bestSquare != startingSquare)
+		{
+			turnSM.SelectMovementSquareForMovement(bestSquare); // , true in rogues
+			BotManager.Get().SelectDestination(actorData, bestSquare);
 		}
 	}
 
