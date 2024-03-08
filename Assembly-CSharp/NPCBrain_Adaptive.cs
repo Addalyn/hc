@@ -2256,6 +2256,7 @@ public class NPCBrain_Adaptive : NPCBrain
 			float dashScore = 0;
 			foreach (ActorData target in actorsInRange)
 			{
+				if (GetEnemyPlayerAliveAndVisibleMultiplier(target) <= 0f) continue;
 				damageScore += ConvertDamageToScore(caster, target, (int)(damage * 0.7f));
 				// TODO BOTS also include barrier.OnEnemyMovedThrough.m_effect
 				
@@ -2342,6 +2343,7 @@ public class NPCBrain_Adaptive : NPCBrain
 						{
 							foreach (ActorData target in actorsInShape)
 							{
+								if (GetEnemyPlayerAliveAndVisibleMultiplier(target) <= 0f) continue; // custom
 								potentialChoice.score += ConvertDamageToScore(caster, target, 5);
 							}
 						}
@@ -2356,6 +2358,7 @@ public class NPCBrain_Adaptive : NPCBrain
 						BazookaGirlDroppedBombInfo bombInfo = bazookaEffect.m_bombInfo;
 						foreach (ActorData targetActor in bazookaEffect.m_targetActors)
 						{
+							if (GetEnemyPlayerAliveAndVisibleMultiplier(targetActor) <= 0f) continue;
 							List<BoardSquare> squaresInShape = AreaEffectUtils.GetSquaresInShape(
 								bombInfo.m_shape,
 								targetActor.GetFreePos(),
@@ -2367,7 +2370,7 @@ public class NPCBrain_Adaptive : NPCBrain
 						foreach (BoardSquare square in hitSquares)
 						{
 							ActorData hitActor = AreaEffectUtils.GetTargetableActorOnSquare(square, true, false, caster);
-							if (hitActor == null)
+							if (hitActor == null || GetEnemyPlayerAliveAndVisibleMultiplier(hitActor) <= 0f)
 							{
 								continue;
 							}
@@ -2419,7 +2422,7 @@ public class NPCBrain_Adaptive : NPCBrain
 								fieldInfo.IncludeAllies(),
 								caster);
 							
-							if (target == null)
+							if (target == null || GetEnemyPlayerAliveAndVisibleMultiplier(target) <= 0f)
 							{
 								continue;
 							}
@@ -2460,7 +2463,7 @@ public class NPCBrain_Adaptive : NPCBrain
 					case NekoHomingDiscEffect nekoHomingDiscEffect:
 					{
 						ActorData target = AreaEffectUtils.GetTargetableActorOnSquare(nekoHomingDiscEffect.TargetSquare, true, false, caster);
-						if (target != null)
+						if (target != null && GetEnemyPlayerAliveAndVisibleMultiplier(target) > 0f)
 						{
 							float factor = IsLikelyToDash(target, true) ? 0.8f : 0.3f;
 							float damageScore = ConvertDamageToScore(caster, target, (int)(nekoHomingDiscEffect.m_returnTripDamage * factor));
@@ -2555,11 +2558,12 @@ public class NPCBrain_Adaptive : NPCBrain
 		}
 	}
 
-	private static void ScoreActorEffects(AbilityResults tempAbilityResults, PotentialChoice potentialChoice)
+	// static in rogues
+	private void ScoreActorEffects(AbilityResults tempAbilityResults, PotentialChoice potentialChoice)
 	{
 		foreach (KeyValuePair<ActorData, ActorHitResults> actorToHitResult in tempAbilityResults.m_actorToHitResults)
 		{
-			if (actorToHitResult.Value.m_effects == null)
+			if (actorToHitResult.Value.m_effects == null || GetEnemyPlayerAliveAndVisibleMultiplier(actorToHitResult.Key) <= 0f)
 			{
 				continue;
 			}
