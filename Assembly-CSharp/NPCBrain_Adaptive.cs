@@ -1,9 +1,11 @@
 // ROGUES
 // SERVER
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class NPCBrain_Adaptive : NPCBrain
 {
@@ -433,7 +435,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		// {
 		// 	yield break;
 		// }
-		for (int abilityIndex = (int)AbilityData.ActionType.CARD_2; abilityIndex >= (int)AbilityData.ActionType.ABILITY_0; abilityIndex--) // starting with ABILITY_6 in rogues
+		for (int abilityIndex = (int)AbilityData.ActionType.CARD_1; abilityIndex >= (int)AbilityData.ActionType.ABILITY_0; abilityIndex--) // starting with ABILITY_6 in rogues
 		{
 			AbilityData.ActionType actionType = (AbilityData.ActionType)abilityIndex;
 			Ability abilityOfActionType = abilityData.GetAbilityOfActionType(actionType);
@@ -609,6 +611,24 @@ public class NPCBrain_Adaptive : NPCBrain
 			}
 
 			bool castFreeAction = !(ability is RageBeastSelfHeal) || actorData.HitPoints < 65;
+			// custom
+			if (ability is Card_Standard_Ability cardStandardAbility
+			    && cardStandardAbility.m_effect != null
+			    && cardStandardAbility.m_applyEffect
+			    && cardStandardAbility.m_effect.m_statusChanges.All(s => s == StatusType.Empowered))
+			{
+				if (bestPrimaryChoice == null)
+				{
+					castFreeAction = false;
+				}
+				else
+				{
+					// can't win being predictable
+					castFreeAction = Random.Range(0.0f, 1.0f) <
+					                 Mathf.Clamp((bestPrimaryChoice.damageTotal - 30.0f) / 30, 0.0f, 1.0f);
+				}
+			}
+			// end custom
 			if (castFreeAction)
 			{
 				Log.Info("{0} casting additional free {1} - {2} - Reasoning:\n{3}Final score: {4}",
@@ -1314,6 +1334,41 @@ public class NPCBrain_Adaptive : NPCBrain
 						}
 						break;
 					}
+					case BazookaGirlDelayedMissileEffect bigOneEffect:
+					{
+						foreach (BazookaGirlDelayedMissile.ShapeToHitInfo shapeToHitInfo in bigOneEffect.ShapeToHitInfo)
+						{
+							bool isSquareInShape = AreaEffectUtils.IsSquareInShape(
+								currentBoardSquare,
+								shapeToHitInfo.m_shape,
+								bigOneEffect.TargetSquare.ToVector3(),
+								bigOneEffect.TargetSquare,
+								true,
+								bigOneEffect.Caster);
+							if (isSquareInShape)
+							{
+								currentPosDamage = shapeToHitInfo.m_damage;
+								break;
+							}
+						}
+						foreach (BazookaGirlDelayedMissile.ShapeToHitInfo shapeToHitInfo in bigOneEffect.ShapeToHitInfo)
+						{
+							bool isSquareInShape = AreaEffectUtils.IsSquareInShape(
+								square,
+								shapeToHitInfo.m_shape,
+								bigOneEffect.TargetSquare.ToVector3(),
+								bigOneEffect.TargetSquare,
+								true,
+								bigOneEffect.Caster);
+							if (isSquareInShape)
+							{
+								projectedPosDamage = shapeToHitInfo.m_damage;
+								break;
+							}
+						}
+
+						break;
+					}
 					// end custom
 					default:
 					{
@@ -1886,7 +1941,6 @@ public class NPCBrain_Adaptive : NPCBrain
 				float range = ability.m_targetData[0].m_range;
 				float minRange = ability.m_targetData[0].m_minRange;
 				if (ability is GremlinsMultiTargeterApocolypse) // gotta limit the number of squares we operate upon
-				// TODO still to much + coroutinize?
 				{
 					List<ActorData> enemyTargets = GetPotentialTargets(actorData,  range, true, false, false);
 					targetSquares = new HashSet<BoardSquare>();
@@ -2369,6 +2423,44 @@ public class NPCBrain_Adaptive : NPCBrain
 
 						float damageFieldScore = potentialChoice.score - score;
 						potentialChoice.reasoning += $"Added {damageFieldScore} score for Aurora damage field.\n";
+						break;
+					}
+					case BazookaGirlDelayedMissileEffect bigOneEffect:
+					{
+						float damageScore = 0.0f;
+						List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(
+							bigOneEffect.Shape,
+							posToHitResult.Key,
+							bigOneEffect.TargetSquare,
+							true,
+							caster,
+							caster.GetOtherTeams(),
+							null);
+						foreach (ActorData actorData in actorsInShape)
+						{
+							if (GetEnemyPlayerAliveAndVisibleMultiplier(actorData) <= 0f) continue;
+							damageScore += 15;
+						}
+
+						float coverScore = 0.0f;
+						ActorCover actorCover = caster.GetActorCover();
+						if (actorCover != null)
+						{
+							List<BoardSquare> squaresInShape = AreaEffectUtils.GetSquaresInShape(
+								bigOneEffect.Shape,
+								posToHitResult.Key,
+								bigOneEffect.TargetSquare,
+								true,
+								caster);
+							foreach (BoardSquare square in squaresInShape)
+							{
+								coverScore += actorCover.AmountOfCover(square);
+							}
+						}
+						
+						potentialChoice.score += damageScore + coverScore;
+						potentialChoice.reasoning += $"Added {damageScore} score for enemies in shape.\n";
+						potentialChoice.reasoning += $"Added {coverScore} score for squares with cover.\n";
 						break;
 					}
 					case BazookaGirlDelayedBombDropsEffect bazookaEffect:
@@ -2854,6 +2946,24 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 				return false; // also process standard effect data
 			}
+			case SparkEnergizedEffect energizedEffect:
+			{
+				ActorData tetheredAlly = GetLinkedActorIfAny(caster, true);
+				if (tetheredAlly != null)
+				{
+					float scoreDelta = 20;
+					potentialChoice.score += scoreDelta;
+					potentialChoice.reasoning += $"Added {scoreDelta} score for energizing a tether.\n";
+				}
+				ActorData tetheredEnemy = GetLinkedActorIfAny(caster, false);
+				if (tetheredEnemy != null)
+				{
+					float scoreDelta = 20;
+					potentialChoice.score += scoreDelta;
+					potentialChoice.reasoning += $"Added {scoreDelta} score for energizing a tether.\n";
+				}
+				return false; // also process standard effect data
+			}
 			case SamuraiMarkEffect _:
 			{
 				if (GetEnemyPlayerAliveAndVisibleMultiplier(target) <= 0f)
@@ -3230,7 +3340,16 @@ public class NPCBrain_Adaptive : NPCBrain
 		List<ActorData> list = null;
 		if (actor.m_characterType == CharacterType.Spark)
 		{
-			list = actor.GetComponent<SparkBeamTrackerComponent>().GetBeamActors();
+			// custom
+			AbilityRequest request = ServerActionBuffer
+				.Get()
+				.GetAllStoredAbilityRequests()
+				.FirstOrDefault(req => req.m_caster == actor && req.m_ability is SparkHealingBeam);
+			list = request != null
+				? request.m_targets.Select(t => Board.Get().GetSquare(t.GridPos).OccupantActor).ToList()
+				: actor.GetComponent<SparkBeamTrackerComponent>().GetBeamActors();
+			// rogues
+			// list = actor.GetComponent<SparkBeamTrackerComponent>().GetBeamActors();
 		}
 		if (list == null)
 		{

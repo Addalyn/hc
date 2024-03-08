@@ -22,6 +22,10 @@ public class BazookaGirlDelayedMissileEffect : Effect
     
     private BazookaGirl_SyncComponent m_syncComponent;
 
+    public AbilityAreaShape Shape => m_shape;
+    public BoardSquare TargetSquare => m_targetSquare;
+    public List<BazookaGirlDelayedMissile.ShapeToHitInfo> ShapeToHitInfo => m_shapeToHitInfo;
+
     public BazookaGirlDelayedMissileEffect(
         EffectSource parent,
         BoardSquare targetSquare,
