@@ -2722,7 +2722,6 @@ public class NPCBrain_Adaptive : NPCBrain
 			}
 			case BlasterOverchargeEffect _:
 			{
-				
 				BlasterOvercharge blasterOverchargeAbility = caster.GetAbilityData().m_ability2 as BlasterOvercharge;
 				if (blasterOverchargeAbility == null)
 				{
@@ -3173,7 +3172,12 @@ public class NPCBrain_Adaptive : NPCBrain
 			{
 				continue;
 			}
-			BoardSquare enemySquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(enemy);
+			
+			// custom
+			BoardSquare enemySquare = enemy.CurrentBoardSquare;
+			// rogues
+			// BoardSquare enemySquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(enemy);
+			
 			Vector3 enemyPos = enemySquare.transform.position;
 			enemyPos.y = 0f;
 			float magnitude = (enemyPos - position).magnitude;
@@ -3444,9 +3448,10 @@ public class NPCBrain_Adaptive : NPCBrain
 					continue;
 				}
 				actorsProcessed++;
-				float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor));
+				// float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor)); // rogues
 				if (otherActor.GetTeam() == actorData.GetTeam())
 				{
+					float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor)); // custom
 					if (distanceToActor < optimalRange - 2f)
 					{
 						score += 90f * distanceToActor / (1f * optimalRange - 2f);
@@ -3462,6 +3467,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 				else
 				{
+					float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(otherActor.CurrentBoardSquare); // custom
 					float enemyScore = 0f;
 					if (distanceToActor < optimalRange - 2.5)
 					{

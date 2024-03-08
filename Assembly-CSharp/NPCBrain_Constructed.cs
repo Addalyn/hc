@@ -517,7 +517,7 @@ public class NPCBrain_Constructed : NPCBrain_Adaptive
 				bool flag = false;
 				if (demandedTarget != null && demandedTarget.GetCurrentBoardSquare() && !demandedTarget.IsDead())
 				{
-					float distance = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(demandedTarget));
+					float distance = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(demandedTarget)); // TODO BOTS might read enemy's mind
 					bool flag2 = actorData.GetOtherTeams().Contains(demandedTarget.GetTeam());
 					float optimalRange = flag2 ? optimalRangeFromEnemy : optimalRangeFromAlly;
 					float optimalRangeWindow = flag2 ? optimalRangeWindowEnemy : optimalRangeWindowAlly;
@@ -540,7 +540,7 @@ public class NPCBrain_Constructed : NPCBrain_Adaptive
 							num5 += num6;
 							if (num4 >= 0f)
 							{
-								float num7 = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(actorData2));
+								float num7 = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(actorData2)); // TODO BOTS might read enemy's mind
 								if (num7 <= engagementRange)
 								{
 									num2++;

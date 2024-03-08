@@ -94,12 +94,12 @@ public class BotManager : MonoBehaviour
 
 	public void BotAIAbilitySelected(ActorData actorData, BoardSquare dashTarget, float optimalRange)
 	{
-		int currentTurn = GameFlowData.Get().CurrentTurn;
-		if (m_pendingBotMovement == null)
-		{
-			m_pendingBotMovement = new List<PendingBotMovement>();
-		}
-		m_pendingBotMovement.Clear();
+		// int currentTurn = GameFlowData.Get().CurrentTurn;
+		// if (m_pendingBotMovement == null)
+		// {
+		// 	m_pendingBotMovement = new List<PendingBotMovement>();
+		// }
+		// m_pendingBotMovement.Clear();
 	}
 
 	public bool IsDestinationSelected(BoardSquare boardSquare)
@@ -117,6 +117,7 @@ public class BotManager : MonoBehaviour
 		return false;
 	}
 
+	// custom
 	public void SelectDestination(ActorData actorData, BoardSquare destination)
 	{
 		foreach (PendingBotMovement pendingBotMovement in m_pendingBotMovement)
@@ -124,9 +125,29 @@ public class BotManager : MonoBehaviour
 			if (pendingBotMovement.actorData == actorData)
 			{
 				pendingBotMovement.destination = destination;
+				pendingBotMovement.currentTurn = GameFlowData.Get().CurrentTurn;
+				return;
 			}
 		}
+		m_pendingBotMovement.Add(new PendingBotMovement
+		{
+			actorData = actorData,
+			currentTurn = GameFlowData.Get().CurrentTurn,
+			destination = destination,
+			optimalRange = actorData.GetComponent<NPCBrain_Adaptive>()?.m_optimalRange ?? 0
+		});
 	}
+	// rogues
+	// public void SelectDestination(ActorData actorData, BoardSquare destination)
+	// {
+	// 	foreach (PendingBotMovement pendingBotMovement in m_pendingBotMovement)
+	// 	{
+	// 		if (pendingBotMovement.actorData == actorData)
+	// 		{
+	// 			pendingBotMovement.destination = destination;
+	// 		}
+	// 	}
+	// }
 
 	public BoardSquare GetPendingDestinationOrCurrentSquare(ActorData actorData)
 	{
