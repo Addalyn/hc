@@ -2,6 +2,7 @@
 // SERVER
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 //using Escalation;
@@ -1657,34 +1658,6 @@ public class GameFlowData : NetworkBehaviour, IGameEventListener
 			ControlpadGameplay.Get().OnTurnTick();
 		}
 	}
-	
-	// custom - don't wait for timebanks if everyone has confirmed
-#if SERVER
-	public void UpdateTimeRemainingOverflow()
-	{
-		float overflow = 0f;
-
-		if (m_timeRemainingInDecision <= 0)
-		{
-			return;
-		}
-		
-		foreach (ActorData actorData in GetActors())
-		{
-			Log.Debug($"UpdateTimeRemainingOverflow {actorData.m_displayName} " +
-			          $"{actorData.GetTimeBank().GetPermittedOverflowTime()} " +
-			          $"{actorData.GetActorTurnSM()?.CurrentState}");
-			if (actorData != null
-			    && actorData.IsHumanControlled()
-			    && actorData.GetActorTurnSM()?.CurrentState != TurnStateEnum.CONFIRMED)
-			{
-				overflow = Mathf.Max(overflow, actorData.GetTimeBank().GetPermittedOverflowTime());
-				Log.Debug($"UpdateTimeRemainingOverflow Waiting for {actorData.m_displayName} ");
-			}
-		}
-		Networkm_timeRemainingInDecisionOverflow = overflow;
-	}
-#endif
 
 	// removed in rogues
 	public bool HasPotentialGameMutatorVisibilityChanges(bool onTurnStart)
@@ -1984,22 +1957,26 @@ public class GameFlowData : NetworkBehaviour, IGameEventListener
 			if (m_timeRemainingInDecision < -m_timeRemainingInDecisionOverflow)
 			{
 				m_timeRemainingInDecision = -m_timeRemainingInDecisionOverflow;
-
-				// custom
-				if (NetworkServer.active)
+			}
+			
+#if SERVER
+			// custom
+			if (NetworkServer.active
+			    && m_timeRemainingInDecision <= 0
+			    && GetActors().All(a => a.GetActorTurnSM().CurrentState == TurnStateEnum.CONFIRMED
+			                            || a.PlayerIndex == PlayerData.s_invalidPlayerIndex)) // Oz why
+			{
+				foreach (ActorData actor in GetActors())
 				{
-					foreach (ActorData actor in GetActors())
-					{
-						var turnSm = actor.gameObject.GetComponent<ActorTurnSM>();
-						turnSm.OnMessage(TurnMessage.BEGIN_RESOLVE);
-					}
-					ServerActionBuffer.Get().ActionPhase = ActionBufferPhase.Abilities;
-					gameState = GameState.BothTeams_Resolve;
+					var turnSm = actor.gameObject.GetComponent<ActorTurnSM>();
+					turnSm.OnMessage(TurnMessage.BEGIN_RESOLVE);
 				}
+				ServerActionBuffer.Get().ActionPhase = ActionBufferPhase.Abilities;
+				gameState = GameState.BothTeams_Resolve;
+				return;
 			}
 
 			// server-only
-#if SERVER
 			if (NetworkServer.active)
 			{
 				bool syncRequired = m_timeForNextTimeRemainingSync < 0f || Time.time >= m_timeForNextTimeRemainingSync;
@@ -2189,9 +2166,6 @@ public class GameFlowData : NetworkBehaviour, IGameEventListener
 	// reactor
 	public bool PreventAutoLockInOnTimeout()
 	{
-		// TODO for now
-		return false;
-
 		GameManager gameManager = GameManager.Get();
 		if (gameManager == null)
 		{
@@ -2206,13 +2180,11 @@ public class GameFlowData : NetworkBehaviour, IGameEventListener
 		{
 			return false;
 		}
-		if (gameType != GameType.Solo && gameType != GameType.NewPlayerSolo && gameType != GameType.Tutorial && !gameManager.GameConfig.InstanceSubType.HasMod(GameSubType.SubTypeMods.AntiSocial))
-		{
-			return false;
-		}
-		return true;
+		return gameType == GameType.Solo
+		       || gameType == GameType.NewPlayerSolo
+		       || gameType == GameType.Tutorial
+		       || gameManager.GameConfig.InstanceSubType.HasMod(GameSubType.SubTypeMods.AntiSocial);
 	}
-
 	// rogues
 	//public bool PreventAutoLockInOnTimeout()
 	//{

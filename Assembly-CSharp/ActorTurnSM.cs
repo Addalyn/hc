@@ -1358,16 +1358,6 @@ public class ActorTurnSM : NetworkBehaviour
 			//}
 			UpdateStates();
 		}
-		
-#if SERVER
-		// custom
-		if (NetworkServer.active
-		    && (msg == TurnMessage.DONE_BUTTON_CLICKED
-				|| msg == TurnMessage.CANCEL_BUTTON_CLICKED))
-		{
-			GameFlowData.Get().UpdateTimeRemainingOverflow();
-		}
-#endif
 	}
 
 	[Command]
