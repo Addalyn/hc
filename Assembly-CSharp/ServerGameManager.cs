@@ -2037,6 +2037,7 @@ public class ServerGameManager : MonoBehaviour
 			     // TODO HACK
 			     // custom
 			     && serverPlayerState.PlayerInfo.LobbyPlayerInfo.AccountId > 0
+			     && !serverPlayerState.IsAIControlled
 			     && !(GameManager.Get().GameStatus >= GameStatus.Loaded && serverPlayerState.GameResult > GameResult.Requeued))
 			     // end custom
 			    || serverPlayerState.LocalClient)
