@@ -932,11 +932,11 @@ public class ServerGameManager : MonoBehaviour
 		}
 		StartServerOrHost(); // await StartServerOrHost(); in rogues
 		m_serverPlayerStates.Clear();
-		List<LobbyServerPlayerInfo> localPlayers = (from p in request.TeamInfo.TeamPlayerInfo where !p.IsNPCBot && !p.IsRemoteControlled select p).ToList();
+		List<LobbyServerPlayerInfo> primaryPlayers = (from p in request.TeamInfo.TeamPlayerInfo where !p.IsNPCBot && !p.IsRemoteControlled select p).ToList();
 		List<LobbyServerPlayerInfo> bots = (from p in request.TeamInfo.TeamPlayerInfo where p.IsNPCBot select p).ToList();
-		Log.Info($"ServerGameManager::HandleLaunchGameRequest: {localPlayers.Count} local players and {bots.Count} bots");
+		Log.Info($"ServerGameManager::HandleLaunchGameRequest: {primaryPlayers.Count} primary players and {bots.Count} bots");
 		int num = -1;
-		foreach (LobbyServerPlayerInfo lobbyServerPlayerInfo in localPlayers)
+		foreach (LobbyServerPlayerInfo lobbyServerPlayerInfo in primaryPlayers)
 		{
 			LobbySessionInfo sessionInfo = request.SessionInfo[lobbyServerPlayerInfo.PlayerId];
 			List<LobbyServerPlayerInfo> proxyPlayerInfos = new List<LobbyServerPlayerInfo>();
@@ -950,7 +950,7 @@ public class ServerGameManager : MonoBehaviour
 				}
 			}
 			AddPlayerState(sessionInfo, lobbyServerPlayerInfo, proxyPlayerInfos, num--);
-			Log.Info($"ServerGameManager::HandleLaunchGameRequest: Added local player {lobbyServerPlayerInfo.Handle} {lobbyServerPlayerInfo.CharacterType}");
+			Log.Info($"ServerGameManager::HandleLaunchGameRequest: Added primary player {lobbyServerPlayerInfo.PlayerId} {lobbyServerPlayerInfo.Handle} {lobbyServerPlayerInfo.CharacterType}");
 		}
 		foreach (LobbyServerPlayerInfo primaryPlayerInfo in bots)
 		{
@@ -2189,6 +2189,19 @@ public class ServerGameManager : MonoBehaviour
 		foreach (ServerPlayerState serverPlayerState in m_serverPlayerStates.Values)
 		{
 			if (serverPlayerState.SessionInfo != null && serverPlayerState.SessionInfo.AccountId == accountId)
+			{
+				return serverPlayerState;
+			}
+		}
+		return null;
+	}
+
+	// custom
+	public ServerPlayerState GetPlayerStateByPlayerId(long playerId)
+	{
+		foreach (ServerPlayerState serverPlayerState in m_serverPlayerStates.Values)
+		{
+			if (serverPlayerState.PlayerInfo.PlayerId == playerId)
 			{
 				return serverPlayerState;
 			}

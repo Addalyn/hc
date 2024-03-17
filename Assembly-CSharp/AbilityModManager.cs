@@ -66,14 +66,15 @@ public class AbilityModManager : NetworkBehaviour
 					// }
 					
 					// custom
-					ServerPlayerState playerState = ServerGameManager.Get().GetPlayerStateByAccountId(actorData.GetAccountId());
+					ServerPlayerState playerState = ServerGameManager.Get().GetPlayerStateByPlayerId(actorData.PlayerIndex);
 					if (playerState != null)
 					{
-						if (playerState.PlayerInfo.PlayerId == actorData.PlayerIndex)
-						{
-							actorData.SetupAbilityMods(playerState.PlayerInfo.CharacterMods);
-						}
-						else
+						actorData.SetupAbilityMods(playerState.PlayerInfo.CharacterMods);
+					}
+					else if (actorData.GetAccountId() > 0) // actor is a proxy
+					{
+						playerState = ServerGameManager.Get().GetPlayerStateByAccountId(actorData.GetAccountId());
+						if (playerState != null)
 						{
 							foreach (ServerPlayerInfo proxy in playerState.PlayerInfo.ProxyPlayerInfos)
 							{
