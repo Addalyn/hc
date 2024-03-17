@@ -1621,7 +1621,9 @@ public class GameFlowData : NetworkBehaviour, IGameEventListener
 			if (!m_pause)
 			{
 				// custom
-				if (!allClientsConnected && HydrogenConfig.Get().PendingReconnectTurnTime > Get().m_turnTime)
+				if (!allClientsConnected
+				    && !GameManager.Get().GameConfig.InstanceSubType.HasMod(GameSubType.SubTypeMods.AntiSocial)
+				    && HydrogenConfig.Get().PendingReconnectTurnTime > Get().m_turnTime)
 				{
 					Log.Info($"Disconnect detected, extending turn time");
 					ServerGameManager.Get()?.SendUnlocalizedConsoleMessage(
