@@ -940,16 +940,21 @@ public class GameFlow : NetworkBehaviour
 			playerDetails.ReplaceWithBots();
 		}
 		base.SetDirtyBit(1U);
-		for (int i = 0; i < playerDetails.m_gameObjects.Count; i++)
+		
+		bool isAllowedToReplaceWithBots = GameManager.Get().GameConfig.GameType == GameType.Coop; // custom
+		if (isAllowedToReplaceWithBots) // custom TODO HACK do not replace with bots in pvp
 		{
-			GameObject gameObject = playerDetails.m_gameObjects[i];
-			ActorData component = gameObject.GetComponent<ActorData>();
-			gameObject.AddComponent<BotController>();
-			component.HasBotController = true;
-			NPCBrain_Adaptive component2 = gameObject.GetComponent<NPCBrain_Adaptive>();
-			if (component2 != null)
+			for (int i = 0; i < playerDetails.m_gameObjects.Count; i++)
 			{
-				component2.isReplacingHuman = true;
+				GameObject gameObject = playerDetails.m_gameObjects[i];
+				ActorData component = gameObject.GetComponent<ActorData>();
+				gameObject.AddComponent<BotController>();
+				component.HasBotController = true;
+				NPCBrain_Adaptive component2 = gameObject.GetComponent<NPCBrain_Adaptive>();
+				if (component2 != null)
+				{
+					component2.isReplacingHuman = true;
+				}
 			}
 		}
 		for (int j = 0; j < NetworkServer.connections.Count; j++)
@@ -991,11 +996,10 @@ public class GameFlow : NetworkBehaviour
 						actorData.HasBotController = false;
 						int length = value.m_handle.LastIndexOf('#');
 						actorData.m_displayName = value.m_handle.Substring(0, length);
-						// custom
-						actorData.SetupAbilityModOnReconnect();
 						// rogues
 						//actorData.SetupAbilityGear();
 					}
+					actorData.SetupAbilityModOnReconnect(); // custom
 				}
 				break;
 			}
