@@ -1964,6 +1964,7 @@ public class GameFlowData : NetworkBehaviour, IGameEventListener
 			if (NetworkServer.active
 			    && m_timeRemainingInDecision <= 0
 			    && GetActors().All(a => a.GetActorTurnSM().CurrentState == TurnStateEnum.CONFIRMED
+			                            || !a.IsHumanControlled()
 			                            || a.PlayerIndex == PlayerData.s_invalidPlayerIndex)) // Oz why
 			{
 				foreach (ActorData actor in GetActors())
