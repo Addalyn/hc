@@ -143,6 +143,7 @@ public class PlayerAction_Ability : PlayerAction
 	//custom
 	public List<ActorAnimation> PrepareResults()
 	{
+		ServerActionBuffer.Get().GatheringFakeResults = false;
 		if (m_requests == null)
 		{
 			return new List<ActorAnimation>();
@@ -179,7 +180,6 @@ public class PlayerAction_Ability : PlayerAction
 		List<ActorAnimation> list = new List<ActorAnimation>();
 		sbyte b = 0;
 
-		ServerActionBuffer.Get().GatheringFakeResults = false;
 		
 		foreach (AbilityRequest abilityRequest3 in m_requests)
 		{

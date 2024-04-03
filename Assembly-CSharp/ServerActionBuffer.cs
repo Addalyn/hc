@@ -82,6 +82,7 @@ public class ServerActionBuffer : NetworkBehaviour
 			if (m_gatheringFakeResults != value)
 			{
 				m_gatheringFakeResults = value;
+				Log.Info($"Now gathering {(value ? "fake" : "real")} results"); // custom
 			}
 		}
 	}
