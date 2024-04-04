@@ -8,18 +8,19 @@ using UnityEngine.Networking;
 [Serializable]
 public class JoinGameServerRequest : AllianceMessageBase
 {
-	internal int OrigRequestId;
-	internal LobbySessionInfo SessionInfo;
-	internal LobbyServerPlayerInfo PlayerInfo;
-	internal string GameServerProcessCode;
+	// all fields internal in rogues
+	public int OrigRequestId;
+	public LobbySessionInfo SessionInfo;
+	public LobbyServerPlayerInfo PlayerInfo;
+	public string GameServerProcessCode;
 
 	public override void Deserialize(NetworkReader reader)
 	{
 		base.Deserialize(reader);
-		this.OrigRequestId = reader.ReadInt32();
-		AllianceMessageBase.DeserializeObject<LobbySessionInfo>(out this.SessionInfo, reader);
-		AllianceMessageBase.DeserializeObject<LobbyServerPlayerInfo>(out this.PlayerInfo, reader);
-		this.GameServerProcessCode = reader.ReadString();
+		OrigRequestId = reader.ReadInt32();
+		DeserializeObject(out SessionInfo, reader);
+		DeserializeObject(out PlayerInfo, reader);
+		GameServerProcessCode = reader.ReadString();
 	}
 }
 #endif

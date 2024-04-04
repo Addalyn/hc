@@ -393,7 +393,7 @@ public class BotController : MonoBehaviour
 	// added in rogues
 	public void StartDecideAbilities_FCFS()
 	{
-		Log.Info("BotController::StartDecideAbilities_FCFS"); // custom log
+		Log.Info($"BotController::StartDecideAbilities_FCFS {m_actor?.DisplayName} {m_actor?.GetTeam()}"); // custom log
 		StartCoroutine(DecideAbilities());
 	}
 
