@@ -1535,7 +1535,10 @@ public class NPCBrain_Adaptive : NPCBrain
 				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterThiefFanLaser.m_rangeInSquares, includeEnemies, includeFriendlies, includeSelf);
 				break;
 			case AbilityUtil_Targeter_BounceLaser targeterBounceLaser:
-				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterBounceLaser.m_maxDistancePerBounce, includeEnemies, includeFriendlies, includeSelf);
+				// custom
+				potentialTargets = GeneratePotentialAbilityTargetLocationsCircle(360);
+				// rogues
+				// potentialTargets = GeneratePotentialAbilityTargetLocations(targeterBounceLaser.m_maxDistancePerBounce, includeEnemies, includeFriendlies, includeSelf);
 				break;
 			case AbilityUtil_Targeter_BounceActor targeterBounceActor:
 				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterBounceActor.m_maxDistancePerBounce, includeEnemies, includeFriendlies, includeSelf);
