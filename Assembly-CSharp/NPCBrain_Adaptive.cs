@@ -624,20 +624,26 @@ public class NPCBrain_Adaptive : NPCBrain
 
 			bool castFreeAction = !(ability is RageBeastSelfHeal) || actorData.HitPoints < 65;
 			// custom
+			Ability primaryAbility = abilityData.GetAbilityOfActionType(bestPrimaryActionType);
 			if (ability is Card_Standard_Ability cardStandardAbility
 			    && cardStandardAbility.m_effect != null
 			    && cardStandardAbility.m_applyEffect
 			    && cardStandardAbility.m_effect.m_statusChanges.All(s => s == StatusType.Empowered))
 			{
-				if (bestPrimaryChoice == null)
+				if (bestPrimaryChoice == null
+				    || bestPrimaryChoice.damageTotal <= 0
+				    || bestPrimaryChoice.numEnemyTargetsHit <= 0
+				    || primaryAbility != null && primaryAbility.GetStatusToApplyWhenRequested().Contains(StatusType.Empowered)
+				    || !actorData.GetActorStatus()
+				    || actorData.GetActorStatus().HasStatus(StatusType.Empowered))
 				{
 					castFreeAction = false;
 				}
 				else
 				{
 					// can't win being predictable
-					castFreeAction = Random.Range(0.0f, 1.0f) <
-					                 Mathf.Clamp((bestPrimaryChoice.damageTotal - 30.0f) / 30, 0.0f, 1.0f);
+					float f = (bestPrimaryChoice.damageTotal - 30.0f) / 50;
+					castFreeAction = Random.Range(0.0f, 1.0f) < Mathf.Clamp(f*f, 0.0f, 0.95f);
 				}
 			}
 			// end custom
