@@ -65,6 +65,9 @@ public class NPCBrain_Adaptive : NPCBrain
 	private const float healingNearDeathMultiplier = 0.1f;
 	// added in rogues
 	private const float fatalDamageFlatBonus = 2f;
+	
+	// custom logs
+	private readonly HashSet<Type> reportedUnsupportedTypes = new HashSet<Type>();
 #endif
 
 	public bool isReplacingHuman { get; set; }
@@ -483,6 +486,15 @@ public class NPCBrain_Adaptive : NPCBrain
 			}
 			if (iterationStartTime + config.MaxAIIterationTime < Time.realtimeSinceStartup)
 			{
+				// custom
+				float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
+				if (iterationTime > config.MaxAIIterationTime * 1.2)
+				{
+					Log.Error($"BOT iteration too long {iterationTime}/{config.MaxAIIterationTime} " +
+					          $"DecideAbilities {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType} {abilityIndex}");
+				}
+				// end custom
+				
 				yield return null;
 				iterationStartTime = Time.realtimeSinceStartup;
 			}
@@ -780,12 +792,16 @@ public class NPCBrain_Adaptive : NPCBrain
 		}
 		else
 		{
-			Log.Error($"Single position targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})"); // custom
+			if (!reportedUnsupportedTypes.Contains(ability.GetType()))
+			{
+				reportedUnsupportedTypes.Add(ability.GetType());
+				Log.Error($"Single position targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})"); // custom
+			}
 		}
 		
 		if (potentialTargets != null)
 		{
-			float realtimeSinceStartup = Time.realtimeSinceStartup;
+			float iterationStartTime = Time.realtimeSinceStartup;
 			foreach (AbilityTarget item in potentialTargets)
 			{
 				List<AbilityTarget> targetList = new List<AbilityTarget> { item };
@@ -805,10 +821,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					retVal = potentialChoice;
 				}
-				if (realtimeSinceStartup + config.MaxAIIterationTime < Time.realtimeSinceStartup)
+				if (iterationStartTime + config.MaxAIIterationTime < Time.realtimeSinceStartup)
 				{
+					// custom
+					float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
+					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+					{
+						Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
+						          $"ScoreSinglePositionTargetAbility {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType} {ability.m_abilityName}");
+					}
+					// end custom
+					
 					yield return null;
-					realtimeSinceStartup = Time.realtimeSinceStartup;
+					iterationStartTime = Time.realtimeSinceStartup;
 				}
 			}
 		}
@@ -1025,13 +1050,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				break;
 			}
 			default:
-				Log.Error($"Single board square targeter is not supported by bots: {thisAbility.Targeter.GetType()} ({thisAbility.GetType()})"); // custom
+			{
+				if (!reportedUnsupportedTypes.Contains(thisAbility.GetType()))
+				{
+					reportedUnsupportedTypes.Add(thisAbility.GetType());
+					Log.Error($"Single board square targeter is not supported by bots: {thisAbility.Targeter.GetType()} ({thisAbility.GetType()})"); // custom
+				}
 				break;
+			}
 		}
 		
 		if (potentialTargets != null)
 		{
-			float realtimeSinceStartup = Time.realtimeSinceStartup;
+			float iterationStartTime = Time.realtimeSinceStartup;
 			foreach (AbilityTarget target in potentialTargets)
 			{
 				List<AbilityTarget> targetList = new List<AbilityTarget> { target };
@@ -1094,10 +1125,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					retVal = potentialChoice;
 				}
-				if (realtimeSinceStartup + config.MaxAIIterationTime < Time.realtimeSinceStartup)
+				if (iterationStartTime + config.MaxAIIterationTime < Time.realtimeSinceStartup)
 				{
+					// custom
+					float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
+					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+					{
+						Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
+						          $"ScoreSingleBoardSquareTargetAbility {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType} {thisAbility.m_abilityName}");
+					}
+					// end custom
+					
 					yield return null;
-					realtimeSinceStartup = Time.realtimeSinceStartup;
+					iterationStartTime = Time.realtimeSinceStartup;
 				}
 			}
 		}
@@ -1558,13 +1598,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				potentialTargets = GeneratePotentialAbilityTargetLocations(8f, includeEnemies, includeFriendlies, includeSelf);
 				break;
 			default:
-				Log.Error($"Single direction targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})"); // custom
+			{
+				if (!reportedUnsupportedTypes.Contains(ability.GetType()))
+				{
+					reportedUnsupportedTypes.Add(ability.GetType());
+					Log.Error($"Single direction targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})"); // custom
+				}
 				break;
+			}
 		}
 		
 		if (potentialTargets != null)
 		{
-			float realtimeSinceStartup = Time.realtimeSinceStartup;
+			float iterationStartTime = Time.realtimeSinceStartup;
 			foreach (AbilityTarget target in potentialTargets)
 			{
 				List<AbilityTarget> targetList = new List<AbilityTarget> { target };
@@ -1584,10 +1630,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					retVal = potentialChoice;
 				}
-				if (realtimeSinceStartup + HydrogenConfig.Get().MaxAIIterationTime < Time.realtimeSinceStartup)
+				if (iterationStartTime + HydrogenConfig.Get().MaxAIIterationTime < Time.realtimeSinceStartup)
 				{
+					// custom
+					float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
+					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+					{
+						Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
+						          $"ScoreSingleDirectionTargetAbility {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType} {ability.m_abilityName}");
+					}
+					// end custom
+					
 					yield return null;
-					realtimeSinceStartup = Time.realtimeSinceStartup;
+					iterationStartTime = Time.realtimeSinceStartup;
 				}
 			}
 		}
@@ -2202,14 +2257,18 @@ public class NPCBrain_Adaptive : NPCBrain
 			}
 			default:
 			{
-				Log.Error($"Multi targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})");
+				if (!reportedUnsupportedTypes.Contains(ability.GetType()))
+				{
+					reportedUnsupportedTypes.Add(ability.GetType());
+					Log.Error($"Multi targeter is not supported by bots: {ability.Targeter.GetType()} ({ability.GetType()})");
+				}
 				break;
 			}
 		}
 		
 		if (potentialTargets.Count > 0)
 		{
-			float realtimeSinceStartup = Time.realtimeSinceStartup;
+			float iterationStartTime = Time.realtimeSinceStartup;
 			foreach (List<AbilityTarget> targetList in potentialTargets)
 			{
 				if (!abilityData.ValidateActionRequest(thisAction, targetList, false))
@@ -2232,10 +2291,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					retVal = potentialChoice;
 				}
-				if (realtimeSinceStartup + HydrogenConfig.Get().MaxAIIterationTime < Time.realtimeSinceStartup)
+				if (iterationStartTime + HydrogenConfig.Get().MaxAIIterationTime < Time.realtimeSinceStartup)
 				{
+					// custom
+					float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
+					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+					{
+						Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
+						          $"ScoreMultiTargetAbility {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType} {ability.m_abilityName}");
+					}
+					// end custom
+					
 					yield return null;
-					realtimeSinceStartup = Time.realtimeSinceStartup;
+					iterationStartTime = Time.realtimeSinceStartup;
 				}
 			}
 		}
@@ -2412,8 +2480,12 @@ public class NPCBrain_Adaptive : NPCBrain
 
 			if (damage == 0)
 			{
-				Log.Warning($"Barrier is not supported by bots: " +
-				            $"({tempAbilityResults.Ability.GetType()})"); // custom
+				// custom
+				if (!reportedUnsupportedTypes.Contains(tempAbilityResults.Ability.GetType()))
+				{
+					reportedUnsupportedTypes.Add(tempAbilityResults.Ability.GetType());
+					Log.Warning($"Barrier is not supported by bots: ({tempAbilityResults.Ability.GetType()})"); 
+				}
 			}
 
 			float damageScore = 0;
@@ -2681,9 +2753,16 @@ public class NPCBrain_Adaptive : NPCBrain
 						break;
 					}
 					default:
-						Log.Warning($"World effect is not supported by bots: {effect.GetType()}" +
-						            $"({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
+					{
+						// custom
+						if (!reportedUnsupportedTypes.Contains(effect.GetType()))
+						{
+							reportedUnsupportedTypes.Add(effect.GetType());
+							Log.Warning($"World effect is not supported by bots: {effect.GetType()}" +
+							            $"({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); 
+						}
 						break;
+					}
 				}
 			}
 		}
@@ -2785,8 +2864,14 @@ public class NPCBrain_Adaptive : NPCBrain
 				StandardActorEffectData effectData = GetEffectDataFromActorEffect(effect);
 				if (effectData == null)
 				{
-					Log.Warning($"Actor effect is not supported by bots: {effect.GetType()} " +
-					            $"({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
+					// custom
+					if (!reportedUnsupportedTypes.Contains(effect.GetType()))
+					{
+						reportedUnsupportedTypes.Add(effect.GetType());
+						Log.Warning($"Actor effect is not supported by bots: {effect.GetType()} " +
+						            $"({effect.Parent.Ability?.GetType()}{effect.Parent.Passive?.GetType()})"); // custom
+					}
+					// end custom
 					continue;
 				}
 				
@@ -3357,7 +3442,7 @@ public class NPCBrain_Adaptive : NPCBrain
 	// added in rogues
 	public IEnumerator DoMeleeMovement(ActorData actorData, float optimalRange)
 	{
-		float realtimeSinceStartup = Time.realtimeSinceStartup;
+		float iterationStartTime = Time.realtimeSinceStartup;
 		ActorMovement actorMovement = actorData.GetActorMovement();
 		ActorTurnSM turnSM = actorData.GetActorTurnSM();
 		HydrogenConfig hydrogenConfig = HydrogenConfig.Get();
@@ -3418,10 +3503,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				bestDestSquare = boardSquare;
 			}
 		}
-		if (realtimeSinceStartup + hydrogenConfig.MaxAIIterationTime < Time.realtimeSinceStartup)
+		if (iterationStartTime + hydrogenConfig.MaxAIIterationTime < Time.realtimeSinceStartup)
 		{
+			// custom
+			float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
+			if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+			{
+				Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
+				          $"DoMeleeMovement {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType}");
+			}
+			// end custom
+			
 			yield return null;
-			realtimeSinceStartup = Time.realtimeSinceStartup;
+			iterationStartTime = Time.realtimeSinceStartup;
 		}
 		if (actorData.RemainingHorizontalMovement != 0f && bestDestSquare != null)
 		{
@@ -3469,7 +3563,7 @@ public class NPCBrain_Adaptive : NPCBrain
 	// added in rogues
 	public IEnumerator DoSupportMovement(ActorData actorData, float optimalRange)
 	{
-		float realtimeSinceStartup = Time.realtimeSinceStartup;
+		float iterationStartTime = Time.realtimeSinceStartup;
 		ActorMovement actorMovement = actorData.GetActorMovement();
 		ActorTurnSM turnSM = actorData.GetActorTurnSM();
 		HydrogenConfig hydrogenConfig = HydrogenConfig.Get();
@@ -3515,10 +3609,19 @@ public class NPCBrain_Adaptive : NPCBrain
 					bestScore = score;
 				}
 			}
-			if (realtimeSinceStartup + hydrogenConfig.MaxAIIterationTime < Time.realtimeSinceStartup)
+			if (iterationStartTime + hydrogenConfig.MaxAIIterationTime < Time.realtimeSinceStartup)
 			{
+				// custom
+				float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
+				if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+				{
+					Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
+					          $"DoSupportMovement {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType}");
+				}
+				// end custom
+				
 				yield return null;
-				realtimeSinceStartup = Time.realtimeSinceStartup;
+				iterationStartTime = Time.realtimeSinceStartup;
 			}
 		}
 		if (actorData.RemainingHorizontalMovement != 0f
@@ -3548,7 +3651,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		BoardSquare startingSquare = actorData.GetCurrentBoardSquare();
 		BoardSquare bestSquare = startingSquare;
 		List<ActorData> actors = GameFlowData.Get().GetActors();
-		float realtimeSinceStartup = Time.realtimeSinceStartup;
+		float iterationStartTime = Time.realtimeSinceStartup;
 		foreach (BoardSquare boardSquare in actorMovement.SquaresCanMoveTo)
 		{
 			float score = 0f;
@@ -3616,10 +3719,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				bestSquareScore = score;
 				bestSquare = boardSquare;
 			}
-			if (realtimeSinceStartup + config.MaxAIIterationTime < Time.realtimeSinceStartup)
+			if (iterationStartTime + config.MaxAIIterationTime < Time.realtimeSinceStartup)
 			{
+				// custom
+				float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
+				if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+				{
+					Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
+					          $"DoSupportMovement2 {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType}");
+				}
+				// end custom
+				
 				yield return null;
-				realtimeSinceStartup = Time.realtimeSinceStartup;
+				iterationStartTime = Time.realtimeSinceStartup;
 			}
 		}
 		if (bestSquare != startingSquare)
@@ -3644,7 +3756,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		BoardSquare startingSquare = actorData.GetCurrentBoardSquare();
 		BoardSquare bestSquare = startingSquare;
 		List<ActorData> actors = GameFlowData.Get().GetActors();
-		float realtimeSinceStartup = Time.realtimeSinceStartup;
+		float iterationStartTime = Time.realtimeSinceStartup;
 		foreach (BoardSquare boardSquare in actorMovement.SquaresCanMoveTo)
 		{
 			float score = 0f;
@@ -3737,10 +3849,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				bestSquareScore = score;
 				bestSquare = boardSquare;
 			}
-			if (realtimeSinceStartup + config.MaxAIIterationTime < Time.realtimeSinceStartup)
+			if (iterationStartTime + config.MaxAIIterationTime < Time.realtimeSinceStartup)
 			{
+				// custom
+				float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
+				if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+				{
+					Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
+					          $"DoRangedMovement {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType}");
+				}
+				// end custom
+				
 				yield return null;
-				realtimeSinceStartup = Time.realtimeSinceStartup;
+				iterationStartTime = Time.realtimeSinceStartup;
 			}
 		}
 		if (bestSquare != startingSquare)
