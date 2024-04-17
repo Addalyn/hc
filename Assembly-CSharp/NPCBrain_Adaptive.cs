@@ -68,6 +68,8 @@ public class NPCBrain_Adaptive : NPCBrain
 	
 	// custom logs
 	private readonly HashSet<Type> reportedUnsupportedTypes = new HashSet<Type>();
+	private const float iterationTimeWarningFactor = 1.5f;
+	private const int maxTargetsForCombinations = 15; // TODO BOTS remove this, optimize decision making instead
 #endif
 
 	public bool isReplacingHuman { get; set; }
@@ -488,7 +490,7 @@ public class NPCBrain_Adaptive : NPCBrain
 			{
 				// custom
 				float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
-				if (iterationTime > config.MaxAIIterationTime * 1.2)
+				if (iterationTime > config.MaxAIIterationTime * iterationTimeWarningFactor)
 				{
 					Log.Error($"BOT iteration too long {iterationTime}/{config.MaxAIIterationTime} " +
 					          $"DecideAbilities {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType} {abilityIndex}");
@@ -600,6 +602,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		BotManager.Get().BotAIAbilitySelected(actorData, dashTarget, m_optimalRange);
 		foreach (KeyValuePair<AbilityData.ActionType, PotentialChoice> potentialChoice in m_potentialChoices)
 		{
+			// TODO BOTS evaluate free actions after requesting non-free ones
 			if (potentialChoice.Value == null || !potentialChoice.Value.freeAction)
 			{
 				continue;
@@ -831,7 +834,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					// custom
 					float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
-					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * iterationTimeWarningFactor)
 					{
 						Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
 						          $"ScoreSinglePositionTargetAbility {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType} {ability.m_abilityName}");
@@ -1135,7 +1138,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					// custom
 					float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
-					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * iterationTimeWarningFactor)
 					{
 						Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
 						          $"ScoreSingleBoardSquareTargetAbility {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType} {thisAbility.m_abilityName}");
@@ -1643,7 +1646,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					// custom
 					float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
-					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * iterationTimeWarningFactor)
 					{
 						Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
 						          $"ScoreSingleDirectionTargetAbility {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType} {ability.m_abilityName}");
@@ -1794,20 +1797,65 @@ public class NPCBrain_Adaptive : NPCBrain
 				Vector3 boundsPosition = actorData.transform.position;
 				boundsPosition.y = 0f;
 				Bounds bounds = new Bounds(boundsPosition, boundsSize);
-				List<BoardSquare> squaresInBox = Board.Get().GetSquaresInBox(bounds);
+				List<BoardSquare> squaresInBox = Board.Get().GetSquaresInBox(bounds)
+					.Where(s => s != actorData.GetCurrentBoardSquare())
+					.Where(s => abilityData.IsTargetSquareInRangeOfAbilityFromSquare(
+						s, actorData.GetCurrentBoardSquare(), range, minRange))
+					.ToList();
+				
+				if (ability is TricksterCatchMeIfYouCan abilityTCMIYC)
+				{
+					Vector3 loSCheckPos = actorData.GetLoSCheckPos(actorData.GetCurrentBoardSquare());
+					List<AbilityTarget> targets =
+						squaresInBox
+							.Select(s => AbilityTarget.CreateAbilityTargetFromBoardSquare(s, actorData.GetFreePos()))
+							.Where(t => ability.CustomTargetValidation(actorData, t, 0, null))
+							.Where(t => AreaEffectUtils.GetActorsInRadiusOfLine(
+								loSCheckPos,
+								Board.Get().GetSquare(t.GridPos).ToVector3(),
+								abilityTCMIYC.GetPathStartRadius(),
+								abilityTCMIYC.GetPathEndRadius(),
+								abilityTCMIYC.GetPathRadius(),
+								abilityTCMIYC.PenetrateLos(),
+								actorData,
+								TargeterUtils.GetRelevantTeams(actorData, abilityTCMIYC.IncludeAllies(), abilityTCMIYC.IncludeEnemies()),
+								null).Count > 0)
+							.ToList();
+					
+					targets = FilterTargetsForCombinations(targets);
+					
+					Log.Info($"Got {targets.Count} targets for TricksterCatchMeIfYouCan");
+
+					for (int i = 0; i < targets.Count; i++)
+					{
+						AbilityTarget firstTarget = targets[i];
+						for (int j = i + 1; j < targets.Count; j++)
+						{
+							AbilityTarget secondTarget = targets[j];
+							for (int k = j + 1; k < targets.Count; k++)
+							{
+								AbilityTarget thirdTarget = targets[k];
+								potentialTargets.Add(new List<AbilityTarget>
+									{ firstTarget, secondTarget, thirdTarget });
+								potentialTargets.Add(new List<AbilityTarget>
+									{ firstTarget, thirdTarget, secondTarget });
+								potentialTargets.Add(new List<AbilityTarget>
+									{ secondTarget, firstTarget, thirdTarget });
+								potentialTargets.Add(new List<AbilityTarget>
+									{ secondTarget, thirdTarget, firstTarget });
+								potentialTargets.Add(new List<AbilityTarget>
+									{ thirdTarget, firstTarget, secondTarget });
+								potentialTargets.Add(new List<AbilityTarget>
+									{ thirdTarget, secondTarget, firstTarget });
+							}
+						}
+					}
+
+					break;
+				}
+				
 				foreach (BoardSquare boardSquare in squaresInBox)
 				{
-					if (boardSquare == actorData.GetCurrentBoardSquare())
-					{
-						continue;
-					}
-
-					if (!abilityData.IsTargetSquareInRangeOfAbilityFromSquare(
-						    boardSquare, actorData.GetCurrentBoardSquare(), range, minRange))
-					{
-						continue;
-					}
-
 					AbilityTarget firstTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
 					if (ability.CustomTargetValidation(actorData, firstTarget, 0, null))
 					{
@@ -1851,11 +1899,6 @@ public class NPCBrain_Adaptive : NPCBrain
 									potentialTargets.Add(new List<AbilityTarget> { firstTarget, secondTarget });
 								}
 							}
-						}
-						else if (ability is TricksterCatchMeIfYouCan)
-						{
-							List<AbilityTarget> firstTargetAsList = AbilityTarget.AbilityTargetList(firstTarget);
-							NestedAddTarget(squaresInBox, actorData, ability, firstTargetAsList, potentialTargets);
 						}
 						else if (ability is RampartDashAndAimShield)
 						{
@@ -2112,6 +2155,7 @@ public class NPCBrain_Adaptive : NPCBrain
 							    || ability is GremlinsMultiTargeterBasicAttack
 							    || ability is GremlinsMultiTargeterApocolypse)
 							{
+								targetSquares = FilterTargetsForCombinations(targetSquares);
 								if (!NestedAddTarget(targetSquares, actorData, ability, firstTargetAsList, potentialTargets))
 								{
 									goto default;
@@ -2304,7 +2348,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					// custom
 					float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
-					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+					if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * iterationTimeWarningFactor)
 					{
 						Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
 						          $"ScoreMultiTargetAbility {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType} {ability.m_abilityName}");
@@ -2322,7 +2366,20 @@ public class NPCBrain_Adaptive : NPCBrain
 		}
 		// end custom
 	}
-	
+
+	// custom
+	private static List<T> FilterTargetsForCombinations<T>(List<T> targets)
+	{
+		if (targets.Count > maxTargetsForCombinations)
+		{
+			Log.Info($"Got {targets.Count}/{maxTargetsForCombinations} targets");
+			float chance = (float)maxTargetsForCombinations / targets.Count;
+			targets = targets.Where(t => Random.Range(0.0f, 1.0f) < chance).ToList();
+		}
+
+		return targets;
+	}
+
 	// custom
 	private static bool NestedAddTarget(
 		ICollection<BoardSquare> potentialTargetSquares,
@@ -3516,7 +3573,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		{
 			// custom
 			float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
-			if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+			if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * iterationTimeWarningFactor)
 			{
 				Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
 				          $"DoMeleeMovement {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType}");
@@ -3622,7 +3679,7 @@ public class NPCBrain_Adaptive : NPCBrain
 			{
 				// custom
 				float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
-				if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+				if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * iterationTimeWarningFactor)
 				{
 					Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
 					          $"DoSupportMovement {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType}");
@@ -3732,7 +3789,7 @@ public class NPCBrain_Adaptive : NPCBrain
 			{
 				// custom
 				float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
-				if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+				if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * iterationTimeWarningFactor)
 				{
 					Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
 					          $"DoSupportMovement2 {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType}");
@@ -3862,7 +3919,7 @@ public class NPCBrain_Adaptive : NPCBrain
 			{
 				// custom
 				float iterationTime = Time.realtimeSinceStartup - iterationStartTime;
-				if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * 1.2)
+				if (iterationTime > HydrogenConfig.Get().MaxAIIterationTime * iterationTimeWarningFactor)
 				{
 					Log.Error($"BOT iteration too long {iterationTime}/{HydrogenConfig.Get().MaxAIIterationTime} " +
 					          $"DoRangedMovement {actorData.ActorIndex} {actorData.m_displayName} {actorData.m_characterType}");
