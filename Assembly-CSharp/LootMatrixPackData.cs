@@ -4,7 +4,6 @@ using System;
 public class LootMatrixPackData
 {
 	public int LootMatrixInventoryIndexID;
-
 	public LootMatrixPack[] m_lootMatrixPacks;
 
 	public static LootMatrixPackData Get()

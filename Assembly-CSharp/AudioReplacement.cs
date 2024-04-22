@@ -4,6 +4,5 @@ using System;
 public class AudioReplacement
 {
 	public string OriginalString;
-
 	public string Replacement;
 }
