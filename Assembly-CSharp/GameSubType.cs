@@ -217,41 +217,41 @@ public class GameSubType
 
 	public static ushort CalculatePivotSubTypes(ushort mask, SubTypeMods pivot, List<GameSubType> allSubTypesInOrder)
 	{
-		Dictionary<ushort, GameSubType> dictionary = new Dictionary<ushort, GameSubType>();
-		Dictionary<ushort, GameSubType> dictionary2 = new Dictionary<ushort, GameSubType>();
-		ushort num = 1;
+		Dictionary<ushort, GameSubType> selected = new Dictionary<ushort, GameSubType>();
+		Dictionary<ushort, GameSubType> unselected = new Dictionary<ushort, GameSubType>();
+		ushort flag = 1;
 		foreach (GameSubType subType in allSubTypesInOrder)
 		{
-			if ((mask & num) == 0)
+			if ((mask & flag) == 0)
 			{
-				dictionary2.Add(num, subType);
+				unselected.Add(flag, subType);
 			}
 			else
 			{
-				dictionary.Add(num, subType);
+				selected.Add(flag, subType);
 			}
-			num = (ushort)(num << 1);
+			flag = (ushort)(flag << 1);
 		}
-		if (dictionary2.IsNullOrEmpty())
+		if (unselected.IsNullOrEmpty())
 		{
 			return 0;
 		}
-		ushort num2 = 0;
-		foreach (KeyValuePair<ushort, GameSubType> item in dictionary)
+		ushort result = 0;
+		foreach (KeyValuePair<ushort, GameSubType> item in selected)
 		{
 			CCSTSort cCSTSort = new CCSTSort(item.Value, pivot);
-			ushort num3 = 0;
+			ushort unselectedFlag = 0;
 			GameSubType gameSubType = null;
-			foreach (KeyValuePair<ushort, GameSubType> item2 in dictionary2)
+			foreach (KeyValuePair<ushort, GameSubType> unselectedSubType in unselected)
 			{
-				if (gameSubType == null || cCSTSort.Compare(item2.Value, gameSubType) < 0)
+				if (gameSubType == null || cCSTSort.Compare(unselectedSubType.Value, gameSubType) < 0)
 				{
-					gameSubType = item2.Value;
-					num3 = item2.Key;
+					gameSubType = unselectedSubType.Value;
+					unselectedFlag = unselectedSubType.Key;
 				}
 			}
-			num2 = (ushort)(num2 | num3);
+			result = (ushort)(result | unselectedFlag);
 		}
-		return num2;
+		return result;
 	}
 }
