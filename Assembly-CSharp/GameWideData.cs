@@ -8,129 +8,78 @@ public class GameWideData : MonoBehaviour
 
 	[Header("Buff [Haste]")]
 	public int m_hasteHalfMovementAdjustAmount;
-
 	public int m_hasteFullMovementAdjustAmount;
-
 	public float m_hasteMovementMultiplier = 1f;
-
 	[Header("Debuff [SlowMovement]")]
 	public int m_slowHalfMovementAdjustAmount;
-
 	public int m_slowFullMovementAdjustAmount;
-
 	public float m_slowMovementMultiplier = 1f;
-
 	[Header("Buff [Empowered]")]
 	public AbilityModPropertyInt m_empoweredOutgoingDamageMod;
-
 	public AbilityModPropertyInt m_empoweredOutgoingHealingMod;
-
 	public AbilityModPropertyInt m_empoweredOutgoingAbsorbMod;
-
 	[Header("Debuff [Weakened]")]
 	public AbilityModPropertyInt m_weakenedOutgoingDamageMod;
-
 	public AbilityModPropertyInt m_weakenedOutgoingHealingMod;
-
 	public AbilityModPropertyInt m_weakenedOutgoingAbsorbMod;
-
 	[Header("Buff [Armored]")]
 	public AbilityModPropertyInt m_armoredIncomingDamageMod;
-
 	[Header("Debuff [Vulnerable] (values used if positive)")]
 	public float m_vulnerableDamageMultiplier = -1f;
-
 	public int m_vulnerableDamageFlatAdd;
-
 	[Separator("Gameplay Misc", true)]
 	public List<StatusType> m_statusesToDelayFromCombatToNextTurn;
-
 	public int m_killAssistMemory = 2;
-
 	public int AdvancedSkinUnlockLevel = 6;
-
 	public int ExpertSkinUnlockLevel = 8;
-
 	public int MasterySkinUnlockLevel = 10;
-
 	public Ability m_gameModeAbility;
-
 	public int NumOverconsPerTurn = 3;
-
 	public int NumOverconsPerMatch = 10;
-
 	public int FreeAutomaticOverconOnCatalyst_OverconId = -1;
-
 	public int FreeAutomaticOverconOnDeath_OverconID = -1;
-
 	[Space(10f)]
 	public bool m_useEnergyStatusForPassiveRegen;
-
 	[Header("Buff [Energized]")]
 	public AbilityModPropertyInt m_energizedEnergyGainMod;
-
 	[Header("Debuff [SlowEnergyGain]")]
 	public AbilityModPropertyInt m_slowEnergyGainEnergyGainMod;
-
 	[Separator("Character Resource Links", true)]
 	public CharacterResourceLink[] m_characterResourceLinks;
-
 	public GameObject SpectatorPrefab;
-
 	[Separator("Map Data", true)]
 	public MapData[] m_mapData;
-
 	private Dictionary<string, MapData> m_mapDataDictionary;
-
 	[Separator("Targeting", true)]
 	public float m_actorTargetingRadiusInSquares = 0.4f;
-
 	public float m_laserInitialOffsetInSquares = 0.41f;
-
 	public bool m_useActorRadiusForLaser;
-
 	public bool m_useActorRadiusForCones;
-
 	[Header("-- Max angle for bouncing off actors")]
 	public float m_maxAngleForBounceOnActor = 90f;
-
 	[Separator("Visibility On Ability Cast", true)]
 	public bool m_abilityCasterVisibleOnCast;
-
 	[Header("-- Game Balance Vars --")]
 	public GameBalanceVars m_gameBalanceVars = new GameBalanceVars();
-
 	[Header("-- Banned Words --")]
 	public BannedWords m_bannedWords = new BannedWords();
-
 	[Header("-- Loot Matrix Packs --")]
 	public LootMatrixPackData m_lootMatrixPackData = new LootMatrixPackData();
-
 	[Header("-- Game Packs --")]
 	public GamePackData m_gamePackData = new GamePackData();
-
 	[Header("-- GG Boost Packs --")]
 	public GGPackData m_ggPackData = new GGPackData();
-
 	[Header("-- Loading Tips --")]
 	public string[] m_loadingTips;
-
 	[Separator("Timebank", true)]
 	public float m_tbInitial;
-
 	public float m_tbRecharge;
-
 	public float m_tbRechargeCap;
-
 	public int m_tbConsumables;
-
 	public float m_tbConsumableDuration = 5f;
-
 	public float m_tbGracePeriodBeforeConsuming = 0.2f;
-
 	[Separator("Key Command Data", true)]
 	public KeyBindingCommand[] m_keyBindingData;
-
 	private Dictionary<string, KeyBindingCommand> m_keyBindingDataDictionary;
 
 	private void Awake()
@@ -138,33 +87,14 @@ public class GameWideData : MonoBehaviour
 		s_instance = this;
 		if (m_characterResourceLinks.Length == 0)
 		{
-			while (true)
-			{
-				switch (6)
-				{
-				case 0:
-					break;
-				default:
-					throw new Exception("GameWideData failed to load (no character resource links)");
-				}
-			}
+			throw new Exception("GameWideData failed to load (no character resource links)");
 		}
 		List<GameBalanceVars.CharacterUnlockData> list = new List<GameBalanceVars.CharacterUnlockData>();
 		for (int i = 0; i < m_characterResourceLinks.Length; i++)
 		{
-			CharacterResourceLink characterResourceLink = m_characterResourceLinks[i];
-			if (characterResourceLink.m_characterType == CharacterType.None)
+			if (m_characterResourceLinks[i].m_characterType == CharacterType.None)
 			{
-				while (true)
-				{
-					switch (1)
-					{
-					case 0:
-						break;
-					default:
-						throw new Exception($"GameWideData failed to load (invalid data for character index {i})");
-					}
-				}
+				throw new Exception($"GameWideData failed to load (invalid data for character index {i})");
 			}
 			list.Add(m_characterResourceLinks[i].CreateUnlockData());
 		}
@@ -198,22 +128,14 @@ public class GameWideData : MonoBehaviour
 
 	public CharacterResourceLink GetCharacterResourceLink(CharacterType characterType)
 	{
-		CharacterResourceLink[] characterResourceLinks = m_characterResourceLinks;
-		foreach (CharacterResourceLink characterResourceLink in characterResourceLinks)
+		foreach (CharacterResourceLink characterResourceLink in m_characterResourceLinks)
 		{
-			if (characterResourceLink.m_characterType != characterType)
-			{
-				continue;
-			}
-			while (true)
+			if (characterResourceLink.m_characterType == characterType)
 			{
 				return characterResourceLink;
 			}
 		}
-		while (true)
-		{
-			throw new Exception("Character resource link not found for: " + characterType.ToString() + " in GameWideData.");
-		}
+		throw new Exception($"Character resource link not found for: {characterType} in GameWideData.");
 	}
 
 	public string GetCharacterDisplayName(CharacterType characterType)
@@ -230,29 +152,15 @@ public class GameWideData : MonoBehaviour
 	{
 		if (mapDisplayName == null)
 		{
-			while (true)
-			{
-				switch (4)
-				{
-				case 0:
-					break;
-				default:
-					return null;
-				}
-			}
+			return null;
 		}
 		Debug.Log("attempting to find: " + mapDisplayName);
-		MapData[] mapData = m_mapData;
-		foreach (MapData mapData2 in mapData)
+		foreach (MapData mapData in m_mapData)
 		{
-			Debug.Log(mapData2.DisplayName);
-			if (!(mapData2.DisplayName.ToLower() == mapDisplayName.ToLower()))
+			Debug.Log(mapData.DisplayName);
+			if (mapData.DisplayName.ToLower() == mapDisplayName.ToLower())
 			{
-				continue;
-			}
-			while (true)
-			{
-				return mapData2;
+				return mapData;
 			}
 		}
 		return null;
@@ -267,24 +175,14 @@ public class GameWideData : MonoBehaviour
 		if (m_mapDataDictionary == null)
 		{
 			m_mapDataDictionary = new Dictionary<string, MapData>(StringComparer.OrdinalIgnoreCase);
-			MapData[] mapData = m_mapData;
-			foreach (MapData mapData2 in mapData)
+			foreach (MapData mapData in m_mapData)
 			{
-				m_mapDataDictionary.Add(mapData2.Name, mapData2);
+				m_mapDataDictionary.Add(mapData.Name, mapData);
 			}
 		}
 		if (m_mapDataDictionary.TryGetValue(mapName, out MapData value))
 		{
-			while (true)
-			{
-				switch (4)
-				{
-				case 0:
-					break;
-				default:
-					return value;
-				}
-			}
+			return value;
 		}
 		return null;
 	}
@@ -295,11 +193,7 @@ public class GameWideData : MonoBehaviour
 		if (mapData == null)
 		{
 			string text = StringUtil.TR_MapName(mapName);
-			if (text.IsNullOrEmpty())
-			{
-				return mapName;
-			}
-			return text;
+			return !text.IsNullOrEmpty() ? text : mapName;
 		}
 		return mapData.GetDisplayName();
 	}
@@ -308,38 +202,19 @@ public class GameWideData : MonoBehaviour
 	{
 		if (keyBindName == null)
 		{
-			while (true)
-			{
-				switch (5)
-				{
-				case 0:
-					break;
-				default:
-					return null;
-				}
-			}
+			return null;
 		}
 		if (m_keyBindingDataDictionary == null)
 		{
 			m_keyBindingDataDictionary = new Dictionary<string, KeyBindingCommand>();
-			KeyBindingCommand[] keyBindingData = m_keyBindingData;
-			foreach (KeyBindingCommand keyBindingCommand in keyBindingData)
+			foreach (KeyBindingCommand keyBindingCommand in m_keyBindingData)
 			{
 				m_keyBindingDataDictionary.Add(keyBindingCommand.Name, keyBindingCommand);
 			}
 		}
 		if (m_keyBindingDataDictionary.TryGetValue(keyBindName, out KeyBindingCommand value))
 		{
-			while (true)
-			{
-				switch (2)
-				{
-				case 0:
-					break;
-				default:
-					return value;
-				}
-			}
+			return value;
 		}
 		return null;
 	}
@@ -347,60 +222,49 @@ public class GameWideData : MonoBehaviour
 	public string GetKeyBindingDisplayName(string keyBindName)
 	{
 		KeyBindingCommand keyBindingCommand = GetKeyBindingCommand(keyBindName);
-		if (keyBindingCommand == null)
-		{
-			return keyBindName;
-		}
-		return keyBindingCommand.GetDisplayName();
+		return keyBindingCommand != null
+			? keyBindingCommand.GetDisplayName()
+			: keyBindName;
 	}
 
 	public string GetUnlockString(GameBalanceVars.UnlockData unlock)
 	{
 		if (unlock == null)
 		{
-			while (true)
-			{
-				switch (5)
-				{
-				case 0:
-					break;
-				default:
-					return string.Empty;
-				}
-			}
+			return string.Empty;
 		}
 		string text = string.Empty;
-		GameBalanceVars.UnlockCondition[] unlockConditions = unlock.UnlockConditions;
-		foreach (GameBalanceVars.UnlockCondition unlockCondition in unlockConditions)
+		foreach (GameBalanceVars.UnlockCondition unlockCondition in unlock.UnlockConditions)
 		{
 			if (text != string.Empty)
 			{
 				text += Environment.NewLine;
 			}
-			if (unlockCondition.ConditionType == GameBalanceVars.UnlockData.UnlockType.CharacterLevel)
+
+			switch (unlockCondition.ConditionType)
 			{
-				CharacterType typeSpecificData = (CharacterType)unlockCondition.typeSpecificData;
-				int typeSpecificData2 = unlockCondition.typeSpecificData2;
-				if (typeSpecificData != 0)
+				case GameBalanceVars.UnlockData.UnlockType.CharacterLevel:
 				{
-					text += $"{GetCharacterResourceLink(typeSpecificData).m_displayName} Level {typeSpecificData2}";
+					CharacterType typeSpecificData = (CharacterType)unlockCondition.typeSpecificData;
+					if (typeSpecificData != 0)
+					{
+						text += $"{GetCharacterResourceLink(typeSpecificData).m_displayName} Level {unlockCondition.typeSpecificData2}";
+					}
+					break;
+				}
+				case GameBalanceVars.UnlockData.UnlockType.PlayerLevel:
+				{
+					text += $"Account Level {unlockCondition.typeSpecificData}";
+					break;
+				}
+				case GameBalanceVars.UnlockData.UnlockType.ELO:
+				{
+					text += $"ELO of {unlockCondition.typeSpecificData}";
+					break;
 				}
 			}
-			else if (unlockCondition.ConditionType == GameBalanceVars.UnlockData.UnlockType.PlayerLevel)
-			{
-				int typeSpecificData3 = unlockCondition.typeSpecificData;
-				text += $"Account Level {typeSpecificData3}";
-			}
-			else if (unlockCondition.ConditionType == GameBalanceVars.UnlockData.UnlockType.ELO)
-			{
-				int typeSpecificData4 = unlockCondition.typeSpecificData;
-				text += $"ELO of {typeSpecificData4}";
-			}
 		}
-		while (true)
-		{
-			return text;
-		}
+		return text;
 	}
 
 	private void OnValidate()
