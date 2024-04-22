@@ -4,6 +4,5 @@ using System;
 public class BonusLootMatrixes
 {
 	public int LootMatrixId;
-
 	public int NumberOfMatrixes;
 }

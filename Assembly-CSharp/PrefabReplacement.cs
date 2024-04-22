@@ -4,6 +4,5 @@ using System;
 public class PrefabReplacement
 {
 	public PrefabResourceLink OriginalPrefab;
-
 	public PrefabResourceLink Replacement;
 }
