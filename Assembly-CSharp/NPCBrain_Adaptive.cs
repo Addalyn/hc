@@ -3457,7 +3457,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		}
 		foreach (ActorData ally in GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam()))
 		{
-			BoardSquare allySquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(ally);
+			BoardSquare allySquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(ally, actorData);
 			if (allySquare != null && square.GetLOS(allySquare.x, allySquare.y))
 			{
 				return true;
@@ -3557,6 +3557,14 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 				boardSquare = closestSquare;
 			}
+			
+			// custom
+			if (BotManager.Get().IsDestinationSelected(actorData, boardSquare))
+			{
+				continue;
+			}
+			// end custom
+			
 			float hitPointPercent = enemy.GetHitPointPercent();
 			if (hitPointPercent < 0.5f && hitPointPercent > 0.1f)
 			{
@@ -3651,7 +3659,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				{
 					continue;
 				}
-				BoardSquare teammateSquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(teammate);
+				BoardSquare teammateSquare = BotManager.Get().GetPendingDestinationOrCurrentSquare(teammate, actorData);
 				Vector3 teammatePos = teammateSquare.transform.position;
 				teammatePos.y = 0f;
 				float dist = (teammatePos - startPos).magnitude;
@@ -3696,6 +3704,26 @@ public class NPCBrain_Adaptive : NPCBrain
 		{
 			BoardSquare closestMoveableSquareTo = actorData.GetActorMovement().GetClosestMoveableSquareTo(
 				bestFriendlyPlayer.GetCurrentBoardSquare(), true);
+			
+			// custom
+			if (BotManager.Get().IsDestinationSelected(actorData, closestMoveableSquareTo))
+			{
+				List<BoardSquare> squares = null;
+				Board.Get().GetAllAdjacentSquares(closestMoveableSquareTo.x, closestMoveableSquareTo.y, ref squares);
+				ActorCover actorCover = actorData.GetActorCover();
+				closestMoveableSquareTo = squares
+					.Where(s => !BotManager.Get().IsDestinationSelected(actorData, s))
+					.OrderByDescending(s => actorCover.CoverRating(s))
+					.FirstOrDefault();
+
+				if (closestMoveableSquareTo == null)
+				{
+					Log.Warning($"Failed to find a square to move to for {actorData.ActorIndex} {actorData.DisplayName}");
+					closestMoveableSquareTo = actorData.GetCurrentBoardSquare();
+				}	
+			}
+			// end custom
+			
 			turnSM.SelectMovementSquareForMovement(closestMoveableSquareTo); // , true in rogues
 			BotManager.Get().SelectDestination(actorData, closestMoveableSquareTo);
 		}
@@ -3720,6 +3748,13 @@ public class NPCBrain_Adaptive : NPCBrain
 		float iterationStartTime = Time.realtimeSinceStartup;
 		foreach (BoardSquare boardSquare in actorMovement.SquaresCanMoveTo)
 		{
+			// custom
+			if (BotManager.Get().IsDestinationSelected(actorData, boardSquare))
+			{
+				continue;
+			}
+			// end custom
+			
 			float score = 0f;
 			int actorsProcessed = 0;
 			foreach (ActorData otherActor in actors)
@@ -3734,7 +3769,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				actorsProcessed++;
 				if (otherActor.GetTeam() == actorData.GetTeam())
 				{
-					float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor));
+					float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor, actorData));
 					if (distanceToActor < optimalRange - 2f)
 					{
 						score += 90f * distanceToActor / (1f * optimalRange - 2f);
@@ -3825,6 +3860,13 @@ public class NPCBrain_Adaptive : NPCBrain
 		float iterationStartTime = Time.realtimeSinceStartup;
 		foreach (BoardSquare boardSquare in actorMovement.SquaresCanMoveTo)
 		{
+			// custom
+			if (BotManager.Get().IsDestinationSelected(actorData, boardSquare))
+			{
+				continue;
+			}
+			// end custom
+			
 			float score = 0f;
 			float closestEnemyScore = 0f;
 			float closestEnemyDist = 99999f;
@@ -3844,7 +3886,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				// float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor)); // rogues
 				if (otherActor.GetTeam() == actorData.GetTeam())
 				{
-					float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor)); // custom
+					float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor, actorData)); // custom
 					if (distanceToActor < optimalRange - 2f)
 					{
 						score += 90f * distanceToActor / (1f * optimalRange - 2f);

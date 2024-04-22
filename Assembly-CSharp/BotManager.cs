@@ -1,6 +1,7 @@
 ﻿// ROGUES
 // SERVER
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 // server-only -- empty in reactor
@@ -102,20 +103,18 @@ public class BotManager : MonoBehaviour
 		// m_pendingBotMovement.Clear();
 	}
 
-	public bool IsDestinationSelected(BoardSquare boardSquare)
+	// custom
+	public bool IsDestinationSelected(ActorData actorData, BoardSquare destination)
 	{
-		using (List<PendingBotMovement>.Enumerator enumerator = m_pendingBotMovement.GetEnumerator())
-		{
-			while (enumerator.MoveNext())
-			{
-				if (enumerator.Current.destination == boardSquare)
-				{
-					return true;
-				}
-			}
-		}
-		return false;
+		return m_pendingBotMovement.Any(pendingBotMovement
+			=> pendingBotMovement.actorData.GetTeam() == actorData.GetTeam()
+			   && pendingBotMovement.destination == destination);
 	}
+	// rogues
+	// public bool IsDestinationSelected(BoardSquare boardSquare)
+	// {
+	// 	return m_pendingBotMovement.Any(x => x.destination == boardSquare);
+	// }
 
 	// custom
 	public void SelectDestination(ActorData actorData, BoardSquare destination)
@@ -149,8 +148,14 @@ public class BotManager : MonoBehaviour
 	// 	}
 	// }
 
-	public BoardSquare GetPendingDestinationOrCurrentSquare(ActorData actorData)
+	public BoardSquare GetPendingDestinationOrCurrentSquare(ActorData actorData, ActorData requester) // custom requester
 	{
+		// custom
+		if (actorData.GetTeam() != requester.GetTeam()) {
+			return actorData.GetCurrentBoardSquare();
+		}
+		// end custom
+		
 		foreach (PendingBotMovement pendingBotMovement in m_pendingBotMovement)
 		{
 			if (pendingBotMovement.actorData == actorData)
