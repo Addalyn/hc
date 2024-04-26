@@ -2141,6 +2141,7 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 			? string.Format("{0}{1} adds {3} Energy to {2}", casterName, sourceName, target.DisplayName, healAmount)
 			: string.Format("{0}{1} removes {3} Energy from {2}", casterName, sourceName, target.DisplayName, healAmount);
 		CombatTextCategory category = isHeal ? CombatTextCategory.TP_Recovery : CombatTextCategory.TP_Damage;
+		Log.Info($"Combat log: energy {combatText}, {logText}"); // custom log
 		target.CallRpcCombatText(combatText, logText, category, BuffIconToDisplay.None);
 	}
 

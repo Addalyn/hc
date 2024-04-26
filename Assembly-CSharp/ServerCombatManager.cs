@@ -399,6 +399,7 @@ public class ServerCombatManager : MonoBehaviour
 		//{
 		//	text2 += string.Format("{0}", hitType);
 		//}
+		Log.Info($"Combat log: damage {combatText}, {text2}"); // custom log
 		target.CallRpcCombatText(combatText, text2, CombatTextCategory.Damage, BuffIconToDisplay.None);
 	}
 
@@ -412,6 +413,7 @@ public class ServerCombatManager : MonoBehaviour
 		string combatText = $"{healAmount}";
 		string casterStr = caster == null ? "[null]" : caster.DisplayName;
 		string logText = $"{casterStr}'s {sourceName} heals {target.DisplayName} for {healAmount}";
+		Log.Info($"Combat log: damage {combatText}, {logText}"); // custom log
 		target.CallRpcCombatText(combatText, logText, CombatTextCategory.Healing, BuffIconToDisplay.None);
 	}
 
