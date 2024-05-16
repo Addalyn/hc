@@ -5550,6 +5550,10 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 		}
 		GetActorMovement().UpdateSquaresCanMoveTo();
 		GameplayMetricHelper.CollectTurnStart(this);
+		
+		// custom
+		ExpectedHoTTotal = 0;
+		ExpectedHoTThisTurn = 0;
 	}
 #endif
 

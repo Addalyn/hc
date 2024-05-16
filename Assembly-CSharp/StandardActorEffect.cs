@@ -201,6 +201,16 @@ public class StandardActorEffect : Effect
 			}
 		}
 		m_absorbToAddOnTurnStart = 0;
+		
+		// custom
+		int hot = GetExpectedHealOverTimeTotal();
+		if (hot > 0 && Target != null && !Target.IsDead())
+		{
+			Target.ExpectedHoTTotal += hot;
+			Target.ExpectedHoTThisTurn += GetExpectedHealOverTimeThisTurn();
+			Target.SetDirtyBit(1);
+		}
+		// end custom
 	}
 
 	private void AddMods()
