@@ -556,8 +556,8 @@ public class GenericAbility_Container : Ability
 #if SERVER
 	protected virtual void PreProcessForCalcAbilityHits(List<AbilityTarget> targets, ActorData caster, Dictionary<ActorData, ActorHitContext> actorHitContextMap, ContextVars abilityContext)
 	{
-		int num = 0;
-		int num2 = 0;
+		int numEnemiesHits = 0;
+		int numAlliesHit = 0;
 		foreach (KeyValuePair<ActorData, ActorHitContext> keyValuePair in actorHitContextMap)
 		{
 			float hitPointPercent = keyValuePair.Key.GetHitPointPercent();
@@ -566,20 +566,26 @@ public class GenericAbility_Container : Ability
 			keyValuePair.Value.m_contextVars.SetValue(ContextKeys.s_TargetHealthPercentage.GetKey(), hitPointPercent);
 			if (keyValuePair.Key.GetTeam() == caster.GetTeam())
 			{
-				num2++;
+				numAlliesHit++;
 			}
 			else
 			{
-				num++;
+				numEnemiesHits++;
 			}
 		}
-		abilityContext.SetValue(ContextKeys.s_NumEnemyHits.GetKey(), num);
-		abilityContext.SetValue(ContextKeys.s_NumAllyHits.GetKey(), num2);
+		abilityContext.SetValue(ContextKeys.s_NumEnemyHits.GetKey(), numEnemiesHits);
+		abilityContext.SetValue(ContextKeys.s_NumAllyHits.GetKey(), numAlliesHit);
 	}
 
 	// rogues?
-	//protected virtual void ProcessGatheredHits(List<AbilityTarget> targets, ActorData caster, AbilityResults abilityResults, List<ActorHitResults> actorHitResults, List<PositionHitResults> positionHitResults, List<NonActorTargetInfo> nonActorTargetInfo)
-	//{
+	protected virtual void ProcessGatheredHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		AbilityResults abilityResults,
+		List<ActorHitResults> actorHitResults,
+		List<PositionHitResults> positionHitResults,
+		List<NonActorTargetInfo> nonActorTargetInfo)
+	{
 	//    if (actorHitResults.Any<ActorHitResults>())
 	//    {
 	//        foreach (OnHitEffectTemplateField onHitEffectTemplateField in m_onHitData.m_effectTemplateFields)
@@ -610,7 +616,7 @@ public class GenericAbility_Container : Ability
 	//            actorHitResults2.AddEffect(effect);
 	//        }
 	//    }
-	//}
+	}
 
 	// added in rogues
 	public override List<ServerClientUtils.SequenceStartData> GetAbilityRunSequenceStartDataList(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
@@ -649,18 +655,23 @@ public class GenericAbility_Container : Ability
 		List<NonActorTargetInfo> nonActorTargetInfo = new List<NonActorTargetInfo>();
 		targetSelectComp.CalcHitTargets(targets, caster, nonActorTargetInfo);
 		PreProcessForCalcAbilityHits(targets, caster, targetSelectComp.GetActorHitContextMap(), targetSelectComp.GetNonActorSpecificContext());
-		List<ActorHitResults> list;
-		List<PositionHitResults> list2;
-		GenericAbility_Container.CalcAbilityHits(targetSelectComp.GetActorHitContextMap(), targetSelectComp.GetNonActorSpecificContext(), caster, GetOnHitAuthoredData(), this, abilityResults.SequenceSource, out list, out list2);
+		CalcAbilityHits(
+			targetSelectComp.GetActorHitContextMap(),
+			targetSelectComp.GetNonActorSpecificContext(),
+			caster,
+			GetOnHitAuthoredData(),
+			this,
+			abilityResults.SequenceSource,
+			out List<ActorHitResults> actorHitResults,
+			out List<PositionHitResults> positionHitResults);
 
-		// rogues?
-		//ProcessGatheredHits(targets, caster, abilityResults, list, list2, nonActorTargetInfo);
+		ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
 
-		foreach (ActorHitResults hitResults in list)
+		foreach (ActorHitResults hitResults in actorHitResults)
 		{
 			abilityResults.StoreActorHit(hitResults);
 		}
-		foreach (PositionHitResults hitResults2 in list2)
+		foreach (PositionHitResults hitResults2 in positionHitResults)
 		{
 			abilityResults.StorePositionHit(hitResults2);
 		}
@@ -831,8 +842,8 @@ public class GenericAbility_Container : Ability
 			{
 				GenericAbility_Container.CalcIntFieldValues(actorData, caster, actorContext, abilityContext, onHitAuthoredData.m_allyHitIntFields, numericHitResultScratch);
 
+				GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
 				// rogues?
-				//GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
 				//GenericAbility_Container.SetKnockbackFieldsOnHitResults(actorData, caster, actorContext, abilityContext, actorHitResults, onHitAuthoredData.m_allyHitKnockbackFields);
 				//GenericAbility_Container.SetCooldownReductionFieldsOnHitResults(actorData, caster, actorContext, abilityContext, actorHitResults, onHitAuthoredData.m_allyHitCooldownReductionFields, actorHitContextMap.Count);
 				GenericAbility_Container.SetEffectFieldsOnHitResults(actorData, caster, actorContext, abilityContext, actorHitResults, onHitAuthoredData.m_allyHitEffectFields);
@@ -843,8 +854,8 @@ public class GenericAbility_Container : Ability
 			{
 				GenericAbility_Container.CalcIntFieldValues(actorData, caster, actorContext, abilityContext, onHitAuthoredData.m_enemyHitIntFields, numericHitResultScratch);
 
+				GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
 				// rogues?
-				//GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
 				//GenericAbility_Container.SetKnockbackFieldsOnHitResults(actorData, caster, actorContext, abilityContext, actorHitResults, onHitAuthoredData.m_enemyHitKnockbackFields);
 				//GenericAbility_Container.SetCooldownReductionFieldsOnHitResults(actorData, caster, actorContext, abilityContext, actorHitResults, onHitAuthoredData.m_enemyHitCooldownReductionFields, actorHitContextMap.Count);
 				GenericAbility_Container.SetEffectFieldsOnHitResults(actorData, caster, actorContext, abilityContext, actorHitResults, onHitAuthoredData.m_enemyHitEffectFields);
@@ -860,7 +871,27 @@ public class GenericAbility_Container : Ability
 		}
 	}
 
-	// rogues?
+	// custom
+	public static void SetNumericFieldsOnHitResults(ActorHitResults hitRes, NumericHitResultScratch calcScratch)
+	{
+		if (calcScratch.m_damage > 0)
+		{
+			hitRes.AddBaseDamage(calcScratch.m_damage);
+		}
+		if (calcScratch.m_healing > 0)
+		{
+			hitRes.AddBaseHealing(calcScratch.m_healing);
+		}
+		if (calcScratch.m_energyGain > 0)
+		{
+			hitRes.AddTechPointGain(calcScratch.m_energyGain);
+		}
+		if (calcScratch.m_energyLoss > 0)
+		{
+			hitRes.AddTechPointLoss(calcScratch.m_energyLoss);
+		}
+	}
+	// rogues
 	//public static void SetNumericFieldsOnHitResults(ActorHitResults hitRes, NumericHitResultScratch calcScratch)
 	//{
 	//	if (calcScratch.m_damageMin > 0f)
@@ -924,7 +955,12 @@ public class GenericAbility_Container : Ability
 		{
 			if (TargetFilterHelper.ActorMeetsConditions(onHitEffecField.m_conditions, targetActor, caster, actorContext, abilityContext))
 			{
-				hitRes.AddStandardEffectInfo(onHitEffecField.m_effect);
+				// custom
+				StandardEffectInfo effectInfo = onHitEffecField.m_effect.GetShallowCopy();
+				hitRes.AddStandardEffectInfo(effectInfo);
+				// rogues
+				// hitRes.AddStandardEffectInfo(onHitEffecField.m_effect);
+				
 				if (onHitEffecField.m_skipRemainingEffectEntriesIfMatch)
 				{
 					break;
