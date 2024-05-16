@@ -341,7 +341,7 @@ public class StandardGroundEffect : Effect
 		           || m_fieldInfo.stopMovementOutOfField && m_affectedSquares.Contains(movingFrom));
 	}
 
-	private bool IsActorHitThisTurn(ActorData actor, bool isReal)
+	public bool IsActorHitThisTurn(ActorData actor, bool isReal) // private in rogues
 	{
 		bool isActorHit = isReal
 			? m_actorsHitThisTurn.Contains(actor)

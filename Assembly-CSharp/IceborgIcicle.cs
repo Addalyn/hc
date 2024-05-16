@@ -109,4 +109,51 @@ public class IceborgIcicle : GenericAbility_Container
 	{
 		m_abilityMod = null;
 	}
+	
+#if SERVER
+	// custom
+	protected override void PreProcessForCalcAbilityHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		Dictionary<ActorData, ActorHitContext> actorHitContextMap,
+		ContextVars abilityContext)
+	{
+        base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
+
+        foreach (ActorData hitActor in actorHitContextMap.Keys)
+        {
+            if (m_syncComp.HasNovaCore(hitActor))
+			{
+                actorHitContextMap[hitActor].m_contextVars.SetValue(Iceborg_SyncComponent.s_cvarHasNova.GetKey(), 1);
+            }
+        }
+		if (m_abilityMod != null) 
+		{
+			Log.Info($"status thing: {m_abilityMod.m_useStatusWhenRequestedOverride}");
+        }
+    }
+
+	// custom
+    protected override void ProcessGatheredHits(
+	    List<AbilityTarget> targets,
+	    ActorData caster,
+	    AbilityResults abilityResults,
+	    List<ActorHitResults> actorHitResults,
+	    List<PositionHitResults> positionHitResults,
+	    List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+		foreach (var actorHitResult in actorHitResults)
+		{
+			ActorData hitActor = actorHitResult.m_hitParameters.Target;
+
+			if (m_syncComp.HasNovaCore(hitActor))
+			{
+				actorHitResult.AddTechPointGainOnCaster(GetEnergyOnCasterIfTargetHasNovaCore());
+			}
+			actorHitResult.AddTechPointGainOnCaster(100);
+			actorHitResult.AddEffect(m_syncComp.CreateNovaCoreEffect(AsEffectSource(), hitActor.GetCurrentBoardSquare(), hitActor, caster));
+			m_syncComp.AddNovaCoreActorIndex(hitActor.ActorIndex);
+        }
+    }
+#endif
 }

@@ -51,6 +51,11 @@ public class Iceborg_SyncComponent : NetworkBehaviour
 	internal bool m_selfShieldLowHealthOnTurnStart;
 
 	private static int kListm_actorsWithNovaCore = 1707706451;
+	
+#if SERVER
+    // custom
+    private StandardActorEffectData m_cachedNovaCenterEffectData;
+#endif
 
 	public short Networkm_damageFieldLastCastTurn
 	{
@@ -328,4 +333,72 @@ public class Iceborg_SyncComponent : NetworkBehaviour
 			m_selfShieldLowHealthOnTurnStart = reader.ReadBoolean();
 		}
 	}
+	
+#if SERVER
+	// custom
+	public void AddNovaCoreActorIndex(int actorIndex)
+	{
+		Log.Info("Adding to NovaCore List -> " + GameFlowData.Get().FindActorByActorIndex(actorIndex));
+		if(!m_actorsWithNovaCore.Contains((uint)actorIndex))
+		{
+			Log.Info("  Added");
+            m_actorsWithNovaCore.Add((uint)actorIndex);
+        }
+    }
+
+	// custom
+	public void RemoveNovaCoreActorIndex(int actorIndex)
+	{
+		Log.Info("Removing actor from NovaCore list -> " +  GameFlowData.Get().FindActorByActorIndex(actorIndex));
+		m_actorsWithNovaCore.Remove((uint)actorIndex);
+	}
+
+	// custom
+	public void ClearNovaCoreActors() 
+	{
+		m_actorsWithNovaCore.Clear();
+	}
+
+	// custom
+    public StandardActorEffectData GetNovaCoreEffectData()
+    {
+        if (m_cachedNovaCenterEffectData == null)
+        {
+			m_cachedNovaCenterEffectData = new StandardActorEffectData();
+            m_cachedNovaCenterEffectData.SetValues(
+	            "NovaCoreVisualEffect",
+	            2,
+	            0,
+	            0,
+	            0,
+	            ServerCombatManager.HealingType.Effect,
+	            0,
+	            0,
+	            new AbilityStatMod[0],
+	            new StatusType[0],
+	            StandardActorEffectData.StatusDelayMode.DefaultBehavior);
+            m_cachedNovaCenterEffectData.m_sequencePrefabs = new[] { m_delayedAoePersistentSeqPrefab };
+        }
+        return m_cachedNovaCenterEffectData;
+    }
+
+    // custom
+    public IceborgNovaCoreEffect CreateNovaCoreEffect(
+	    EffectSource effectSource,
+	    BoardSquare targetSquare,
+	    ActorData target,
+	    ActorData caster,
+	    int extraEnergy = 0) 
+	{
+        return new IceborgNovaCoreEffect(
+	        effectSource,
+	        targetSquare,
+	        target,
+	        caster,
+	        GetNovaCoreEffectData(),
+	        GetNovaCoreTriggerDamage(),
+	        m_delayedAoeTriggerSeqPrefab,
+	        extraEnergy);
+	}
+#endif
 }

@@ -1127,12 +1127,15 @@
     <Compile Include="IceborgConeOrLaser.cs" />
     <Compile Include="IceborgConsumeNova.cs" />
     <Compile Include="IceborgDamageArea.cs" />
+    <Compile Include="IceborgDamageAreaEffect.cs" />
     <Compile Include="IceborgDamageToShield.cs" />
     <Compile Include="IceborgDetonateNotifySequence.cs" />
     <Compile Include="IceborgDetonateNova.cs" />
     <Compile Include="IceborgIcicle.cs" />
+    <Compile Include="IceborgNovaCoreEffect.cs" />
     <Compile Include="IceborgNovaCoreSequence.cs" />
     <Compile Include="IceborgNovaOnReact.cs" />
+    <Compile Include="IceborgNovaOnReactEffect.cs" />
     <Compile Include="IceborgPrepCone.cs" />
     <Compile Include="IceborgSelfShield.cs" />
     <Compile Include="IceborgWall.cs" />

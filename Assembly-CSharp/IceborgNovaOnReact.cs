@@ -125,4 +125,57 @@ public class IceborgNovaOnReact : GenericAbility_Container
 	{
 		m_abilityMod = null;
 	}
+	
+#if SERVER
+	// custom
+    protected override void ProcessGatheredHits(
+	    List<AbilityTarget> targets,
+	    ActorData caster,
+	    AbilityResults abilityResults,
+	    List<ActorHitResults> actorHitResults,
+	    List<PositionHitResults> positionHitResults,
+	    List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+		foreach (ActorHitResults hitResults in actorHitResults)
+		{
+			Log.Info("IceborgNovaOnReact actor hit: " + hitResults.m_hitParameters.Target);
+			IceborgNovaOnReactEffect effect = CreateNovaOnReactEffect(hitResults.m_hitParameters.Target, caster);
+			hitResults.AddEffect(effect);
+
+			OnHitAuthoredData hitData = GetReactOnHitData();
+            Log.Info(hitData.ToString());
+		}
+    }
+
+    // custom
+    public IceborgNovaOnReactEffect CreateNovaOnReactEffect(ActorData target, ActorData caster)
+    {
+		StandardActorEffectData effectData = new StandardActorEffectData();
+		effectData.SetValues(
+			"NovaOnReactEffect",
+			GetReactDuration(),
+			0,
+			0,
+			0,
+			ServerCombatManager.HealingType.Effect,
+			0,
+			0,
+			new AbilityStatMod[0],
+			new StatusType[0],
+			StandardActorEffectData.StatusDelayMode.DefaultBehavior);
+		effectData.m_sequencePrefabs = new[] { m_reactPersistentSeqPrefab };
+		return new IceborgNovaOnReactEffect(
+			AsEffectSource(), 
+			target.GetCurrentBoardSquare(), 
+			target, 
+			caster, 
+			effectData, 
+			GetReactOnHitData().GetFirstDamageValue(), 
+			m_reactOnTriggerSeqPrefab,
+			GetEnergyOnTargetPerReaction(),
+			GetEnergyOnCasterPerReaction(),
+			GetExtraEnergyPerNovaCoreTrigger());
+    }
+#endif
 }
