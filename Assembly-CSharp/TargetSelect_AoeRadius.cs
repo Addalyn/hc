@@ -87,4 +87,66 @@ public class TargetSelect_AoeRadius : GenericAbility_TargetSelectBase
     {
         m_targetSelMod = null;
     }
+
+    public override void CalcHitTargets(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        ResetContextData();
+        base.CalcHitTargets(targets, caster, nonActorTargetInfo);
+        m_contextCalcData.m_nonActorSpecificContext.SetValue(ContextKeys.s_Radius.GetKey(), GetRadius());
+        Vector3 centerPos = GetCenterPos(caster, targets[0]);
+        foreach (ActorData actorData in GetHitActors(targets, caster, nonActorTargetInfo))
+        {
+            AddHitActor(actorData, caster.GetLoSCheckPos());
+            float value = VectorUtils.HorizontalPlaneDistInSquares(centerPos, actorData.GetFreePos());
+            SetActorContext(actorData, ContextKeys.s_DistFromStart.GetKey(), value);
+        }
+    }
+
+    public List<ActorData> GetHitActors(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        List<ActorData> actorsInRadius = AreaEffectUtils.GetActorsInRadius(
+            GetCenterPos(caster, targets[0]),
+            GetRadius(),
+            IgnoreLos(),
+            caster,
+            TargeterUtils.GetRelevantTeams(caster, IncludeAllies(), IncludeEnemies()),
+            nonActorTargetInfo);
+        if (IncludeCaster() && !actorsInRadius.Contains(caster))
+        {
+            actorsInRadius.Add(caster);
+        }
+
+        return actorsInRadius;
+    }
+
+    public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        ServerAbilityUtils.AbilityRunData additionalData,
+        Sequence.IExtraSequenceParams[] extraSequenceParams = null)
+    {
+        List<Sequence.IExtraSequenceParams> sequenceParams = new List<Sequence.IExtraSequenceParams>();
+        if (extraSequenceParams != null)
+        {
+            sequenceParams.AddRange(extraSequenceParams);
+        }
+
+        sequenceParams.AddRange(AbilityCommon_LayeredRings.GetAdjustableRingSequenceParams(GetRadius()));
+        return new List<ServerClientUtils.SequenceStartData>
+        {
+            new ServerClientUtils.SequenceStartData(
+                m_castSequencePrefab,
+                GetCenterPos(caster, targets[0]),
+                additionalData.m_abilityResults.HitActorsArray(),
+                caster,
+                additionalData.m_sequenceSource,
+                sequenceParams.ToArray())
+        };
+    }
 }

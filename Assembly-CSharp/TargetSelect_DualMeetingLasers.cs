@@ -166,4 +166,210 @@ public class TargetSelect_DualMeetingLasers : GenericAbility_TargetSelectBase
             ? m_targetSelMod.m_aoeIgnoreMinCoverDistMod.GetModifiedValue(m_aoeIgnoreMinCoverDist)
             : m_aoeIgnoreMinCoverDist;
     }
+
+    public override void CalcHitTargets(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        ResetContextData();
+        base.CalcHitTargets(targets, caster, nonActorTargetInfo);
+        GetHitActors(
+            targets,
+            caster,
+            nonActorTargetInfo,
+            out List<List<ActorData>> laserHitActors,
+            out List<Vector3> laserStartPosList,
+            out List<Vector3> laserEndPosList,
+            out Vector3 aimAtPos,
+            out int aoeEndPosIndex,
+            out _,
+            out List<ActorData> aoeHitActors);
+        float value = AbilityCommon_DualMeetingLasers.CalcMeetingPosDistFromMin(
+            caster.GetLoSCheckPos(),
+            aimAtPos,
+            GetMinMeetingDistFromCaster());
+        List<ActorData> processedHits = new List<ActorData>();
+        if (aoeEndPosIndex >= 0)
+        {
+            foreach (ActorData actor in aoeHitActors)
+            {
+                AddHitActor(actor, laserEndPosList[aoeEndPosIndex], AoeIgnoreMinCoverDist());
+                SetActorContext(actor, ContextKeys.s_InAoe.GetKey(), 1);
+                SetActorContext(actor, ContextKeys.s_DistFromMin.GetKey(), value);
+                processedHits.Add(actor);
+            }
+        }
+
+        for (int i = 0; i < laserHitActors.Count; i++)
+        {
+            foreach (ActorData actor in laserHitActors[i])
+            {
+                if (processedHits.Contains(actor))
+                {
+                    continue;
+                }
+
+                AddHitActor(actor, laserStartPosList[i]);
+                SetActorContext(actor, ContextKeys.s_InAoe.GetKey(), 0);
+                SetActorContext(actor, ContextKeys.s_DistFromMin.GetKey(), value);
+                processedHits.Add(actor);
+            }
+        }
+    }
+
+    private void GetHitActors(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo,
+        out List<List<ActorData>> laserHitActors,
+        out List<Vector3> laserStartPosList,
+        out List<Vector3> laserEndPosList,
+        out Vector3 aimAtPos,
+        out int aoeEndPosIndex,
+        out float aoeRadius,
+        out List<ActorData> aoeHitActors)
+    {
+        Vector3 loSCheckPos = caster.GetLoSCheckPos();
+        AbilityTarget abilityTarget = targets[0];
+        int laserCount = m_delegateLaserCount?.Invoke(targets[0], caster) ?? 2;
+        if (laserCount > 1)
+        {
+            laserStartPosList = AbilityCommon_DualMeetingLasers.CalcStartingPositions(
+                loSCheckPos,
+                abilityTarget.FreePos,
+                GetLaserStartForwardOffset(),
+                GetLaserStartSideOffset());
+        }
+        else
+        {
+            laserStartPosList = new List<Vector3> { loSCheckPos };
+        }
+
+        aimAtPos = AbilityCommon_DualMeetingLasers.CalcClampedMeetingPos(
+            loSCheckPos,
+            abilityTarget.FreePos,
+            GetMinMeetingDistFromCaster(),
+            GetMaxMeetingDistFromCaster());
+        float baseAoeRadius = AbilityCommon_DualMeetingLasers.CalcAoeRadius(
+            loSCheckPos,
+            aimAtPos,
+            GetAoeBaseRadius(),
+            GetMinMeetingDistFromCaster(),
+            GetAoeRadiusChangePerUnitFromMin(),
+            GetAoeMinRadius(),
+            GetAoeMaxRadius());
+        if (m_delegateExtraAoeRadius != null)
+        {
+            baseAoeRadius += m_delegateExtraAoeRadius(abilityTarget, caster, GetAoeBaseRadius());
+        }
+
+        aoeRadius = baseAoeRadius;
+        AbilityCommon_DualMeetingLasers.CalcHitActors(
+            aimAtPos,
+            laserStartPosList,
+            GetLaserWidth(),
+            baseAoeRadius,
+            GetRadiusMultIfPartialBlock(),
+            caster,
+            TargeterUtils.GetRelevantTeams(caster, IncludeAllies(), IncludeEnemies()),
+            true,
+            nonActorTargetInfo,
+            out laserHitActors,
+            out laserEndPosList,
+            out aoeEndPosIndex,
+            out aoeRadius,
+            out aoeHitActors);
+    }
+
+    public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        ServerAbilityUtils.AbilityRunData additionalData,
+        Sequence.IExtraSequenceParams[] extraSequenceParams = null)
+    {
+        List<ServerClientUtils.SequenceStartData> list = new List<ServerClientUtils.SequenceStartData>();
+        List<NonActorTargetInfo> nonActorTargetInfo = new List<NonActorTargetInfo>();
+        GetHitActors(
+            targets,
+            caster,
+            nonActorTargetInfo,
+            out List<List<ActorData>> laserHitActors,
+            out List<Vector3> laserStartPosList,
+            out List<Vector3> laserEndPosList,
+            out _,
+            out int aoeEndPosIndex,
+            out float radiusInSquares,
+            out List<ActorData> aoeHitActors);
+        for (int i = 0; i < laserStartPosList.Count; i++)
+        {
+            List<Sequence.IExtraSequenceParams> sequenceParams = new List<Sequence.IExtraSequenceParams>();
+            if (extraSequenceParams != null)
+            {
+                sequenceParams.AddRange(extraSequenceParams);
+            }
+
+            sequenceParams.Add(
+                new SplineProjectileSequence.DelayedProjectileExtraParams
+                {
+                    skipImpactFx = i != aoeEndPosIndex,
+                    useOverrideStartPos = true,
+                    overrideStartPos = laserStartPosList[i]
+                });
+            if (i == 1)
+            {
+                sequenceParams.Add(
+                    new Sequence.GenericIntParam
+                    {
+                        m_fieldIdentifier = Sequence.GenericIntParam.FieldIdentifier.Index,
+                        m_value = 1
+                    });
+            }
+
+            if (i == aoeEndPosIndex)
+            {
+                sequenceParams.Add(
+                    new Sequence.FxAttributeParam
+                    {
+                        m_paramNameCode = Sequence.FxAttributeParam.ParamNameCode.ScaleControl,
+                        m_paramTarget = Sequence.FxAttributeParam.ParamTarget.ImpactVfx,
+                        m_paramValue = 2f * radiusInSquares
+                    });
+                if (m_aoeSequencePrefab == null)
+                {
+                    laserHitActors[i].AddRange(aoeHitActors);
+                }
+            }
+
+            list.Add(
+                new ServerClientUtils.SequenceStartData(
+                    m_laserSequencePrefab,
+                    laserEndPosList[i],
+                    laserHitActors[i].ToArray(),
+                    caster,
+                    additionalData.m_sequenceSource,
+                    sequenceParams.ToArray()));
+        }
+
+        if (aoeEndPosIndex >= 0 && m_aoeSequencePrefab != null)
+        {
+            List<Sequence.IExtraSequenceParams> sequenceParams = new List<Sequence.IExtraSequenceParams>();
+            if (extraSequenceParams != null)
+            {
+                sequenceParams.AddRange(extraSequenceParams);
+            }
+
+            sequenceParams.AddRange(AbilityCommon_LayeredRings.GetAdjustableRingSequenceParams(radiusInSquares));
+            list.Add(
+                new ServerClientUtils.SequenceStartData(
+                    m_aoeSequencePrefab,
+                    laserEndPosList[aoeEndPosIndex],
+                    aoeHitActors.ToArray(),
+                    caster,
+                    additionalData.m_sequenceSource,
+                    sequenceParams.ToArray()));
+        }
+
+        return list;
+    }
 }

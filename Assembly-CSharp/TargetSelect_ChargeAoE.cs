@@ -16,6 +16,9 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
     private int m_maxTargets;
     private TargetSelectMod_ChargeAoE m_targetSelMod;
 
+    public static ContextNameKeyPair s_cvarInStart = new ContextNameKeyPair("InStart");
+    public static ContextNameKeyPair s_cvarInEnd = new ContextNameKeyPair("InEnd");
+
     public override string GetUsageForEditor()
     {
         return "Intended for single click charge abilities, with line and AoE on either end.\n"
@@ -210,5 +213,70 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
     protected override void OnTargetSelModRemoved()
     {
         m_targetSelMod = null;
+    }
+
+    public override void CalcHitTargets(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        ResetContextData();
+        base.CalcHitTargets(targets, caster, nonActorTargetInfo);
+        Vector3 startPos = caster.GetSquareAtPhaseStart().ToVector3();
+        Vector3 targetPos = Board.Get().GetSquare(targets[0].GridPos).GetOccupantLoSPos();
+        Vector3 loSCheckPos = caster.GetLoSCheckPos(caster.GetSquareAtPhaseStart());
+        foreach (ActorData actorData in GetHitActorsInShape(loSCheckPos, targetPos, caster, nonActorTargetInfo))
+        {
+            AddHitActor(actorData, startPos);
+            float sqrDitToStart = (actorData.GetLoSCheckPos() - startPos).sqrMagnitude;
+            float sqrDistToEnd = (actorData.GetLoSCheckPos() - targetPos).sqrMagnitude;
+            bool inStartAoe = sqrDitToStart <= m_radiusAroundStart * m_radiusAroundStart;
+            bool inEndAoe = sqrDistToEnd <= m_radiusAroundEnd * m_radiusAroundEnd;
+            SetActorContext(actorData, s_cvarInStart.GetKey(), inStartAoe ? 1 : 0);
+            SetActorContext(actorData, s_cvarInEnd.GetKey(), inEndAoe ? 1 : 0);
+        }
+
+        if (IncludeCaster())
+        {
+            AddHitActor(caster, caster.GetCurrentBoardSquare().ToVector3());
+        }
+    }
+
+    protected List<ActorData> GetHitActorsInShape(
+        Vector3 startPos,
+        Vector3 endPos,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        List<ActorData> actorsInRadiusOfLine = AreaEffectUtils.GetActorsInRadiusOfLine(
+            startPos,
+            endPos,
+            m_radiusAroundStart,
+            m_radiusAroundEnd,
+            m_rangeFromLine,
+            m_ignoreLos,
+            caster,
+            TargeterUtils.GetRelevantTeams(caster, m_includeAllies, m_includeEnemies),
+            nonActorTargetInfo);
+        ServerAbilityUtils.RemoveEvadersFromHitTargets(ref actorsInRadiusOfLine);
+        return actorsInRadiusOfLine;
+    }
+
+    public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        ServerAbilityUtils.AbilityRunData additionalData,
+        Sequence.IExtraSequenceParams[] extraSequenceParams = null)
+    {
+        return new List<ServerClientUtils.SequenceStartData>
+        {
+            new ServerClientUtils.SequenceStartData(
+                m_castSequencePrefab,
+                Board.Get().GetSquare(targets[0].GridPos),
+                additionalData.m_abilityResults.HitActorsArray(),
+                caster,
+                additionalData.m_sequenceSource,
+                extraSequenceParams)
+        };
     }
 }

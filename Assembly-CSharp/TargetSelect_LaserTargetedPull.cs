@@ -202,4 +202,42 @@ public class TargetSelect_LaserTargetedPull : GenericAbility_TargetSelectBase
         targetPosForSequences.Add(laserEndPos);
         return actorsInLaser;
     }
+
+    public override void CalcHitTargets(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        ResetContextData();
+        base.CalcHitTargets(targets, caster, nonActorTargetInfo);
+        foreach (ActorData actor in GetHitActors(targets, caster, out _, nonActorTargetInfo))
+        {
+            AddHitActor(actor, caster.GetLoSCheckPos());
+        }
+    }
+
+    public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        ServerAbilityUtils.AbilityRunData additionalData,
+        Sequence.IExtraSequenceParams[] extraSequenceParams = null)
+    {
+        List<ActorData> hitActors = GetHitActors(targets, caster, out List<Vector3> targetPosForSequences, null);
+        TargeterUtils.SortActorsByDistanceToPos(ref hitActors, targetPosForSequences[0]);
+        if (additionalData.m_abilityResults.HasHitOnActor(caster) && !hitActors.Contains(caster))
+        {
+            hitActors.Add(caster);
+        }
+
+        return new List<ServerClientUtils.SequenceStartData>
+        {
+            new ServerClientUtils.SequenceStartData(
+                m_castSequencePrefab,
+                targetPosForSequences[0],
+                hitActors.ToArray(),
+                caster,
+                additionalData.m_sequenceSource,
+                extraSequenceParams)
+        };
+    }
 }
