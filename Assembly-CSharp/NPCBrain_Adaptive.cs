@@ -1172,7 +1172,31 @@ public class NPCBrain_Adaptive : NPCBrain
 	// added in rogues
 	private PotentialChoice AdjustScoreForEvasion(ActorData actorData, PotentialChoice choice, Ability thisAbility)
 	{
-		AbilityData component = GetComponent<AbilityData>();
+		AbilityData abilityData = GetComponent<AbilityData>();
+		AdjustDamageScoreForEvasion(actorData, choice);
+		SetEvasionDestSquare(actorData, choice);
+		AdjustEvasionForPositionImprovement(actorData, choice, thisAbility);
+		
+		if (actorData.GetCharacterResourceLink().m_characterRole != CharacterRole.Tank
+		    && actorData.GetHitPointPercent() > 0.9f
+		    && actorData.TechPoints < 100)
+		{
+			choice.score *= 0.5f;
+			choice.reasoning += "Not a frontline & over 90% hp: Dividing score by 2.\n";
+		}
+		if (!HasNoDashOffCooldown(actorData, false)
+		    && abilityData.GetActionTypeOfAbility(thisAbility) == AbilityData.ActionType.CARD_1)
+		{
+			choice.score *= 0.25f;
+			choice.reasoning += "Reduce the score by 75% - don't use a card shift if you have a normal shift";
+		}
+		
+		return choice;
+	}
+
+	// refactored from rogues AdjustScoreForEvasion
+	private void AdjustDamageScoreForEvasion(ActorData actorData, PotentialChoice choice)
+	{
 		if (GameFlowData.Get().CurrentTurn == 1)
 		{
 			choice.score -= 200f;
@@ -1198,17 +1222,22 @@ public class NPCBrain_Adaptive : NPCBrain
 			choice.score /= 2f;
 			choice.reasoning += "Reduce the score by 50% - don't use shift if you have decent cover and a ranged";
 		}
-		float score = 0f;
-		BoardSquare currentBoardSquare = actorData.GetCurrentBoardSquare();
+		if (actorData.m_characterType == CharacterType.Spark
+		    && choice.targetList.Count == 2
+		    && GameFlowData.Get().CurrentTurn == 2)
+		{
+			choice.score -= 200f;
+			choice.reasoning += "Subtracting 200 score - quark evading on turn 2 is generally bad.\n";
+		}
+	}
+
+	// refactored from rogues AdjustScoreForEvasion
+	private static void SetEvasionDestSquare(ActorData actorData, PotentialChoice choice)
+	{
 		BoardSquare square = Board.Get().GetSquare(choice.targetList[0].GridPos);
 		if (actorData.m_characterType == CharacterType.Spark && choice.targetList.Count == 2)
 		{
 			square = Board.Get().GetSquare(choice.targetList[1].GridPos);
-			if (GameFlowData.Get().CurrentTurn == 2)
-			{
-				choice.score -= 200f;
-				choice.reasoning += "Subtracting 200 score - quark evading on turn 2 is generally bad.\n";
-			}
 		}
 		if (actorData.m_characterType == CharacterType.Gremlins && choice.targetList.Count > 0)
 		{
@@ -1225,279 +1254,327 @@ public class NPCBrain_Adaptive : NPCBrain
 		}
 		// end custom
 		choice.destinationSquare = square;
-		if (!IsSquareOccupiedByAliveActor(square))
+	}
+
+	// refactored from rogues AdjustScoreForEvasion
+	private void AdjustEvasionForPositionImprovement(
+		ActorData actorData,
+		PotentialChoice choice,
+		Ability thisAbility)
+	{
+		BoardSquare curSquare = actorData.GetCurrentBoardSquare();
+		BoardSquare destSquare = choice.destinationSquare;
+		float score = 0f;
+		if (IsSquareOccupiedByAliveActor(destSquare))
 		{
-			float dodgeScore = 0f;
-			if (actorData.GetHitPointPercent() < 0.5)
+			// TODO BOTS dashing into other players?
+			return;
+		}
+		float dodgeScore = 0f;
+		if (actorData.GetHitPointPercent() < 0.5)
+		{
+			score = CalcEvasionDestCoverScore(actorData, choice, thisAbility, ref dodgeScore);
+		}
+
+		score += CalcDamageReductionFromWorldEffects(actorData, curSquare, destSquare);
+		score += CalcScoreForEvadingThroughBarriers(actorData, thisAbility, curSquare, destSquare); // custom
+		
+		if (dodgeScore == 0f && choice.score < 10f)
+		{
+			score = 0f;
+		}
+		else if (dodgeScore >= 2f && choice.score < 10f)
+		{
+			score *= 1.25f;
+		}
+		
+		if (score != 0f)
+		{
+			if (actorData.GetHitPointPercent() < 0.4f && choice.score == 0f)
 			{
-				if (thisAbility.GetEvasionTeleportType() != ActorData.TeleportType.NotATeleport
-				    && square.IsInBrush()
-				    && BrushCoordinator.Get().IsRegionFunctioning(square.BrushRegion))
+				choice.score += 20f * dodgeScore;
+				choice.reasoning += "Adding score if you are low health and your evade does no damage so you will not shoot and just dodge";
+			}
+			choice.score += score;
+			choice.reasoning +=
+				$"Adding {score} based on the quality of the evade (destination position & world effects at start and destination)\n";
+		}
+	}
+
+	// refactored from rogues AdjustScoreForEvasion
+	private float CalcEvasionDestCoverScore(
+		ActorData actorData,
+		PotentialChoice choice,
+		Ability thisAbility,
+		ref float dodgeScore)
+	{
+		BoardSquare curSquare = actorData.GetCurrentBoardSquare();
+		BoardSquare destSquare = choice.destinationSquare;
+		float score = 0;
+		if (thisAbility.GetEvasionTeleportType() != ActorData.TeleportType.NotATeleport
+		    && destSquare.IsInBrush()
+		    && BrushCoordinator.Get().IsRegionFunctioning(destSquare.BrushRegion))
+		{
+			score += 20f;
+		}
+		// custom
+		ActorCover actorCover = actorData.GetComponent<ActorCover>();
+		if (actorCover != null)
+		{
+			float destCoverRating = actorCover.CoverRating(destSquare);
+			if (destCoverRating > 1.5f)
+			{
+				score += 25f;
+			}
+			else if (destCoverRating > 1.0f)
+			{
+				score += 20f;
+			}
+		}
+		// end custom
+		List<ActorData> enemies = actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList();
+		foreach (ActorData enemy in enemies)
+		{
+			if (GetEnemyPlayerAliveAndVisibleMultiplier(enemy) == 0f)
+			{
+				continue;
+			}
+			BoardSquare enemySquare = enemy.GetCurrentBoardSquare();
+			Vector3 currentEnemyVector = curSquare.transform.position - enemySquare.transform.position;
+			Vector3 projectedEnemyVector = destSquare.transform.position - enemySquare.transform.position;
+			float curDistToEnemy = currentEnemyVector.magnitude;
+			float projDistToEnemy = projectedEnemyVector.magnitude;
+			if (curDistToEnemy <= 6f * Board.Get().squareSize)
+			{
+				dodgeScore += 1f;
+			}
+			currentEnemyVector.Normalize();
+			projectedEnemyVector.Normalize();
+			float angleChange = Vector3.Dot(currentEnemyVector, projectedEnemyVector);
+			float enemyWeight;
+			if (angleChange > 0.9f)
+			{
+				enemyWeight = 0.25f;
+			}
+			else if (angleChange > 0.25f)
+			{
+				enemyWeight = Mathf.Sqrt(angleChange);
+			}
+			else if (choice.score > 0f)
+			{
+				enemyWeight = 0.5f;
+			}
+			else
+			{
+				enemyWeight = 0.5f + (angleChange + 1f) / 2.5f;
+			}
+			if (actorData.m_characterType == CharacterType.Tracker)
+			{
+				enemyWeight += 1f;
+			}
+			if (choice.score == 0f)
+			{
+				enemyWeight *= 20f;
+			}
+			if (curDistToEnemy < 4.5f)
+			{
+				score += 20f * (Mathf.Abs(projDistToEnemy - curDistToEnemy) / 10f) * enemyWeight / (1f * enemies.Count);
+			}
+			else if (curDistToEnemy < 9f)
+			{
+				score += 10f * (Mathf.Abs(projDistToEnemy - curDistToEnemy) / 10f) * enemyWeight / (1f * enemies.Count);
+			}
+			else
+			{
+				score += 5f * (Mathf.Abs(projDistToEnemy - curDistToEnemy) / 10f) * enemyWeight / (1f * enemies.Count);
+			}
+			score *= 0.5f;
+		}
+
+		return score;
+	}
+
+	// refactored from rogues AdjustScoreForEvasion
+	private static float CalcDamageReductionFromWorldEffects(
+		ActorData actorData,
+		BoardSquare curSquare,
+		BoardSquare destSquare)
+	{
+		float damageReduction = 0;
+		// TODO BOTS include damage from effects/barriers in the path
+		foreach (Effect effect in ServerEffectManager.Get().WorldEffects)
+		{
+			if (effect.Caster == null
+			    || effect.Caster.GetTeam() != actorData.GetEnemyTeam())
+			{
+				continue;
+			}
+			int currentPosDamage = 0;
+			int projectedPosDamage = 0;
+			switch (effect)
+			{
+				case SorceressDamageFieldEffect sorceressDamageFieldEffect:
 				{
-					score += 20f;
+					if (sorceressDamageFieldEffect.AffectedSquares.Contains(curSquare))
+					{
+						currentPosDamage = sorceressDamageFieldEffect.m_damage;
+					}
+					if (sorceressDamageFieldEffect.AffectedSquares.Contains(destSquare))
+					{
+						projectedPosDamage = sorceressDamageFieldEffect.m_damage;
+					}
+
+					break;
 				}
 				// custom
-				if (actorCover != null)
+				case StandardGroundEffect _:
+				case StandardMultiAreaGroundEffect _:
 				{
-					float destCoverRating = actorCover.CoverRating(square);
-					if (destCoverRating > 1.5f)
+					if (effect is ThiefHiddenTrapEffect)
 					{
-						score += 25f;
+						break;
 					}
-					else if (destCoverRating > 1.0f)
+						
+					ICollection<BoardSquare> squaresInShape;
+					int damage;
+					if (effect is StandardGroundEffect standardGroundEffect)
 					{
-						score += 20f;
+						damage = standardGroundEffect.m_fieldInfo.damageAmount;
+						squaresInShape = standardGroundEffect.AffectedSquares;
 					}
+					else if (effect is StandardMultiAreaGroundEffect standardMultiAreaGroundEffect)
+					{
+						damage = standardMultiAreaGroundEffect.m_fieldInfo.damageAmount;
+						squaresInShape = standardMultiAreaGroundEffect.GetSquaresInShape();
+					}
+					else
+					{
+						break;
+					}
+						
+					if (squaresInShape.Contains(curSquare))
+					{
+						currentPosDamage = damage;
+					}
+					if (squaresInShape.Contains(destSquare))
+					{
+						projectedPosDamage = damage;
+					}
+					break;
+				}
+				case NekoBoomerangDiscEffect _:
+				{
+					// TODO BOT dodge catarangs
+					break;
+				}
+				case NekoHomingDiscEffect nekoHomingDiscEffect:
+				{
+					// TODO BOT dodge catarangs
+					if (nekoHomingDiscEffect.HomingTarget == actorData)
+					{
+						currentPosDamage = nekoHomingDiscEffect.m_returnTripDamage;
+					}
+					break;
+				}
+				case BazookaGirlDelayedMissileEffect bigOneEffect:
+				{
+					foreach (BazookaGirlDelayedMissile.ShapeToHitInfo shapeToHitInfo in bigOneEffect.ShapeToHitInfo)
+					{
+						bool isSquareInShape = AreaEffectUtils.IsSquareInShape(
+							curSquare,
+							shapeToHitInfo.m_shape,
+							bigOneEffect.TargetSquare.ToVector3(),
+							bigOneEffect.TargetSquare,
+							true,
+							bigOneEffect.Caster);
+						if (isSquareInShape)
+						{
+							currentPosDamage = shapeToHitInfo.m_damage;
+							break;
+						}
+					}
+					foreach (BazookaGirlDelayedMissile.ShapeToHitInfo shapeToHitInfo in bigOneEffect.ShapeToHitInfo)
+					{
+						bool isSquareInShape = AreaEffectUtils.IsSquareInShape(
+							destSquare,
+							shapeToHitInfo.m_shape,
+							bigOneEffect.TargetSquare.ToVector3(),
+							bigOneEffect.TargetSquare,
+							true,
+							bigOneEffect.Caster);
+						if (isSquareInShape)
+						{
+							projectedPosDamage = shapeToHitInfo.m_damage;
+							break;
+						}
+					}
+
+					break;
 				}
 				// end custom
-				List<ActorData> enemies = actorData.GetOtherTeams().SelectMany(otherTeam => GameFlowData.Get().GetAllTeamMembers(otherTeam)).ToList();
-				foreach (ActorData enemy in enemies)
+				default:
 				{
-					if (GetEnemyPlayerAliveAndVisibleMultiplier(enemy) == 0f)
+					if (effect.TargetSquare == curSquare)
 					{
-						continue;
+						currentPosDamage = 10;
 					}
-					BoardSquare enemySquare = enemy.GetCurrentBoardSquare();
-					Vector3 currentEnemyVector = currentBoardSquare.transform.position - enemySquare.transform.position;
-					Vector3 projectedEnemyVector = square.transform.position - enemySquare.transform.position;
-					float curDistToEnemy = currentEnemyVector.magnitude;
-					float projDistToEnemy = projectedEnemyVector.magnitude;
-					if (curDistToEnemy <= 6f * Board.Get().squareSize)
+					if (effect.TargetSquare == destSquare)
 					{
-						dodgeScore += 1f;
+						projectedPosDamage = 10;
 					}
-					currentEnemyVector.Normalize();
-					projectedEnemyVector.Normalize();
-					float angleChange = Vector3.Dot(currentEnemyVector, projectedEnemyVector);
-					float enemyWeight;
-					if (angleChange > 0.9f)
-					{
-						enemyWeight = 0.25f;
-					}
-					else if (angleChange > 0.25f)
-					{
-						enemyWeight = Mathf.Sqrt(angleChange);
-					}
-					else if (choice.score > 0f)
-					{
-						enemyWeight = 0.5f;
-					}
-					else
-					{
-						enemyWeight = 0.5f + (angleChange + 1f) / 2.5f;
-					}
-					if (actorData.m_characterType == CharacterType.Tracker)
-					{
-						enemyWeight += 1f;
-					}
-					if (choice.score == 0f)
-					{
-						enemyWeight *= 20f;
-					}
-					if (curDistToEnemy < 4.5f)
-					{
-						score += 20f * (Mathf.Abs(projDistToEnemy - curDistToEnemy) / 10f) * enemyWeight / (1f * enemies.Count);
-					}
-					else if (curDistToEnemy < 9f)
-					{
-						score += 10f * (Mathf.Abs(projDistToEnemy - curDistToEnemy) / 10f) * enemyWeight / (1f * enemies.Count);
-					}
-					else
-					{
-						score += 5f * (Mathf.Abs(projDistToEnemy - curDistToEnemy) / 10f) * enemyWeight / (1f * enemies.Count);
-					}
-					score *= 0.5f;
+
+					break;
 				}
 			}
-			foreach (Effect effect in ServerEffectManager.Get().WorldEffects)
+			damageReduction += currentPosDamage;
+			damageReduction -= projectedPosDamage;
+		}
+
+		return damageReduction;
+	}
+
+	// custom
+	// TODO BOTS consider full path
+	private static float CalcScoreForEvadingThroughBarriers(
+		ActorData actorData,
+		Ability thisAbility,
+		BoardSquare curSquare,
+		BoardSquare destSquare)
+	{
+		if (thisAbility.IsTeleport())
+		{
+			return 0;
+		}
+
+		float adjustment = 0;
+		foreach (Barrier barrier in BarrierManager.Get().GetAllBarriers())
+		{
+			if (barrier.Caster == null
+			    || barrier.Caster.GetTeam() != actorData.GetEnemyTeam()
+			    || !barrier.CrossingBarrier(curSquare.ToVector3(), destSquare.ToVector3()))
 			{
-				if (effect.Caster == null
-				    || effect.Caster.GetTeam() != actorData.GetEnemyTeam())
-				{
-					continue;
-				}
-				int currentPosDamage = 0;
-				int projectedPosDamage = 0;
-				switch (effect)
-				{
-					case SorceressDamageFieldEffect sorceressDamageFieldEffect:
-					{
-						if (sorceressDamageFieldEffect.AffectedSquares.Contains(currentBoardSquare))
-						{
-							currentPosDamage = sorceressDamageFieldEffect.m_damage;
-						}
-						if (sorceressDamageFieldEffect.AffectedSquares.Contains(square))
-						{
-							projectedPosDamage = sorceressDamageFieldEffect.m_damage;
-						}
-
-						break;
-					}
-					// custom
-					case StandardGroundEffect _:
-					case StandardMultiAreaGroundEffect _:
-					{
-						if (effect is ThiefHiddenTrapEffect)
-						{
-							break;
-						}
-						
-						ICollection<BoardSquare> squaresInShape;
-						int damage;
-						if (effect is StandardGroundEffect standardGroundEffect)
-						{
-							damage = standardGroundEffect.m_fieldInfo.damageAmount;
-							squaresInShape = standardGroundEffect.AffectedSquares;
-						}
-						else if (effect is StandardMultiAreaGroundEffect standardMultiAreaGroundEffect)
-						{
-							damage = standardMultiAreaGroundEffect.m_fieldInfo.damageAmount;
-							squaresInShape = standardMultiAreaGroundEffect.GetSquaresInShape();
-						}
-						else
-						{
-							break;
-						}
-						
-						if (squaresInShape.Contains(currentBoardSquare))
-						{
-							currentPosDamage = damage;
-						}
-						if (squaresInShape.Contains(square))
-						{
-							projectedPosDamage = damage;
-						}
-						break;
-					}
-					case NekoBoomerangDiscEffect _:
-					{
-						// TODO BOT dodge catarangs
-						break;
-					}
-					case NekoHomingDiscEffect nekoHomingDiscEffect:
-					{
-						// TODO BOT dodge catarangs
-						if (nekoHomingDiscEffect.HomingTarget == actorData)
-						{
-							currentPosDamage = nekoHomingDiscEffect.m_returnTripDamage;
-						}
-						break;
-					}
-					case BazookaGirlDelayedMissileEffect bigOneEffect:
-					{
-						foreach (BazookaGirlDelayedMissile.ShapeToHitInfo shapeToHitInfo in bigOneEffect.ShapeToHitInfo)
-						{
-							bool isSquareInShape = AreaEffectUtils.IsSquareInShape(
-								currentBoardSquare,
-								shapeToHitInfo.m_shape,
-								bigOneEffect.TargetSquare.ToVector3(),
-								bigOneEffect.TargetSquare,
-								true,
-								bigOneEffect.Caster);
-							if (isSquareInShape)
-							{
-								currentPosDamage = shapeToHitInfo.m_damage;
-								break;
-							}
-						}
-						foreach (BazookaGirlDelayedMissile.ShapeToHitInfo shapeToHitInfo in bigOneEffect.ShapeToHitInfo)
-						{
-							bool isSquareInShape = AreaEffectUtils.IsSquareInShape(
-								square,
-								shapeToHitInfo.m_shape,
-								bigOneEffect.TargetSquare.ToVector3(),
-								bigOneEffect.TargetSquare,
-								true,
-								bigOneEffect.Caster);
-							if (isSquareInShape)
-							{
-								projectedPosDamage = shapeToHitInfo.m_damage;
-								break;
-							}
-						}
-
-						break;
-					}
-					// end custom
-					default:
-					{
-						if (effect.TargetSquare == currentBoardSquare)
-						{
-							currentPosDamage = 10;
-						}
-						if (effect.TargetSquare == square)
-						{
-							projectedPosDamage = 10;
-						}
-
-						break;
-					}
-				}
-				score += currentPosDamage;
-				score -= projectedPosDamage;
+				continue;
 			}
-			// custom
-			if (!thisAbility.IsTeleport())
-			{
-				foreach (Barrier barrier in BarrierManager.Get().GetAllBarriers())
-				{
-					if (barrier.Caster == null
-					    || barrier.Caster.GetTeam() != actorData.GetEnemyTeam()
-					    || !barrier.CrossingBarrier(currentBoardSquare.ToVector3(), square.ToVector3()))
-					{
-						continue;
-					}
 
-					int projectedDamage = barrier.OnEnemyMovedThrough.m_damage;
-					StandardEffectInfo effect = barrier.OnEnemyMovedThrough.m_effect;
-					if (effect.m_applyEffect)
+			int projectedDamage = barrier.OnEnemyMovedThrough.m_damage;
+			StandardEffectInfo effect = barrier.OnEnemyMovedThrough.m_effect;
+			if (effect.m_applyEffect)
+			{
+				foreach (StatusType statusChange in effect.m_effectData.m_statusChanges)
+				{
+					switch (statusChange)
 					{
-						foreach (StatusType statusChange in effect.m_effectData.m_statusChanges)
-						{
-							switch (statusChange)
-							{
-								case StatusType.Weakened:
-									projectedDamage += 13 * effect.m_effectData.m_duration;
-									break;
-							}
-						}
+						case StatusType.Weakened:
+							projectedDamage += 13 * effect.m_effectData.m_duration;
+							break;
 					}
+				}
+			}
 				
-					score -= projectedDamage;
-				}
-			}
-			// end custom
-			if (dodgeScore == 0f && choice.score < 10f)
-			{
-				score = 0f;
-			}
-			else if (dodgeScore >= 2f && choice.score < 10f)
-			{
-				score *= 1.25f;
-			}
-			if (score != 0f)
-			{
-				if (actorData.GetHitPointPercent() < 0.4f && choice.score == 0f)
-				{
-					choice.score += 20f * dodgeScore;
-					choice.reasoning += "Adding score if you are low health and your evade does no damage so you will not shoot and just dodge";
-				}
-				choice.score += score;
-				choice.reasoning +=
-					$"Adding {score} based on the quality of the evade (destination position & world effects at start and destination)\n";
-			}
+			adjustment -= projectedDamage;
 		}
-		if (actorData.GetCharacterResourceLink().m_characterRole != CharacterRole.Tank && actorData.GetHitPointPercent() > 0.9f && actorData.TechPoints < 100)
-		{
-			choice.score *= 0.5f;
-			choice.reasoning += "Not a frontline & over 90% hp: Dividing score by 2.\n";
-		}
-		if (!HasNoDashOffCooldown(actorData, false) && component.GetActionTypeOfAbility(thisAbility) == AbilityData.ActionType.CARD_1)
-		{
-			choice.score *= 0.25f;
-			choice.reasoning += "Reduce the score by 75% - don't use a card shift if you have a normal shift";
-		}
-		return choice;
+
+		return adjustment;
 	}
 
 	// added in rogues
