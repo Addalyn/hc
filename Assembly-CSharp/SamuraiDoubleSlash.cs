@@ -46,6 +46,7 @@ public class SamuraiDoubleSlash : Ability
 	private void SetupTargeter()
 	{
 		SetCachedFields();
+		ClearTargeters(); // custom
 		for (int i = 0; i < GetExpectedNumberOfTargeters(); i++)
 		{
 			if (i == 0 && m_coneFirstSlash || i == 1 && m_coneSecondSlash)
