@@ -817,7 +817,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				AbilityResults abilityResults = new AbilityResults(actorData, ability, null, s_gatherRealResults, true);
 				ability.GatherAbilityResults(targetList, actorData, ref abilityResults);
 				GatherChainAbilityResults(ability, actorData, targetList, abilityResults);
-				PotentialChoice potentialChoice = ScoreResults(abilityResults, actorData, false);
+				PotentialChoice potentialChoice = ScoreResults(abilityResults, actorData, true);  // false in rogues
 				potentialChoice.freeAction = ability.IsFreeAction();
 				potentialChoice.targetList = targetList;
 				// custom
@@ -1078,7 +1078,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				AbilityResults abilityResults = new AbilityResults(actorData, thisAbility, null, s_gatherRealResults, true);
 				thisAbility.GatherAbilityResults(targetList, actorData, ref abilityResults);
 				GatherChainAbilityResults(thisAbility, actorData, targetList, abilityResults);
-				PotentialChoice potentialChoice = ScoreResults(abilityResults, actorData, false);
+				PotentialChoice potentialChoice = ScoreResults(abilityResults, actorData, true);  // false in rogues
 				potentialChoice.freeAction = thisAbility.IsFreeAction();
 				potentialChoice.targetList = targetList;
 				// custom
@@ -1706,7 +1706,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				AbilityResults tempAbilityResults = new AbilityResults(actorData, ability, null, s_gatherRealResults, true);
 				ability.GatherAbilityResults(targetList, actorData, ref tempAbilityResults);
 				GatherChainAbilityResults(ability, actorData, targetList, tempAbilityResults);
-				PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, false);
+				PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, true);  // false in rogues
 				potentialChoice.freeAction = ability.IsFreeAction();
 				potentialChoice.targetList = targetList;
 				// custom
@@ -2408,7 +2408,7 @@ public class NPCBrain_Adaptive : NPCBrain
 				AbilityResults tempAbilityResults = new AbilityResults(actorData, ability, null, s_gatherRealResults, true);
 				ability.GatherAbilityResults(targetList, actorData, ref tempAbilityResults);
 				GatherChainAbilityResults(ability, actorData, targetList, tempAbilityResults);
-				PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, false);
+				PotentialChoice potentialChoice = ScoreResults(tempAbilityResults, actorData, true);  // false in rogues
 				potentialChoice.freeAction = ability.IsFreeAction();
 				potentialChoice.targetList = targetList;
 				// custom
@@ -2532,6 +2532,7 @@ public class NPCBrain_Adaptive : NPCBrain
 	}
 
 	// added in rogues
+	// TODO BOTS do not ignore overhealing depending on target exposedness rating?
 	public virtual PotentialChoice ScoreResults(AbilityResults tempAbilityResults, ActorData caster, bool ignoreOverhealing)
 	{
 		Dictionary<ActorData, int> damageResults = tempAbilityResults.DamageResults;
