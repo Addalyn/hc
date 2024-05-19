@@ -1964,7 +1964,8 @@ public class GameFlowData : NetworkBehaviour, IGameEventListener
 #if SERVER
 			// custom
 			if (NetworkServer.active
-			    && m_timeRemainingInDecision <= 0
+			    && (m_timeRemainingInDecision <= 0
+			        || GameManager.Get().GameConfig.InstanceSubType.HasMod(GameSubType.SubTypeMods.AntiSocial))
 			    && GetActors().All(a => a.GetActorTurnSM().CurrentState == TurnStateEnum.CONFIRMED
 			                            || !a.IsHumanControlled()
 			                            || a.PlayerIndex == PlayerData.s_invalidPlayerIndex)) // Oz why
