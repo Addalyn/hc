@@ -3,54 +3,18 @@ using System;
 [Serializable]
 public class PersistedStatEntry : ICloneable, IPersistedGameplayStat
 {
-	public int Sum
-	{
-		get;
-		set;
-	}
-
-	public int NumGamesInSum
-	{
-		get;
-		set;
-	}
-
-	public int Min
-	{
-		get;
-		set;
-	}
-
-	public int Max
-	{
-		get;
-		set;
-	}
-
-	public PersistedStatEntry()
-	{
-		Sum = 0;
-		NumGamesInSum = 0;
-		Min = 0;
-		Max = 0;
-	}
+	public int Sum { get; set; } = 0;
+	public int NumGamesInSum { get; set; } = 0;
+	public int Min { get; set; } = 0;
+	public int Max { get; set; } = 0;
 
 	public float Average()
 	{
 		if (NumGamesInSum == 0)
 		{
-			while (true)
-			{
-				switch (4)
-				{
-				case 0:
-					break;
-				default:
-					return 0f;
-				}
-			}
+			return 0f;
 		}
-		return (float)Sum / (float)NumGamesInSum;
+		return Sum / (float)NumGamesInSum;
 	}
 
 	public void CombineStats(PersistedStatEntry entry)
@@ -63,27 +27,17 @@ public class PersistedStatEntry : ICloneable, IPersistedGameplayStat
 
 	public void Adjust(int val)
 	{
-		bool flag = NumGamesInSum == 0;
+		bool isFirst = NumGamesInSum == 0;
 		Sum += val;
 		NumGamesInSum++;
-		if (val <= Max)
+		if (val > Max || isFirst)
 		{
-			if (!flag)
-			{
-				goto IL_0054;
-			}
+			Max = val;
 		}
-		Max = val;
-		goto IL_0054;
-		IL_0054:
-		if (val >= Min)
+		if (val < Min || isFirst)
 		{
-			if (!flag)
-			{
-				return;
-			}
+			Min = val;
 		}
-		Min = val;
 	}
 
 	public object Clone()

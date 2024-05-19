@@ -3,37 +3,10 @@ using System;
 [Serializable]
 public class PersistedStatFloatEntry : ICloneable, IPersistedGameplayStat
 {
-	public float Sum
-	{
-		get;
-		set;
-	}
-
-	public int NumGamesInSum
-	{
-		get;
-		set;
-	}
-
-	public float Min
-	{
-		get;
-		set;
-	}
-
-	public float Max
-	{
-		get;
-		set;
-	}
-
-	public PersistedStatFloatEntry()
-	{
-		Sum = 0f;
-		NumGamesInSum = 0;
-		Min = 0f;
-		Max = 0f;
-	}
+	public float Sum { get; set; } = 0f;
+	public int NumGamesInSum { get; set; } = 0;
+	public float Min { get; set; } = 0f;
+	public float Max { get; set; } = 0f;
 
 	public float Average()
 	{
@@ -54,27 +27,17 @@ public class PersistedStatFloatEntry : ICloneable, IPersistedGameplayStat
 
 	public void Adjust(float val)
 	{
-		bool flag = NumGamesInSum == 0;
+		bool isFirst = NumGamesInSum == 0;
 		Sum += val;
 		NumGamesInSum++;
-		if (!(val > Max))
+		if (val > Max || isFirst)
 		{
-			if (!flag)
-			{
-				goto IL_005c;
-			}
+			Max = val;
 		}
-		Max = val;
-		goto IL_005c;
-		IL_005c:
-		if (!(val < Min))
+		if (val < Min || isFirst)
 		{
-			if (!flag)
-			{
-				return;
-			}
+			Min = val;
 		}
-		Min = val;
 	}
 
 	public object Clone()
