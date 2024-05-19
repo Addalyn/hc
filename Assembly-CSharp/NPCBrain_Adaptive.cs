@@ -1229,6 +1229,14 @@ public class NPCBrain_Adaptive : NPCBrain
 			choice.score -= 200f;
 			choice.reasoning += "Subtracting 200 score - quark evading on turn 2 is generally bad.\n";
 		}
+		
+		// custom
+		if (choice.damageTotal + choice.healingTotal < 15 && choice.score > 0)
+		{
+			choice.score = 0;
+			choice.reasoning += "Remove damage/healing score as it is negligible";
+		}
+		// end custom
 	}
 
 	// refactored from rogues AdjustScoreForEvasion
