@@ -259,16 +259,7 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
 	{
 		if (m_centerSquareDelegate != null)
 		{
-			while (true)
-			{
-				switch (7)
-				{
-				case 0:
-					break;
-				default:
-					return m_centerSquareDelegate(target, caster);
-				}
-			}
+			return m_centerSquareDelegate(target, caster);
 		}
 		return Board.Get().GetSquare(target.GridPos);
 	}
@@ -277,16 +268,7 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
 	{
 		if (m_isMovingShapeDelegate != null)
 		{
-			while (true)
-			{
-				switch (5)
-				{
-				case 0:
-					break;
-				default:
-					return m_isMovingShapeDelegate(caster);
-				}
-			}
+			return m_isMovingShapeDelegate(caster);
 		}
 		return false;
 	}
@@ -295,16 +277,7 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
 	{
 		if (m_moveStartSquareDelegate != null)
 		{
-			while (true)
-			{
-				switch (6)
-				{
-				case 0:
-					break;
-				default:
-					return m_moveStartSquareDelegate(target, caster);
-				}
-			}
+			return m_moveStartSquareDelegate(target, caster);
 		}
 		return caster.GetCurrentBoardSquare();
 	}
@@ -313,16 +286,7 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
 	{
 		if (m_moveStartFreePosDelegate != null)
 		{
-			while (true)
-			{
-				switch (1)
-				{
-				case 0:
-					break;
-				default:
-					return m_moveStartFreePosDelegate(target, caster);
-				}
-			}
+			return m_moveStartFreePosDelegate(target, caster);
 		}
 		return caster.GetFreePos();
 	}
