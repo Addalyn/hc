@@ -1,118 +1,112 @@
-using AbilityContextNamespace;
 using System.Collections.Generic;
+using AbilityContextNamespace;
 using UnityEngine;
 
 public class TargetSelect_Laser : GenericAbility_TargetSelectBase
 {
-	[Separator("Targeting Properties", true)]
-	public float m_laserRange = 5f;
+    [Separator("Targeting Properties")]
+    public float m_laserRange = 5f;
+    public float m_laserWidth = 1f;
+    public int m_maxTargets;
+    [Separator("AoE around start")]
+    public float m_aoeRadiusAroundStart;
+    [Separator("Sequences")]
+    public GameObject m_castSequencePrefab;
+    public GameObject m_aoeAtStartSequencePrefab;
 
-	public float m_laserWidth = 1f;
+    private TargetSelectMod_Laser m_targetSelMod;
 
-	public int m_maxTargets;
+    public override string GetUsageForEditor()
+    {
+        return GetContextUsageStr(
+                   ContextKeys.s_HitOrder.GetName(),
+                   "on every non-caster hit actor, order in which they are hit in laser")
+               + GetContextUsageStr(
+                   ContextKeys.s_DistFromStart.GetName(),
+                   "on every non-caster hit actor, distance from caster");
+    }
 
-	[Separator("AoE around start", true)]
-	public float m_aoeRadiusAroundStart;
+    public override void ListContextNamesForEditor(List<string> names)
+    {
+        names.Add(ContextKeys.s_HitOrder.GetName());
+        names.Add(ContextKeys.s_DistFromStart.GetName());
+    }
 
-	[Separator("Sequences", true)]
-	public GameObject m_castSequencePrefab;
+    public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
+    {
+        AbilityUtil_Targeter targeter;
+        if (GetAoeRadiusAroundStart() <= 0f)
+        {
+            targeter = new AbilityUtil_Targeter_Laser(
+                ability,
+                GetLaserWidth(),
+                GetLaserRange(),
+                IgnoreLos(),
+                GetMaxTargets(),
+                IncludeAllies(),
+                IncludeCaster());
+        }
+        else
+        {
+            targeter = new AbilityUtil_Targeter_ClaymoreSlam(
+                ability,
+                GetLaserRange(),
+                GetLaserWidth(),
+                GetMaxTargets(),
+                360f,
+                GetAoeRadiusAroundStart(),
+                0f,
+                IgnoreLos());
+        }
+        targeter.SetAffectedGroups(IncludeEnemies(), IncludeAllies(), IncludeCaster());
+        return new List<AbilityUtil_Targeter> { targeter };
+    }
 
-	public GameObject m_aoeAtStartSequencePrefab;
+    public float GetLaserRange()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_laserRangeMod.GetModifiedValue(m_laserRange)
+            : m_laserRange;
+    }
 
-	private TargetSelectMod_Laser m_targetSelMod;
+    public float GetLaserWidth()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_laserWidthMod.GetModifiedValue(m_laserWidth)
+            : m_laserWidth;
+    }
 
-	public override string GetUsageForEditor()
-	{
-		return GetContextUsageStr(ContextKeys.s_HitOrder.GetName(), "on every non-caster hit actor, order in which they are hit in laser") + GetContextUsageStr(ContextKeys.s_DistFromStart.GetName(), "on every non-caster hit actor, distance from caster");
-	}
+    public int GetMaxTargets()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_maxTargetsMod.GetModifiedValue(m_maxTargets)
+            : m_maxTargets;
+    }
 
-	public override void ListContextNamesForEditor(List<string> names)
-	{
-		names.Add(ContextKeys.s_HitOrder.GetName());
-		names.Add(ContextKeys.s_DistFromStart.GetName());
-	}
+    public float GetAoeRadiusAroundStart()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_aoeRadiusAroundStartMod.GetModifiedValue(m_aoeRadiusAroundStart)
+            : m_aoeRadiusAroundStart;
+    }
 
-	public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
-	{
-		List<AbilityUtil_Targeter> list = new List<AbilityUtil_Targeter>();
-		AbilityUtil_Targeter abilityUtil_Targeter;
-		if (GetAoeRadiusAroundStart() <= 0f)
-		{
-			abilityUtil_Targeter = new AbilityUtil_Targeter_Laser(ability, GetLaserWidth(), GetLaserRange(), IgnoreLos(), GetMaxTargets(), IncludeAllies(), IncludeCaster());
-		}
-		else
-		{
-			abilityUtil_Targeter = new AbilityUtil_Targeter_ClaymoreSlam(ability, GetLaserRange(), GetLaserWidth(), GetMaxTargets(), 360f, GetAoeRadiusAroundStart(), 0f, IgnoreLos());
-		}
-		abilityUtil_Targeter.SetAffectedGroups(IncludeEnemies(), IncludeAllies(), IncludeCaster());
-		list.Add(abilityUtil_Targeter);
-		return list;
-	}
+    public override bool CanShowTargeterRangePreview(TargetData[] targetData)
+    {
+        return true;
+    }
 
-	public float GetLaserRange()
-	{
-		return (m_targetSelMod == null) ? m_laserRange : m_targetSelMod.m_laserRangeMod.GetModifiedValue(m_laserRange);
-	}
+    public override float GetTargeterRangePreviewRadius(Ability ability, ActorData caster)
+    {
+        return GetLaserRange();
+    }
 
-	public float GetLaserWidth()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_laserWidthMod.GetModifiedValue(m_laserWidth);
-		}
-		else
-		{
-			result = m_laserWidth;
-		}
-		return result;
-	}
+    protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
+    {
+        m_targetSelMod = modBase as TargetSelectMod_Laser;
+    }
 
-	public int GetMaxTargets()
-	{
-		int result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_maxTargetsMod.GetModifiedValue(m_maxTargets);
-		}
-		else
-		{
-			result = m_maxTargets;
-		}
-		return result;
-	}
-
-	public float GetAoeRadiusAroundStart()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_aoeRadiusAroundStartMod.GetModifiedValue(m_aoeRadiusAroundStart);
-		}
-		else
-		{
-			result = m_aoeRadiusAroundStart;
-		}
-		return result;
-	}
-
-	public override bool CanShowTargeterRangePreview(TargetData[] targetData)
-	{
-		return true;
-	}
-
-	public override float GetTargeterRangePreviewRadius(Ability ability, ActorData caster)
-	{
-		return GetLaserRange();
-	}
-
-	protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
-	{
-		m_targetSelMod = (modBase as TargetSelectMod_Laser);
-	}
-
-	protected override void OnTargetSelModRemoved()
-	{
-		m_targetSelMod = null;
-	}
+    protected override void OnTargetSelModRemoved()
+    {
+        m_targetSelMod = null;
+    }
 }
