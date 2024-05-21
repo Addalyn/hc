@@ -3,78 +3,74 @@ using UnityEngine;
 
 public class TargetSelect_ChargeSingleStep : GenericAbility_TargetSelectBase
 {
-	[Separator("Targeting Properties", true)]
-	public AbilityAreaShape m_destShape;
+    [Separator("Targeting Properties")]
+    public AbilityAreaShape m_destShape;
+    [Separator("Sequences")]
+    public GameObject m_castSequencePrefab;
 
-	[Separator("Sequences", true)]
-	public GameObject m_castSequencePrefab;
+    private TargetSelectMod_ChargeSingleStep m_targetSelMod;
 
-	private TargetSelectMod_ChargeSingleStep m_targetSelMod;
+    public override string GetUsageForEditor()
+    {
+        return "Intended for single click charge abilities. Can add shape field to hit targets on destination.";
+    }
 
-	public override string GetUsageForEditor()
-	{
-		return "Intended for single click charge abilities. Can add shape field to hit targets on destination.";
-	}
+    public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
+    {
+        return new List<AbilityUtil_Targeter>
+        {
+            new AbilityUtil_Targeter_Charge(
+                ability,
+                GetDestShape(),
+                IgnoreLos(),
+                AbilityUtil_Targeter_Shape.DamageOriginType.CenterOfShape,
+                IncludeEnemies(),
+                IncludeAllies())
+        };
+    }
 
-	public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
-	{
-		AbilityUtil_Targeter_Charge item = new AbilityUtil_Targeter_Charge(ability, GetDestShape(), IgnoreLos(), AbilityUtil_Targeter_Shape.DamageOriginType.CenterOfShape, IncludeEnemies(), IncludeAllies());
-		List<AbilityUtil_Targeter> list = new List<AbilityUtil_Targeter>();
-		list.Add(item);
-		return list;
-	}
+    protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
+    {
+        m_targetSelMod = modBase as TargetSelectMod_ChargeSingleStep;
+    }
 
-	protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
-	{
-		m_targetSelMod = (modBase as TargetSelectMod_ChargeSingleStep);
-	}
+    protected override void OnTargetSelModRemoved()
+    {
+        m_targetSelMod = null;
+    }
 
-	protected override void OnTargetSelModRemoved()
-	{
-		m_targetSelMod = null;
-	}
+    public AbilityAreaShape GetDestShape()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_destShapeMod.GetModifiedValue(m_destShape)
+            : m_destShape;
+    }
 
-	public AbilityAreaShape GetDestShape()
-	{
-		AbilityAreaShape result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_destShapeMod.GetModifiedValue(m_destShape);
-		}
-		else
-		{
-			result = m_destShape;
-		}
-		return result;
-	}
+    public override bool HandleCustomTargetValidation(
+        Ability ability,
+        ActorData caster,
+        AbilityTarget target,
+        int targetIndex,
+        List<AbilityTarget> currentTargets)
+    {
+        BoardSquare targetSquare = Board.Get().GetSquare(target.GridPos);
+        if (targetSquare != null
+            && targetSquare.IsValidForGameplay()
+            && targetSquare != caster.GetCurrentBoardSquare())
+        {
+            return KnockbackUtils.CanBuildStraightLineChargePath(
+                caster,
+                targetSquare,
+                caster.GetCurrentBoardSquare(),
+                false,
+                out _);
+        }
 
-	public override bool HandleCustomTargetValidation(Ability ability, ActorData caster, AbilityTarget target, int targetIndex, List<AbilityTarget> currentTargets)
-	{
-		BoardSquare boardSquareSafe = Board.Get().GetSquare(target.GridPos);
-		if (boardSquareSafe != null && boardSquareSafe.IsValidForGameplay())
-		{
-			if (boardSquareSafe != caster.GetCurrentBoardSquare())
-			{
-				while (true)
-				{
-					switch (5)
-					{
-					case 0:
-						break;
-					default:
-					{
-						int numSquaresInPath;
-						return KnockbackUtils.CanBuildStraightLineChargePath(caster, boardSquareSafe, caster.GetCurrentBoardSquare(), false, out numSquaresInPath);
-					}
-					}
-				}
-			}
-		}
-		return false;
-	}
+        return false;
+    }
 
-	public override ActorData.MovementType GetMovementType()
-	{
-		return ActorData.MovementType.Charge;
-	}
+    public override ActorData.MovementType GetMovementType()
+    {
+        return ActorData.MovementType.Charge;
+    }
 }
