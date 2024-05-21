@@ -11,7 +11,8 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
     public delegate BoardSquare GetMoveStartSquareDelegate(AbilityTarget currentTarget, ActorData caster);
     public delegate Vector3 GetMoveStartFreePosDelegate(AbilityTarget currentTarget, ActorData caster); // removed in rogues
 
-    [Separator("Targeting Properties")] public AbilityAreaShape m_shape = AbilityAreaShape.Three_x_Three;
+    [Separator("Targeting Properties")]
+    public AbilityAreaShape m_shape = AbilityAreaShape.Three_x_Three;
     public List<AbilityAreaShape> m_additionalShapes = new List<AbilityAreaShape>();
     [Header("-- For require targeting on actors")]
     public bool m_requireTargetingOnActor;
@@ -19,11 +20,13 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
     public bool m_canTargetOnAllies = true;
     public bool m_canTargetOnSelf = true;
     public bool m_ignoreLosToTargetActor; // TODO ICEBORG removed in rogues
-    [Separator("Show targeter arc?")] public bool m_showTargeterArc;
+    [Separator("Show targeter arc?")]
+    public bool m_showTargeterArc;
     [Separator("Use Move Shape Targeter? (for moving a shape similar to Grey drone)")]
     public bool m_useMoveShapeTargeter;
     public float m_moveLineWidth = 1f;
-    [Separator("Sequences")] public GameObject m_castSequencePrefab;
+    [Separator("Sequences")]
+    public GameObject m_castSequencePrefab;
 
     // public string m_centerPosContextKeyName = ContextKeys.s_CenterPos.GetName(); // rogues
     public CenterSquareDelegate m_centerSquareDelegate;
