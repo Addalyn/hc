@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using AbilityContextNamespace;
 using UnityEngine;
@@ -16,9 +18,9 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
 
     public static ContextNameKeyPair s_cvarInCone = new ContextNameKeyPair("InCone");
 
-    private TargetSelectMod_ConeOrLaser m_targetSelMod;
-    private ConeTargetingInfo m_cachedConeInfo;
-    private LaserTargetingInfo m_cachedLaserInfo;
+    private TargetSelectMod_ConeOrLaser m_targetSelMod; // removed in rogues
+    private ConeTargetingInfo m_cachedConeInfo; // removed in rogues
+    private LaserTargetingInfo m_cachedLaserInfo; // removed in rogues
 
     public override string GetUsageForEditor()
     {
@@ -28,7 +30,7 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
                + GetContextUsageStr(
                    s_cvarInCone.GetName(),
                    "Whether the target hit is in cone")
-               + GetContextUsageStr(
+               + GetContextUsageStr( // removed in rogues
                    ContextKeys.s_AngleFromCenter.GetName(),
                    "angle from center of cone");
     }
@@ -37,9 +39,10 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
     {
         keys.Add(ContextKeys.s_DistFromStart.GetName());
         keys.Add(s_cvarInCone.GetName());
-        keys.Add(ContextKeys.s_AngleFromCenter.GetName());
+        keys.Add(ContextKeys.s_AngleFromCenter.GetName()); // removed in rogues
     }
 
+    // removed in rogues
     public override void Initialize()
     {
         base.Initialize();
@@ -54,6 +57,7 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
         laserInfo.affectsCaster = IncludeCaster();
     }
 
+    // reactor
     public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
     {
         return new List<AbilityUtil_Targeter>
@@ -65,14 +69,33 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
                 GetConeDistThreshold())
         };
     }
+    // rogues
+    // public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
+    // {
+    //     m_coneInfo.m_affectsEnemies = IncludeEnemies();
+    //     m_coneInfo.m_affectsAllies = IncludeAllies();
+    //     m_coneInfo.m_affectsCaster = IncludeCaster();
+    //     m_laserInfo.affectsEnemies = IncludeEnemies();
+    //     m_laserInfo.affectsAllies = IncludeAllies();
+    //     m_laserInfo.affectsCaster = IncludeCaster();
+    //     return new List<AbilityUtil_Targeter>
+    //     {
+    //         new AbilityUtil_Targeter_ConeOrLaser(
+    //             ability,
+    //             m_coneInfo,
+    //             m_laserInfo,
+    //             m_coneDistThreshold)
+    //     };
+    // }
 
     public bool ShouldUseCone(Vector3 freePos, ActorData caster)
     {
         Vector3 vector = freePos - caster.GetFreePos();
         vector.y = 0f;
-        return vector.magnitude <= GetConeDistThreshold();
+        return vector.magnitude <= GetConeDistThreshold(); //  <= m_coneDistThreshold in rogues
     }
 
+    // removed in rogues
     private void SetCachedFields()
     {
         m_cachedConeInfo = m_targetSelMod != null
@@ -83,6 +106,7 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
             : m_laserInfo;
     }
 
+    // removed in rogues
     public float GetConeDistThreshold()
     {
         return m_targetSelMod != null
@@ -90,26 +114,31 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
             : m_coneDistThreshold;
     }
 
+    // removed in rogues
     public ConeTargetingInfo GetConeInfo()
     {
         return m_cachedConeInfo ?? m_coneInfo;
     }
 
+    // removed in rogues
     public LaserTargetingInfo GetLaserInfo()
     {
         return m_cachedLaserInfo ?? m_laserInfo;
     }
 
+    // removed in rogues
     protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
     {
         m_targetSelMod = modBase as TargetSelectMod_ConeOrLaser;
     }
 
+    // removed in rogues
     protected override void OnTargetSelModRemoved()
     {
         m_targetSelMod = null;
     }
-
+    
+#if SERVER
     //rogues
     public override void CalcHitTargets(
         List<AbilityTarget> targets,
@@ -213,4 +242,5 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
                 sequenceParams.ToArray())
         };
     }
+#endif
 }
