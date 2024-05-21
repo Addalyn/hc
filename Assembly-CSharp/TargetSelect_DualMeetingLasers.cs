@@ -1,206 +1,169 @@
-using AbilityContextNamespace;
 using System.Collections.Generic;
+using AbilityContextNamespace;
 using UnityEngine;
 
 public class TargetSelect_DualMeetingLasers : GenericAbility_TargetSelectBase
 {
-	public delegate int LaserCountDelegate(AbilityTarget currentTarget, ActorData caster);
+    public delegate int LaserCountDelegate(AbilityTarget currentTarget, ActorData caster);
 
-	public delegate float ExtraAoeRadiusDelegate(AbilityTarget currentTarget, ActorData targetingActor, float baseRadius);
+    public delegate float ExtraAoeRadiusDelegate(
+        AbilityTarget currentTarget,
+        ActorData targetingActor,
+        float baseRadius);
 
-	[Separator("Targeting - Laser", true)]
-	public float m_laserWidth = 0.5f;
+    [Separator("Targeting - Laser")]
+    public float m_laserWidth = 0.5f;
+    public float m_minMeetingDistFromCaster = 1f;
+    public float m_maxMeetingDistFromCaster = 8f;
+    public float m_laserStartForwardOffset;
+    public float m_laserStartSideOffset = 0.5f;
+    [Separator("Targeting - AoE")]
+    public float m_aoeBaseRadius = 2.5f;
+    public float m_aoeMinRadius;
+    public float m_aoeMaxRadius = -1f;
+    public float m_aoeRadiusChangePerUnitFromMin = 0.1f;
+    [Header("-- Multiplier on radius if not all lasers meet")]
+    public float m_radiusMultIfPartialBlock = 1f;
+    [Space(10f)]
+    public bool m_aoeIgnoreMinCoverDist = true;
+    [Separator("Sequences")]
+    public GameObject m_laserSequencePrefab;
+    [Header("-- Use if laser doesn't have impact FX that spawns on end of laser, or for temp testing")]
+    public GameObject m_aoeSequencePrefab;
+    public LaserCountDelegate m_delegateLaserCount;
+    public ExtraAoeRadiusDelegate m_delegateExtraAoeRadius;
 
-	public float m_minMeetingDistFromCaster = 1f;
+    private TargetSelectMod_DualMeetingLasers m_targetSelMod;
 
-	public float m_maxMeetingDistFromCaster = 8f;
+    public override string GetUsageForEditor()
+    {
+        return GetContextUsageStr(
+                   ContextKeys.s_InAoe.GetName(),
+                   "on every hit actor, 1 if in AoE, 0 otherwise")
+               + GetContextUsageStr(
+                   ContextKeys.s_DistFromMin.GetName(),
+                   "on every actor, distance of cursor pos from min distance, for interpolation");
+    }
 
-	public float m_laserStartForwardOffset;
+    public override void ListContextNamesForEditor(List<string> names)
+    {
+        names.Add(ContextKeys.s_InAoe.GetName());
+        names.Add(ContextKeys.s_DistFromMin.GetName());
+    }
 
-	public float m_laserStartSideOffset = 0.5f;
+    public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
+    {
+        AbilityUtil_Targeter_ScampDualLasers targeter = new AbilityUtil_Targeter_ScampDualLasers(
+            ability,
+            GetLaserWidth(),
+            GetMinMeetingDistFromCaster(),
+            GetMaxMeetingDistFromCaster(),
+            GetLaserStartForwardOffset(),
+            GetLaserStartSideOffset(),
+            GetAoeBaseRadius(),
+            GetAoeMinRadius(),
+            GetAoeMaxRadius(),
+            GetAoeRadiusChangePerUnitFromMin(),
+            GetRadiusMultIfPartialBlock(),
+            AoeIgnoreMinCoverDist());
+        targeter.SetAffectedGroups(IncludeEnemies(), IncludeAllies(), IncludeCaster());
+        return new List<AbilityUtil_Targeter> { targeter };
+    }
 
-	[Separator("Targeting - AoE", true)]
-	public float m_aoeBaseRadius = 2.5f;
+    public override bool CanShowTargeterRangePreview(TargetData[] targetData)
+    {
+        return true;
+    }
 
-	public float m_aoeMinRadius;
+    public override float GetTargeterRangePreviewRadius(Ability ability, ActorData caster)
+    {
+        return GetMaxMeetingDistFromCaster() + GetAoeMinRadius();
+    }
 
-	public float m_aoeMaxRadius = -1f;
+    protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
+    {
+        m_targetSelMod = modBase as TargetSelectMod_DualMeetingLasers;
+    }
 
-	public float m_aoeRadiusChangePerUnitFromMin = 0.1f;
+    protected override void OnTargetSelModRemoved()
+    {
+        m_targetSelMod = null;
+    }
 
-	[Header("-- Multiplier on radius if not all lasers meet")]
-	public float m_radiusMultIfPartialBlock = 1f;
+    public float GetLaserWidth()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_laserWidthMod.GetModifiedValue(m_laserWidth)
+            : m_laserWidth;
+    }
 
-	[Space(10f)]
-	public bool m_aoeIgnoreMinCoverDist = true;
+    public float GetMinMeetingDistFromCaster()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_minMeetingDistFromCasterMod.GetModifiedValue(m_minMeetingDistFromCaster)
+            : m_minMeetingDistFromCaster;
+    }
 
-	[Separator("Sequences", true)]
-	public GameObject m_laserSequencePrefab;
+    public float GetMaxMeetingDistFromCaster()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_maxMeetingDistFromCasterMod.GetModifiedValue(m_maxMeetingDistFromCaster)
+            : m_maxMeetingDistFromCaster;
+    }
 
-	[Header("-- Use if laser doesn't have impact FX that spawns on end of laser, or for temp testing")]
-	public GameObject m_aoeSequencePrefab;
+    public float GetLaserStartForwardOffset()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_laserStartForwardOffsetMod.GetModifiedValue(m_laserStartForwardOffset)
+            : m_laserStartForwardOffset;
+    }
 
-	public LaserCountDelegate m_delegateLaserCount;
+    public float GetLaserStartSideOffset()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_laserStartSideOffsetMod.GetModifiedValue(m_laserStartSideOffset)
+            : m_laserStartSideOffset;
+    }
 
-	public ExtraAoeRadiusDelegate m_delegateExtraAoeRadius;
+    public float GetAoeBaseRadius()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_aoeBaseRadiusMod.GetModifiedValue(m_aoeBaseRadius)
+            : m_aoeBaseRadius;
+    }
 
-	private TargetSelectMod_DualMeetingLasers m_targetSelMod;
+    public float GetAoeMinRadius()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_aoeMinRadiusMod.GetModifiedValue(m_aoeMinRadius)
+            : m_aoeMinRadius;
+    }
 
-	public override string GetUsageForEditor()
-	{
-		return GetContextUsageStr(ContextKeys.s_InAoe.GetName(), "on every hit actor, 1 if in AoE, 0 otherwise") + GetContextUsageStr(ContextKeys.s_DistFromMin.GetName(), "on every actor, distance of cursor pos from min distance, for interpolation");
-	}
+    public float GetAoeMaxRadius()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_aoeMaxRadiusMod.GetModifiedValue(m_aoeMaxRadius)
+            : m_aoeMaxRadius;
+    }
 
-	public override void ListContextNamesForEditor(List<string> names)
-	{
-		names.Add(ContextKeys.s_InAoe.GetName());
-		names.Add(ContextKeys.s_DistFromMin.GetName());
-	}
+    public float GetAoeRadiusChangePerUnitFromMin()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_aoeRadiusChangePerUnitFromMinMod.GetModifiedValue(m_aoeRadiusChangePerUnitFromMin)
+            : m_aoeRadiusChangePerUnitFromMin;
+    }
 
-	public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
-	{
-		AbilityUtil_Targeter_ScampDualLasers abilityUtil_Targeter_ScampDualLasers = new AbilityUtil_Targeter_ScampDualLasers(ability, GetLaserWidth(), GetMinMeetingDistFromCaster(), GetMaxMeetingDistFromCaster(), GetLaserStartForwardOffset(), GetLaserStartSideOffset(), GetAoeBaseRadius(), GetAoeMinRadius(), GetAoeMaxRadius(), GetAoeRadiusChangePerUnitFromMin(), GetRadiusMultIfPartialBlock(), AoeIgnoreMinCoverDist());
-		abilityUtil_Targeter_ScampDualLasers.SetAffectedGroups(IncludeEnemies(), IncludeAllies(), IncludeCaster());
-		List<AbilityUtil_Targeter> list = new List<AbilityUtil_Targeter>();
-		list.Add(abilityUtil_Targeter_ScampDualLasers);
-		return list;
-	}
+    public float GetRadiusMultIfPartialBlock()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_radiusMultIfPartialBlockMod.GetModifiedValue(m_radiusMultIfPartialBlock)
+            : m_radiusMultIfPartialBlock;
+    }
 
-	public override bool CanShowTargeterRangePreview(TargetData[] targetData)
-	{
-		return true;
-	}
-
-	public override float GetTargeterRangePreviewRadius(Ability ability, ActorData caster)
-	{
-		return GetMaxMeetingDistFromCaster() + GetAoeMinRadius();
-	}
-
-	protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
-	{
-		m_targetSelMod = (modBase as TargetSelectMod_DualMeetingLasers);
-	}
-
-	protected override void OnTargetSelModRemoved()
-	{
-		m_targetSelMod = null;
-	}
-
-	public float GetLaserWidth()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_laserWidthMod.GetModifiedValue(m_laserWidth);
-		}
-		else
-		{
-			result = m_laserWidth;
-		}
-		return result;
-	}
-
-	public float GetMinMeetingDistFromCaster()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_minMeetingDistFromCasterMod.GetModifiedValue(m_minMeetingDistFromCaster);
-		}
-		else
-		{
-			result = m_minMeetingDistFromCaster;
-		}
-		return result;
-	}
-
-	public float GetMaxMeetingDistFromCaster()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_maxMeetingDistFromCasterMod.GetModifiedValue(m_maxMeetingDistFromCaster);
-		}
-		else
-		{
-			result = m_maxMeetingDistFromCaster;
-		}
-		return result;
-	}
-
-	public float GetLaserStartForwardOffset()
-	{
-		return (m_targetSelMod == null) ? m_laserStartForwardOffset : m_targetSelMod.m_laserStartForwardOffsetMod.GetModifiedValue(m_laserStartForwardOffset);
-	}
-
-	public float GetLaserStartSideOffset()
-	{
-		return (m_targetSelMod == null) ? m_laserStartSideOffset : m_targetSelMod.m_laserStartSideOffsetMod.GetModifiedValue(m_laserStartSideOffset);
-	}
-
-	public float GetAoeBaseRadius()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_aoeBaseRadiusMod.GetModifiedValue(m_aoeBaseRadius);
-		}
-		else
-		{
-			result = m_aoeBaseRadius;
-		}
-		return result;
-	}
-
-	public float GetAoeMinRadius()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_aoeMinRadiusMod.GetModifiedValue(m_aoeMinRadius);
-		}
-		else
-		{
-			result = m_aoeMinRadius;
-		}
-		return result;
-	}
-
-	public float GetAoeMaxRadius()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_aoeMaxRadiusMod.GetModifiedValue(m_aoeMaxRadius);
-		}
-		else
-		{
-			result = m_aoeMaxRadius;
-		}
-		return result;
-	}
-
-	public float GetAoeRadiusChangePerUnitFromMin()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_aoeRadiusChangePerUnitFromMinMod.GetModifiedValue(m_aoeRadiusChangePerUnitFromMin);
-		}
-		else
-		{
-			result = m_aoeRadiusChangePerUnitFromMin;
-		}
-		return result;
-	}
-
-	public float GetRadiusMultIfPartialBlock()
-	{
-		return (m_targetSelMod == null) ? m_radiusMultIfPartialBlock : m_targetSelMod.m_radiusMultIfPartialBlockMod.GetModifiedValue(m_radiusMultIfPartialBlock);
-	}
-
-	public bool AoeIgnoreMinCoverDist()
-	{
-		return (m_targetSelMod == null) ? m_aoeIgnoreMinCoverDist : m_targetSelMod.m_aoeIgnoreMinCoverDistMod.GetModifiedValue(m_aoeIgnoreMinCoverDist);
-	}
+    public bool AoeIgnoreMinCoverDist()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_aoeIgnoreMinCoverDistMod.GetModifiedValue(m_aoeIgnoreMinCoverDist)
+            : m_aoeIgnoreMinCoverDist;
+    }
 }
