@@ -40,7 +40,6 @@ public class SequenceLookup : MonoBehaviour
 	}
 
 	public GameObject m_simpleHitSequencePrefab;
-
 	public GameObject m_debugVfxOnPositionSequencePrefab;
 
 	public const short c_invalidSequence = -1;
@@ -48,11 +47,9 @@ public class SequenceLookup : MonoBehaviour
 	private static SequenceLookup s_instance;
 
 	public List<PrefabResourceLink> m_sequences;
-
 	public List<int> m_sequenceNameHashList;
 
 	private GameObject[] m_sequencesLoaded;
-
 	private Dictionary<int, short> m_sequenceNameHashToIndex = new Dictionary<int, short>();
 
 	public static SequenceLookup Get()
@@ -76,16 +73,6 @@ public class SequenceLookup : MonoBehaviour
 				Log.Error("SequenceLookup contains duplicate sequence name hash");
 			}
 		}
-		while (true)
-		{
-			switch (4)
-			{
-			default:
-				return;
-			case 0:
-				break;
-			}
-		}
 	}
 
 	private void OnDestroy()
@@ -104,91 +91,47 @@ public class SequenceLookup : MonoBehaviour
 		{
 			return null;
 		}
-		if ((bool)m_sequencesLoaded[sequenceId])
+		if (m_sequencesLoaded[sequenceId] != null)
 		{
-			while (true)
-			{
-				switch (7)
-				{
-				case 0:
-					break;
-				default:
-					return m_sequencesLoaded[sequenceId];
-				}
-			}
+			return m_sequencesLoaded[sequenceId];
 		}
-		object obj;
-		if (m_sequences[sequenceId] != null)
+
+		GameObject sequencePrefab = m_sequences[sequenceId] != null
+			? m_sequences[sequenceId].GetPrefab(true)
+			: null;
+		if (sequencePrefab == null)
 		{
-			obj = m_sequences[sequenceId].GetPrefab(true);
+			Debug.LogError("SequenceLookup contains Null sequence prefabs, please update BootstrapSingleton");
+			return null;
 		}
-		else
-		{
-			obj = null;
-		}
-		GameObject gameObject = (GameObject)obj;
-		if (gameObject == null)
-		{
-			while (true)
-			{
-				switch (5)
-				{
-				case 0:
-					break;
-				default:
-					Debug.LogError("SequenceLookup contains Null sequence prefabs, please update BootstrapSingleton");
-					return null;
-				}
-			}
-		}
-		m_sequencesLoaded[sequenceId] = gameObject;
-		Sequence[] components = gameObject.GetComponents<Sequence>();
+		m_sequencesLoaded[sequenceId] = sequencePrefab;
+		Sequence[] components = sequencePrefab.GetComponents<Sequence>();
 		foreach (Sequence sequence in components)
 		{
 			sequence.InitPrefabLookupId(sequenceId);
 		}
-		while (true)
-		{
-			return m_sequencesLoaded[sequenceId];
-		}
+		return m_sequencesLoaded[sequenceId];
 	}
 
 	public short GetSequenceIdOfPrefab(GameObject sequencePrefab)
 	{
 		if (sequencePrefab == null)
 		{
-			while (true)
-			{
-				switch (3)
-				{
-				case 0:
-					break;
-				default:
-					return -1;
-				}
-			}
+			return -1;
 		}
-		int sequenceNameHash = GetSequenceNameHash(sequencePrefab.name);
-		if (m_sequenceNameHashToIndex.ContainsKey(sequenceNameHash))
+		
+		if (m_sequenceNameHashToIndex.TryGetValue(GetSequenceNameHash(sequencePrefab.name), out short prefabId))
 		{
-			while (true)
-			{
-				switch (2)
-				{
-				case 0:
-					break;
-				default:
-					return m_sequenceNameHashToIndex[sequenceNameHash];
-				}
-			}
+			return prefabId;
 		}
+		
 		Debug.LogError("Did not find name hash of sequence prefab: " + sequencePrefab.name + ", please update sequence lookup");
 		return -1;
 	}
 
 	internal static void UnloadAll()
 	{
-		if ((bool)s_instance)
+		if (s_instance != null)
 		{
 			s_instance.m_sequencesLoaded = new GameObject[s_instance.m_sequences.Count];
 		}
@@ -206,261 +149,143 @@ public class SequenceLookup : MonoBehaviour
 
 	public static SequenceExtraParamEnum GetEnumOfExtraParam(Sequence.IExtraSequenceParams extraParam)
 	{
-		SequenceExtraParamEnum result = SequenceExtraParamEnum.Invalid;
-		if (extraParam is PowerUp.ExtraParams)
+		switch (extraParam)
 		{
-			result = SequenceExtraParamEnum.Powerup;
+			case PowerUp.ExtraParams _:
+				return SequenceExtraParamEnum.Powerup;
+			case BouncingShotSequence.ExtraParams _:
+				return SequenceExtraParamEnum.BouncingShot;
+			case ExplosionSequence.ExtraParams _:
+				return SequenceExtraParamEnum.Explosion;
+			case GroundLineSequence.ExtraParams _:
+				return SequenceExtraParamEnum.GroundLine;
+			case HealLaserSequence.ExtraParams _:
+				return SequenceExtraParamEnum.HealLaser;
+			case HitOnAnimationEventSequence.ExtraParams _:
+				return SequenceExtraParamEnum.HitOnAnimationEvent;
+			case NanosmithBoltLaserSequence.ExtraParams _:
+				return SequenceExtraParamEnum.NanosmithBoltLaser;
+			case NinjaMultiAttackSequence.ExtraParams _:
+				return SequenceExtraParamEnum.NinjaMultiAttack;
+			case ProximityMineGroundSequence.ExtraParams _:
+				return SequenceExtraParamEnum.ProximityMineGround;
+			case SplineProjectileSequence.DelayedProjectileExtraParams _:
+				return SequenceExtraParamEnum.DelayedProjectile;
+			case SplineProjectileSequence.MultiEventExtraParams _:
+				return SequenceExtraParamEnum.MultiEventProjectile;
+			case SimpleAttachedVFXSequence.MultiEventExtraParams _:
+				return SequenceExtraParamEnum.MultiEventAttachedVFX;
+			case ExoSweepLaserSequence.ExtraParams _:
+				return SequenceExtraParamEnum.ExoSweepLaser;
+			case BlasterStretchConeSequence.ExtraParams _:
+				return SequenceExtraParamEnum.BlasterStretchingCone;
+			case SimpleVFXAtTargetPosSequence.IgnoreStartEventExtraParam _:
+				return SequenceExtraParamEnum.SimpleVFXAtTargetPos;
+			case ThiefPowerupReturnProjectileSequence.PowerupTypeExtraParams _:
+				return SequenceExtraParamEnum.ThiefPowerupReturnProjectile;
+			case ScoundrelBlindFireSequence.ConeExtraParams _:
+				return SequenceExtraParamEnum.ScoundrelBlindFireCone;
+			case SimpleAttachedVFXSequence.ImpactDelayParams _:
+				return SequenceExtraParamEnum.ImpactDelayAttachedVFX;
+			case SoldierProjectilesInLineSequence.HitAreaExtraParams _:
+				return SequenceExtraParamEnum.SoldierProjectilesInLineHitArea;
+			case SimpleTimingSequence.ExtraParams _:
+				return SequenceExtraParamEnum.SimpleTiming;
+			case NekoDiscReturnProjectileSequence.DiscReturnProjectileExtraParams _:
+				return SequenceExtraParamEnum.DiscReturnProjectile;
+			case SplineProjectileSequence.ProjectilePropertyParams _:
+				return SequenceExtraParamEnum.SplineProjectileProperty;
+			case Sequence.FxAttributeParam _:
+				return SequenceExtraParamEnum.SequenceFxAttribute;
+			case Sequence.PhaseTimingExtraParams _:
+				return SequenceExtraParamEnum.SequencePhaseTiming;
+			case ValkyrieDirectionalShieldSequence.ExtraParams _:
+				return SequenceExtraParamEnum.ValkyrieDirectionalShield;
+			case Sequence.ActorIndexExtraParam _:
+				return SequenceExtraParamEnum.ActorIndexParam;
+			case HitActorGroupOnAnimEventSequence.ActorParams _:
+				return SequenceExtraParamEnum.HitActorGroupActorsParam;
+			case GrydCardinalBombSequence.SegmentExtraParams _:
+				return SequenceExtraParamEnum.GrydCardinalBombParam;
+			case SimpleVFXAtTargetPosSequence.PositionOverrideParam _:
+				return SequenceExtraParamEnum.VFXSpawnPosOverride;
+			case Sequence.GenericIntParam _:
+				return SequenceExtraParamEnum.GenericIntParam;
+			case Sequence.GenericActorListParam _:
+				return SequenceExtraParamEnum.GenericActorListParam;
+			default:
+				return SequenceExtraParamEnum.Invalid;
 		}
-		else if (extraParam is BouncingShotSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.BouncingShot;
-		}
-		else if (extraParam is ExplosionSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.Explosion;
-		}
-		else if (extraParam is GroundLineSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.GroundLine;
-		}
-		else if (extraParam is HealLaserSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.HealLaser;
-		}
-		else if (extraParam is HitOnAnimationEventSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.HitOnAnimationEvent;
-		}
-		else if (extraParam is NanosmithBoltLaserSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.NanosmithBoltLaser;
-		}
-		else if (extraParam is NinjaMultiAttackSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.NinjaMultiAttack;
-		}
-		else if (extraParam is ProximityMineGroundSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.ProximityMineGround;
-		}
-		else if (extraParam is SplineProjectileSequence.DelayedProjectileExtraParams)
-		{
-			result = SequenceExtraParamEnum.DelayedProjectile;
-		}
-		else if (extraParam is SplineProjectileSequence.MultiEventExtraParams)
-		{
-			result = SequenceExtraParamEnum.MultiEventProjectile;
-		}
-		else if (extraParam is SimpleAttachedVFXSequence.MultiEventExtraParams)
-		{
-			result = SequenceExtraParamEnum.MultiEventAttachedVFX;
-		}
-		else if (extraParam is ExoSweepLaserSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.ExoSweepLaser;
-		}
-		else if (extraParam is BlasterStretchConeSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.BlasterStretchingCone;
-		}
-		else if (extraParam is SimpleVFXAtTargetPosSequence.IgnoreStartEventExtraParam)
-		{
-			result = SequenceExtraParamEnum.SimpleVFXAtTargetPos;
-		}
-		else if (extraParam is ThiefPowerupReturnProjectileSequence.PowerupTypeExtraParams)
-		{
-			result = SequenceExtraParamEnum.ThiefPowerupReturnProjectile;
-		}
-		else if (extraParam is ScoundrelBlindFireSequence.ConeExtraParams)
-		{
-			result = SequenceExtraParamEnum.ScoundrelBlindFireCone;
-		}
-		else if (extraParam is SimpleAttachedVFXSequence.ImpactDelayParams)
-		{
-			result = SequenceExtraParamEnum.ImpactDelayAttachedVFX;
-		}
-		else if (extraParam is SoldierProjectilesInLineSequence.HitAreaExtraParams)
-		{
-			result = SequenceExtraParamEnum.SoldierProjectilesInLineHitArea;
-		}
-		else if (extraParam is SimpleTimingSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.SimpleTiming;
-		}
-		else if (extraParam is NekoDiscReturnProjectileSequence.DiscReturnProjectileExtraParams)
-		{
-			result = SequenceExtraParamEnum.DiscReturnProjectile;
-		}
-		else if (extraParam is SplineProjectileSequence.ProjectilePropertyParams)
-		{
-			result = SequenceExtraParamEnum.SplineProjectileProperty;
-		}
-		else if (extraParam is Sequence.FxAttributeParam)
-		{
-			result = SequenceExtraParamEnum.SequenceFxAttribute;
-		}
-		else if (extraParam is Sequence.PhaseTimingExtraParams)
-		{
-			result = SequenceExtraParamEnum.SequencePhaseTiming;
-		}
-		else if (extraParam is ValkyrieDirectionalShieldSequence.ExtraParams)
-		{
-			result = SequenceExtraParamEnum.ValkyrieDirectionalShield;
-		}
-		else if (extraParam is Sequence.ActorIndexExtraParam)
-		{
-			result = SequenceExtraParamEnum.ActorIndexParam;
-		}
-		else if (extraParam is HitActorGroupOnAnimEventSequence.ActorParams)
-		{
-			result = SequenceExtraParamEnum.HitActorGroupActorsParam;
-		}
-		else if (extraParam is GrydCardinalBombSequence.SegmentExtraParams)
-		{
-			result = SequenceExtraParamEnum.GrydCardinalBombParam;
-		}
-		else if (extraParam is SimpleVFXAtTargetPosSequence.PositionOverrideParam)
-		{
-			result = SequenceExtraParamEnum.VFXSpawnPosOverride;
-		}
-		else if (extraParam is Sequence.GenericIntParam)
-		{
-			result = SequenceExtraParamEnum.GenericIntParam;
-		}
-		else if (extraParam is Sequence.GenericActorListParam)
-		{
-			result = SequenceExtraParamEnum.GenericActorListParam;
-		}
-		return result;
 	}
 
 	public Sequence.IExtraSequenceParams CreateExtraParamOfEnum(SequenceExtraParamEnum paramEnum)
 	{
-		Sequence.IExtraSequenceParams result = null;
-		if (paramEnum == SequenceExtraParamEnum.Powerup)
+		switch (paramEnum)
 		{
-			result = new PowerUp.ExtraParams();
+			case SequenceExtraParamEnum.Powerup:
+				return new PowerUp.ExtraParams();
+			case SequenceExtraParamEnum.BouncingShot:
+				return new BouncingShotSequence.ExtraParams();
+			case SequenceExtraParamEnum.Explosion:
+				return new ExplosionSequence.ExtraParams();
+			case SequenceExtraParamEnum.GroundLine:
+				return new GroundLineSequence.ExtraParams();
+			case SequenceExtraParamEnum.HealLaser:
+				return new HealLaserSequence.ExtraParams();
+			case SequenceExtraParamEnum.HitOnAnimationEvent:
+				return new HitOnAnimationEventSequence.ExtraParams();
+			case SequenceExtraParamEnum.NanosmithBoltLaser:
+				return new NanosmithBoltLaserSequence.ExtraParams();
+			case SequenceExtraParamEnum.NinjaMultiAttack:
+				return new NinjaMultiAttackSequence.ExtraParams();
+			case SequenceExtraParamEnum.ProximityMineGround:
+				return new ProximityMineGroundSequence.ExtraParams();
+			case SequenceExtraParamEnum.DelayedProjectile:
+				return new SplineProjectileSequence.DelayedProjectileExtraParams();
+			case SequenceExtraParamEnum.MultiEventProjectile:
+				return new SplineProjectileSequence.MultiEventExtraParams();
+			case SequenceExtraParamEnum.MultiEventAttachedVFX:
+				return new SimpleAttachedVFXSequence.MultiEventExtraParams();
+			case SequenceExtraParamEnum.ExoSweepLaser:
+				return new ExoSweepLaserSequence.ExtraParams();
+			case SequenceExtraParamEnum.BlasterStretchingCone:
+				return new BlasterStretchConeSequence.ExtraParams();
+			case SequenceExtraParamEnum.SimpleVFXAtTargetPos:
+				return new SimpleVFXAtTargetPosSequence.IgnoreStartEventExtraParam();
+			case SequenceExtraParamEnum.ThiefPowerupReturnProjectile:
+				return new ThiefPowerupReturnProjectileSequence.PowerupTypeExtraParams();
+			case SequenceExtraParamEnum.ScoundrelBlindFireCone:
+				return new ScoundrelBlindFireSequence.ConeExtraParams();
+			case SequenceExtraParamEnum.ImpactDelayAttachedVFX:
+				return new SimpleAttachedVFXSequence.ImpactDelayParams();
+			case SequenceExtraParamEnum.SoldierProjectilesInLineHitArea:
+				return new SoldierProjectilesInLineSequence.HitAreaExtraParams();
+			case SequenceExtraParamEnum.SimpleTiming:
+				return new SimpleTimingSequence.ExtraParams();
+			case SequenceExtraParamEnum.SplineProjectileProperty:
+				return new SplineProjectileSequence.ProjectilePropertyParams();
+			case SequenceExtraParamEnum.SequenceFxAttribute:
+				return new Sequence.FxAttributeParam();
+			case SequenceExtraParamEnum.SequencePhaseTiming:
+				return new Sequence.PhaseTimingExtraParams();
+			case SequenceExtraParamEnum.ValkyrieDirectionalShield:
+				return new ValkyrieDirectionalShieldSequence.ExtraParams();
+			case SequenceExtraParamEnum.ActorIndexParam:
+				return new Sequence.ActorIndexExtraParam();
+			case SequenceExtraParamEnum.HitActorGroupActorsParam:
+				return new HitActorGroupOnAnimEventSequence.ActorParams();
+			case SequenceExtraParamEnum.GrydCardinalBombParam:
+				return new GrydCardinalBombSequence.SegmentExtraParams();
+			case SequenceExtraParamEnum.VFXSpawnPosOverride:
+				return new SimpleVFXAtTargetPosSequence.PositionOverrideParam();
+			case SequenceExtraParamEnum.DiscReturnProjectile:
+				return new NekoDiscReturnProjectileSequence.DiscReturnProjectileExtraParams();
+			case SequenceExtraParamEnum.GenericIntParam:
+				return new Sequence.GenericIntParam();
+			case SequenceExtraParamEnum.GenericActorListParam:
+				return new Sequence.GenericActorListParam();
+			default:
+				return null;
 		}
-		else if (paramEnum == SequenceExtraParamEnum.BouncingShot)
-		{
-			result = new BouncingShotSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.Explosion)
-		{
-			result = new ExplosionSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.GroundLine)
-		{
-			result = new GroundLineSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.HealLaser)
-		{
-			result = new HealLaserSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.HitOnAnimationEvent)
-		{
-			result = new HitOnAnimationEventSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.NanosmithBoltLaser)
-		{
-			result = new NanosmithBoltLaserSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.NinjaMultiAttack)
-		{
-			result = new NinjaMultiAttackSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.ProximityMineGround)
-		{
-			result = new ProximityMineGroundSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.DelayedProjectile)
-		{
-			result = new SplineProjectileSequence.DelayedProjectileExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.MultiEventProjectile)
-		{
-			result = new SplineProjectileSequence.MultiEventExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.MultiEventAttachedVFX)
-		{
-			result = new SimpleAttachedVFXSequence.MultiEventExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.ExoSweepLaser)
-		{
-			result = new ExoSweepLaserSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.BlasterStretchingCone)
-		{
-			result = new BlasterStretchConeSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.SimpleVFXAtTargetPos)
-		{
-			result = new SimpleVFXAtTargetPosSequence.IgnoreStartEventExtraParam();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.ThiefPowerupReturnProjectile)
-		{
-			result = new ThiefPowerupReturnProjectileSequence.PowerupTypeExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.ScoundrelBlindFireCone)
-		{
-			result = new ScoundrelBlindFireSequence.ConeExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.ImpactDelayAttachedVFX)
-		{
-			result = new SimpleAttachedVFXSequence.ImpactDelayParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.SoldierProjectilesInLineHitArea)
-		{
-			result = new SoldierProjectilesInLineSequence.HitAreaExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.SimpleTiming)
-		{
-			result = new SimpleTimingSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.SplineProjectileProperty)
-		{
-			result = new SplineProjectileSequence.ProjectilePropertyParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.SequenceFxAttribute)
-		{
-			result = new Sequence.FxAttributeParam();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.SequencePhaseTiming)
-		{
-			result = new Sequence.PhaseTimingExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.ValkyrieDirectionalShield)
-		{
-			result = new ValkyrieDirectionalShieldSequence.ExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.ActorIndexParam)
-		{
-			result = new Sequence.ActorIndexExtraParam();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.HitActorGroupActorsParam)
-		{
-			result = new HitActorGroupOnAnimEventSequence.ActorParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.GrydCardinalBombParam)
-		{
-			result = new GrydCardinalBombSequence.SegmentExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.VFXSpawnPosOverride)
-		{
-			result = new SimpleVFXAtTargetPosSequence.PositionOverrideParam();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.DiscReturnProjectile)
-		{
-			result = new NekoDiscReturnProjectileSequence.DiscReturnProjectileExtraParams();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.GenericIntParam)
-		{
-			result = new Sequence.GenericIntParam();
-		}
-		else if (paramEnum == SequenceExtraParamEnum.GenericActorListParam)
-		{
-			result = new Sequence.GenericActorListParam();
-		}
-		return result;
 	}
 }
