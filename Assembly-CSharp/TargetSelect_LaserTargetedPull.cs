@@ -1,6 +1,7 @@
 // ROGUES
 // SERVER
 using System.Collections.Generic;
+using AbilityContextNamespace;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -12,7 +13,7 @@ public class TargetSelect_LaserTargetedPull : GenericAbility_TargetSelectBase
     public int m_maxTargets = 1;
     public float m_maxKnockbackDist = 50f;
     [Separator("For Pull Destination")]
-    public bool m_casterSquareValidForKnockback = true;
+    public bool m_casterSquareValidForKnockback = true; // removed in rogues
     public float m_squareRangeFromCaster = 3f;
     public float m_destinationAngleDegWithBack = 360f;
     public bool m_destRequireLosFromCaster = true;
@@ -122,7 +123,7 @@ public class TargetSelect_LaserTargetedPull : GenericAbility_TargetSelectBase
             BoardSquare currentBoardSquare = caster.GetCurrentBoardSquare();
             if (boardSquareSafe == currentBoardSquare)
             {
-                return m_casterSquareValidForKnockback;
+                return m_casterSquareValidForKnockback; // false in rogues
             }
 
             if (GetSquareRangeFromCaster() > 0f
@@ -201,6 +202,20 @@ public class TargetSelect_LaserTargetedPull : GenericAbility_TargetSelectBase
             true,
             out Vector3 laserEndPos,
             nonActorTargetInfo);
+        
+#if SERVER
+        // rogues
+        if (actorsInLaser.Count > 0)
+        {
+            Vector3 knockbackOriginFromLaser = AreaEffectUtils.GetKnockbackOriginFromLaser(
+                actorsInLaser,
+                caster,
+                targets[0].AimDirection,
+                laserEndPos);
+            GetNonActorSpecificContext().SetValue(ContextKeys.s_KnockbackOrigin.GetKey(), knockbackOriginFromLaser);
+        }
+#endif
+
         targetPosForSequences.Add(laserEndPos);
         return actorsInLaser;
     }

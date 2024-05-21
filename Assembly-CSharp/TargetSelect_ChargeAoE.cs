@@ -10,13 +10,21 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
     public float m_radiusAroundStart = 2f;
     public float m_radiusAroundEnd = 2f;
     public float m_rangeFromLine = 2f;
-    public bool m_trimPathOnTargetHit;
+    public bool m_trimPathOnTargetHit; // removed in rogues
+    // rogues
+    // [Tooltip("Speed of charge or evasion movement. Ignored if Movement Duration is greater than zero.")]
+    // public float m_movementSpeed = 8f;
+    // rogues
+    // [Tooltip("Duration, in seconds, of charge or evasion movement. Ignored if less than or equal to zero.")]
+    // public float m_movementDuration;
+    // rogues
+    // public ActorData.MovementType m_movementType = ActorData.MovementType.Charge;
     [Separator("Sequences")]
     public GameObject m_castSequencePrefab;
-    public bool m_seqUseTrimmedDestAsTargetPos;
+    public bool m_seqUseTrimmedDestAsTargetPos; // removed in rogues
 
-    private int m_maxTargets;
-    private TargetSelectMod_ChargeAoE m_targetSelMod;
+    private int m_maxTargets; // public in rogues
+    private TargetSelectMod_ChargeAoE m_targetSelMod; // removed in rogues
 
 #if SERVER
     public static ContextNameKeyPair s_cvarInStart = new ContextNameKeyPair("InStart"); // added in rogues
@@ -25,6 +33,7 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
 
     public override string GetUsageForEditor()
     {
+        // reactor
         return "Intended for single click charge abilities, with line and AoE on either end.\n"
                + GetContextUsageStr(
                    ContextKeys.s_InEndAoe.GetName(),
@@ -33,14 +42,27 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
                    ContextKeys.s_ChargeEndPos.GetName(),
                    "non-actor specific, charge end position",
                    false);
+        // rogues
+        // return "Indended for single click charge abilities. Can add shape field to hit targets on destination."
+        //        + GetContextUsageStr(
+        //            s_cvarInStart.GetName(),
+        //            "is hit by the start location aoe")
+        //        + GetContextUsageStr(
+        //            s_cvarInEnd.GetName(),
+        //            "is hit by the end location aoe");
     }
 
     public override void ListContextNamesForEditor(List<string> names)
     {
+        // reactor
         names.Add(ContextKeys.s_InEndAoe.GetName());
         names.Add(ContextKeys.s_ChargeEndPos.GetName());
+        // rogues
+        // names.Add(new ContextNameKeyPair("InStart").GetName());
+        // names.Add(new ContextNameKeyPair("InEnd").GetName());
     }
 
+    // removed in rogues
     public float GetRadiusAroundStart()
     {
         return m_targetSelMod != null
@@ -48,6 +70,7 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
             : m_radiusAroundStart;
     }
 
+    // removed in rogues
     public float GetRadiusAroundEnd()
     {
         return m_targetSelMod != null
@@ -55,6 +78,7 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
             : m_radiusAroundEnd;
     }
 
+    // removed in rogues
     public float GetRangeFromLine()
     {
         return m_targetSelMod != null
@@ -62,6 +86,7 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
             : m_rangeFromLine;
     }
 
+    // removed in rogues
     public bool TrimPathOnTargetHit()
     {
         return m_targetSelMod != null
@@ -73,15 +98,26 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
     {
         AbilityUtil_Targeter_ChargeAoE targeter = new AbilityUtil_Targeter_ChargeAoE(
             ability,
-            GetRadiusAroundStart(),
-            GetRadiusAroundEnd(),
-            GetRangeFromLine(),
+            GetRadiusAroundStart(), // m_radiusAroundStart in rogues
+            GetRadiusAroundEnd(), // m_radiusAroundEnd in rogues
+            GetRangeFromLine(), // m_rangeFromLine in rogues
             m_maxTargets,
             false,
-            IgnoreLos());
+            IgnoreLos()); // m_ignoreLos in rogues
+        
+        // rogues
+        // if (m_movementType == ActorData.MovementType.Flight
+        //     || m_movementType == ActorData.MovementType.Teleport)
+        // {
+        //     targeter.ShowTeleportLines = true;
+        // }
+
+        // removed in rogues
         targeter.SetAffectedGroups(IncludeEnemies(), IncludeAllies(), IncludeCaster());
         targeter.TrimPathOnTargetHit = TrimPathOnTargetHit();
         targeter.ForceAddTargetingActor = IncludeCaster();
+        // end removed in rogues
+        
         return new List<AbilityUtil_Targeter> { targeter };
     }
 
@@ -106,9 +142,10 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
 
     public override ActorData.MovementType GetMovementType()
     {
-        return ActorData.MovementType.Charge;
+        return ActorData.MovementType.Charge; // m_movementType in rogues
     }
 
+    // removed in rogues
     public static BoardSquare GetTrimOnHitDestination(
         AbilityTarget currentTarget,
         BoardSquare startSquare,
@@ -145,6 +182,7 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
         return destSquare;
     }
 
+    // removed in rogues
     public static void TrimChargePathOnActorHit(
         BoardSquarePathInfo chargePath,
         BoardSquare startSquare,
@@ -209,11 +247,13 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
         }
     }
 
+    // removed in rogues
     protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
     {
         m_targetSelMod = modBase as TargetSelectMod_ChargeAoE;
     }
 
+    // removed in rogues
     protected override void OnTargetSelModRemoved()
     {
         m_targetSelMod = null;
@@ -238,6 +278,7 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
             float sqrDistToEnd = (actorData.GetLoSCheckPos() - targetPos).sqrMagnitude;
             bool inStartAoe = sqrDitToStart <= m_radiusAroundStart * m_radiusAroundStart;
             bool inEndAoe = sqrDistToEnd <= m_radiusAroundEnd * m_radiusAroundEnd;
+            // TODO ICEBORG variables don't match the ones from reactor
             SetActorContext(actorData, s_cvarInStart.GetKey(), inStartAoe ? 1 : 0);
             SetActorContext(actorData, s_cvarInEnd.GetKey(), inEndAoe ? 1 : 0);
         }
@@ -286,6 +327,83 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
                 additionalData.m_sequenceSource,
                 extraSequenceParams)
         };
+    }
+
+    // rogues
+    protected float GetEvadeDistance(ServerEvadeUtils.ChargeSegment[] chargeSegments)
+    {
+        float num = 0f;
+        for (int i = 0; i < chargeSegments.Length - 1; i++)
+        {
+            num += chargeSegments[i].m_pos.HorizontalDistanceOnBoardTo(chargeSegments[i + 1].m_pos);
+        }
+
+        return num;
+    }
+
+    // rogues
+    // internal float CalcMovementSpeed(float distance)
+    // {
+    //     if (m_movementDuration <= 0f)
+    //     {
+    //         return m_movementSpeed;
+    //     }
+    //
+    //     return distance / m_movementDuration;
+    // }
+
+    // rogues
+    public override ServerEvadeUtils.ChargeSegment[] GetChargePath(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        ServerAbilityUtils.AbilityRunData additionalData)
+    {
+        float distance = caster.GetCurrentBoardSquare()
+            .HorizontalDistanceOnBoardTo(Board.Get().GetSquare(targets[0].GridPos));
+        // CalcMovementSpeed(distance); // rogues
+        m_chargeSegments.Clear();
+        for (int i = 0; i < targets.Count; i++)
+        {
+            AbilityTarget abilityTarget = targets[i];
+            AddChargeSegment(
+                caster,
+                Board.Get().GetSquare(abilityTarget.GridPos),
+                BoardSquarePathInfo.ChargeCycleType.Movement,
+                0, // m_movementSpeed in rogues
+                i + 1 == targets.Count);
+        }
+
+        return m_chargeSegments.ToArray();
+    }
+
+    // rogues
+    public override void AddChargeSegment(
+        ActorData caster,
+        BoardSquare targetSquare,
+        BoardSquarePathInfo.ChargeCycleType targetCycle,
+        float moveSpeed,
+        bool finalSegment)
+    {
+        if (m_chargeSegments.Count == 0 && caster != null)
+        {
+            m_chargeSegments.Add(new ServerEvadeUtils.ChargeSegment
+            {
+                m_pos = caster.GetCurrentBoardSquare(),
+                m_cycle = targetCycle,
+                m_end = BoardSquarePathInfo.ChargeEndType.Pivot,
+                m_segmentMovementSpeed = moveSpeed
+            });
+        }
+
+        m_chargeSegments.Add(new ServerEvadeUtils.ChargeSegment
+        {
+            m_pos = targetSquare,
+            m_cycle = targetCycle,
+            m_segmentMovementSpeed = moveSpeed,
+            m_end = finalSegment
+                ? BoardSquarePathInfo.ChargeEndType.Miss
+                : BoardSquarePathInfo.ChargeEndType.Pivot
+        });
     }
 #endif
 }
