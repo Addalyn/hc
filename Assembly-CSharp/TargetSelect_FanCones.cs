@@ -1,331 +1,275 @@
-using AbilityContextNamespace;
 using System.Collections.Generic;
+using AbilityContextNamespace;
 using UnityEngine;
 
 public class TargetSelect_FanCones : GenericAbility_TargetSelectBase
 {
-	[Separator("Targeting Properties", true)]
-	public ConeTargetingInfo m_coneInfo;
+    [Separator("Targeting Properties")]
+    public ConeTargetingInfo m_coneInfo;
+    [Space(10f)]
+    public int m_coneCount = 3;
+    [Header("Starting offset, move towards forward/aim direction")]
+    public float m_coneStartOffsetInAimDir;
+    [Header("Starting offset, move towards left/right")]
+    public float m_coneStartOffsetToSides;
+    [Header("Starting offset, move towards each cone's direction")]
+    public float m_coneStartOffsetInConeDir;
+    [Header("-- If Fixed Angle")]
+    public float m_angleInBetween = 10f;
+    [Header("-- If Interpolating Angle")]
+    public bool m_changeAngleByCursorDistance = true;
+    public float m_targeterMinAngle;
+    public float m_targeterMaxAngle = 180f;
+    public float m_startAngleOffset;
+    [Space(10f)]
+    public float m_targeterMinInterpDistance = 0.5f;
+    public float m_targeterMaxInterpDistance = 4f;
+    [Separator("Sequences")]
+    public GameObject m_castSequencePrefab;
 
-	[Space(10f)]
-	public int m_coneCount = 3;
+    private TargetSelectMod_FanCones m_targetSelMod;
+    private ConeTargetingInfo m_cachedConeInfo;
 
-	[Header("Starting offset, move towards forward/aim direction")]
-	public float m_coneStartOffsetInAimDir;
+    public override string GetUsageForEditor()
+    {
+        return GetContextUsageStr(
+            ContextKeys.s_HitCount.GetName(),
+            "on every hit actor, number of cone hits on target");
+    }
 
-	[Header("Starting offset, move towards left/right")]
-	public float m_coneStartOffsetToSides;
+    public override void ListContextNamesForEditor(List<string> names)
+    {
+        names.Add(ContextKeys.s_HitCount.GetName());
+    }
 
-	[Header("Starting offset, move towards each cone's direction")]
-	public float m_coneStartOffsetInConeDir;
+    public override void Initialize()
+    {
+        SetCachedFields();
+        ConeTargetingInfo coneInfo = GetConeInfo();
+        coneInfo.m_affectsAllies = IncludeAllies();
+        coneInfo.m_affectsEnemies = IncludeEnemies();
+        coneInfo.m_affectsCaster = IncludeCaster();
+        coneInfo.m_penetrateLos = IgnoreLos();
+    }
 
-	[Header("-- If Fixed Angle")]
-	public float m_angleInBetween = 10f;
+    private void SetCachedFields()
+    {
+        m_cachedConeInfo = m_targetSelMod != null
+            ? m_targetSelMod.m_coneInfoMod.GetModifiedValue(m_coneInfo)
+            : m_coneInfo;
+    }
 
-	[Header("-- If Interpolating Angle")]
-	public bool m_changeAngleByCursorDistance = true;
+    public ConeTargetingInfo GetConeInfo()
+    {
+        return m_cachedConeInfo ?? m_coneInfo;
+    }
 
-	public float m_targeterMinAngle;
+    public int GetConeCount()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_coneCountMod.GetModifiedValue(m_coneCount)
+            : m_coneCount;
+    }
 
-	public float m_targeterMaxAngle = 180f;
+    public float GetConeStartOffsetInAimDir()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_coneStartOffsetInAimDirMod.GetModifiedValue(m_coneStartOffsetInAimDir)
+            : m_coneStartOffsetInAimDir;
+    }
 
-	public float m_startAngleOffset;
+    public float GetConeStartOffsetToSides()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_coneStartOffsetToSidesMod.GetModifiedValue(m_coneStartOffsetToSides)
+            : m_coneStartOffsetToSides;
+    }
 
-	[Space(10f)]
-	public float m_targeterMinInterpDistance = 0.5f;
+    public float GetConeStartOffsetInConeDir()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_coneStartOffsetInConeDirMod.GetModifiedValue(m_coneStartOffsetInConeDir)
+            : m_coneStartOffsetInConeDir;
+    }
 
-	public float m_targeterMaxInterpDistance = 4f;
+    public float GetAngleInBetween()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_angleInBetweenMod.GetModifiedValue(m_angleInBetween)
+            : m_angleInBetween;
+    }
 
-	[Separator("Sequences", true)]
-	public GameObject m_castSequencePrefab;
+    public bool ChangeAngleByCursorDistance()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_changeAngleByCursorDistanceMod.GetModifiedValue(m_changeAngleByCursorDistance)
+            : m_changeAngleByCursorDistance;
+    }
 
-	private TargetSelectMod_FanCones m_targetSelMod;
+    public float GetTargeterMinAngle()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_targeterMinAngleMod.GetModifiedValue(m_targeterMinAngle)
+            : m_targeterMinAngle;
+    }
 
-	private ConeTargetingInfo m_cachedConeInfo;
+    public float GetTargeterMaxAngle()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_targeterMaxAngleMod.GetModifiedValue(m_targeterMaxAngle)
+            : m_targeterMaxAngle;
+    }
 
-	public override string GetUsageForEditor()
-	{
-		return GetContextUsageStr(ContextKeys.s_HitCount.GetName(), "on every hit actor, number of cone hits on target");
-	}
+    public float GetStartAngleOffset()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_startAngleOffsetMod.GetModifiedValue(m_startAngleOffset)
+            : m_startAngleOffset;
+    }
 
-	public override void ListContextNamesForEditor(List<string> names)
-	{
-		names.Add(ContextKeys.s_HitCount.GetName());
-	}
+    protected virtual bool UseCasterPosForLoS()
+    {
+        return false;
+    }
 
-	public override void Initialize()
-	{
-		SetCachedFields();
-		ConeTargetingInfo coneInfo = GetConeInfo();
-		coneInfo.m_affectsAllies = IncludeAllies();
-		coneInfo.m_affectsEnemies = IncludeEnemies();
-		coneInfo.m_affectsCaster = IncludeCaster();
-		coneInfo.m_penetrateLos = IgnoreLos();
-	}
+    protected virtual bool CustomLoS(ActorData actor, ActorData caster)
+    {
+        return true;
+    }
 
-	private void SetCachedFields()
-	{
-		ConeTargetingInfo cachedConeInfo;
-		if (m_targetSelMod != null)
-		{
-			cachedConeInfo = m_targetSelMod.m_coneInfoMod.GetModifiedValue(m_coneInfo);
-		}
-		else
-		{
-			cachedConeInfo = m_coneInfo;
-		}
-		m_cachedConeInfo = cachedConeInfo;
-	}
+    public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
+    {
+        AbilityUtil_Targeter_TricksterCones targeter = new AbilityUtil_Targeter_TricksterCones(
+            ability,
+            GetConeInfo(),
+            GetConeCount(),
+            GetConeCount,
+            GetConeOrigins,
+            GetConeDirections,
+            GetFreePosForAim,
+            false,
+            UseCasterPosForLoS())
+        {
+            m_customDamageOriginDelegate = GetDamageOriginForTargeter
+        };
+        return new List<AbilityUtil_Targeter> { targeter };
+    }
 
-	public ConeTargetingInfo GetConeInfo()
-	{
-		return (m_cachedConeInfo == null) ? m_coneInfo : m_cachedConeInfo;
-	}
+    private Vector3 GetDamageOriginForTargeter(
+        AbilityTarget currentTarget,
+        Vector3 defaultOrigin,
+        ActorData actorToAdd,
+        ActorData caster)
+    {
+        return caster.GetFreePos();
+    }
 
-	public int GetConeCount()
-	{
-		int result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_coneCountMod.GetModifiedValue(m_coneCount);
-		}
-		else
-		{
-			result = m_coneCount;
-		}
-		return result;
-	}
+    public Vector3 GetFreePosForAim(AbilityTarget currentTarget, ActorData caster)
+    {
+        return currentTarget.FreePos;
+    }
 
-	public float GetConeStartOffsetInAimDir()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_coneStartOffsetInAimDirMod.GetModifiedValue(m_coneStartOffsetInAimDir);
-		}
-		else
-		{
-			result = m_coneStartOffsetInAimDir;
-		}
-		return result;
-	}
+    public virtual List<Vector3> GetConeOrigins(AbilityTarget currentTarget, Vector3 targeterFreePos, ActorData caster)
+    {
+        List<Vector3> list = new List<Vector3>();
+        Vector3 travelBoardSquareWorldPositionForLos = caster.GetLoSCheckPos();
+        Vector3 aimDirection = currentTarget.AimDirection;
+        Vector3 normalized = Vector3.Cross(aimDirection, Vector3.up).normalized;
+        int coneCount = GetConeCount();
+        int halfConeCount = coneCount / 2;
+        bool evenCones = coneCount % 2 == 0;
+        float aimDirOffset = GetConeStartOffsetInAimDir() * Board.SquareSizeStatic;
+        float sideOffsetDir = GetConeStartOffsetToSides() * Board.SquareSizeStatic;
+        for (int i = 0; i < coneCount; i++)
+        {
+            Vector3 b = Vector3.zero;
+            if (aimDirOffset != 0f)
+            {
+                b = aimDirOffset * aimDirection;
+            }
 
-	public float GetConeStartOffsetToSides()
-	{
-		return (m_targetSelMod == null) ? m_coneStartOffsetToSides : m_targetSelMod.m_coneStartOffsetToSidesMod.GetModifiedValue(m_coneStartOffsetToSides);
-	}
+            if (sideOffsetDir > 0f)
+            {
+                if (evenCones)
+                {
+                    if (i < halfConeCount)
+                    {
+                        b -= (halfConeCount - i) * sideOffsetDir * normalized;
+                    }
+                    else
+                    {
+                        b += (i - halfConeCount + 1) * sideOffsetDir * normalized;
+                    }
+                }
+                else if (i < halfConeCount)
+                {
+                    b -= (halfConeCount - i) * sideOffsetDir * normalized;
+                }
+                else if (i > halfConeCount)
+                {
+                    b += (i - halfConeCount) * sideOffsetDir * normalized;
+                }
+            }
 
-	public float GetConeStartOffsetInConeDir()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_coneStartOffsetInConeDirMod.GetModifiedValue(m_coneStartOffsetInConeDir);
-		}
-		else
-		{
-			result = m_coneStartOffsetInConeDir;
-		}
-		return result;
-	}
+            list.Add(travelBoardSquareWorldPositionForLos + b);
+        }
 
-	public float GetAngleInBetween()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_angleInBetweenMod.GetModifiedValue(m_angleInBetween);
-		}
-		else
-		{
-			result = m_angleInBetween;
-		}
-		return result;
-	}
+        if (GetConeStartOffsetInConeDir() > 0f)
+        {
+            List<Vector3> coneDirections = GetConeDirections(currentTarget, targeterFreePos, caster);
+            float d = GetConeStartOffsetInConeDir() * Board.SquareSizeStatic;
+            for (int i = 0; i < coneDirections.Count; i++)
+            {
+                list[i] += d * coneDirections[i];
+            }
+        }
 
-	public bool ChangeAngleByCursorDistance()
-	{
-		bool result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_changeAngleByCursorDistanceMod.GetModifiedValue(m_changeAngleByCursorDistance);
-		}
-		else
-		{
-			result = m_changeAngleByCursorDistance;
-		}
-		return result;
-	}
+        return list;
+    }
 
-	public float GetTargeterMinAngle()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_targeterMinAngleMod.GetModifiedValue(m_targeterMinAngle);
-		}
-		else
-		{
-			result = m_targeterMinAngle;
-		}
-		return result;
-	}
+    public virtual List<Vector3> GetConeDirections(
+        AbilityTarget currentTarget,
+        Vector3 targeterFreePos,
+        ActorData caster)
+    {
+        List<Vector3> list = new List<Vector3>();
+        float angleInBetween = GetAngleInBetween();
+        int coneCount = GetConeCount();
+        if (ChangeAngleByCursorDistance())
+        {
+            float angleTotal = coneCount <= 1
+                ? 0f
+                : AbilityCommon_FanLaser.CalculateFanAngleDegrees(
+                    currentTarget,
+                    caster,
+                    GetTargeterMinAngle(),
+                    GetTargeterMaxAngle(),
+                    m_targeterMinInterpDistance,
+                    m_targeterMaxInterpDistance,
+                    0f);
 
-	public float GetTargeterMaxAngle()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_targeterMaxAngleMod.GetModifiedValue(m_targeterMaxAngle);
-		}
-		else
-		{
-			result = m_targeterMaxAngle;
-		}
-		return result;
-	}
+            angleInBetween = coneCount > 1
+                ? angleTotal / (coneCount - 1)
+                : 0f;
+        }
 
-	public float GetStartAngleOffset()
-	{
-		float result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_startAngleOffsetMod.GetModifiedValue(m_startAngleOffset);
-		}
-		else
-		{
-			result = m_startAngleOffset;
-		}
-		return result;
-	}
+        float aimAngle = VectorUtils.HorizontalAngle_Deg(currentTarget.AimDirection) + GetStartAngleOffset();
+        float startAngle = aimAngle - 0.5f * (coneCount - 1) * angleInBetween;
+        for (int i = 0; i < coneCount; i++)
+        {
+            list.Add(VectorUtils.AngleDegreesToVector(startAngle + i * angleInBetween));
+        }
 
-	protected virtual bool UseCasterPosForLoS()
-	{
-		return false;
-	}
+        return list;
+    }
 
-	protected virtual bool CustomLoS(ActorData actor, ActorData caster)
-	{
-		return true;
-	}
+    protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
+    {
+        m_targetSelMod = modBase as TargetSelectMod_FanCones;
+    }
 
-	public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
-	{
-		AbilityUtil_Targeter_TricksterCones abilityUtil_Targeter_TricksterCones = new AbilityUtil_Targeter_TricksterCones(ability, GetConeInfo(), GetConeCount(), GetConeCount, GetConeOrigins, GetConeDirections, GetFreePosForAim, false, UseCasterPosForLoS());
-		abilityUtil_Targeter_TricksterCones.m_customDamageOriginDelegate = GetDamageOriginForTargeter;
-		List<AbilityUtil_Targeter> list = new List<AbilityUtil_Targeter>();
-		list.Add(abilityUtil_Targeter_TricksterCones);
-		return list;
-	}
-
-	private Vector3 GetDamageOriginForTargeter(AbilityTarget currentTarget, Vector3 defaultOrigin, ActorData actorToAdd, ActorData caster)
-	{
-		return caster.GetFreePos();
-	}
-
-	public Vector3 GetFreePosForAim(AbilityTarget currentTarget, ActorData caster)
-	{
-		return currentTarget.FreePos;
-	}
-
-	public virtual List<Vector3> GetConeOrigins(AbilityTarget currentTarget, Vector3 targeterFreePos, ActorData caster)
-	{
-		List<Vector3> list = new List<Vector3>();
-		Vector3 travelBoardSquareWorldPositionForLos = caster.GetLoSCheckPos();
-		Vector3 aimDirection = currentTarget.AimDirection;
-		Vector3 normalized = Vector3.Cross(aimDirection, Vector3.up).normalized;
-		int coneCount = GetConeCount();
-		int num = coneCount / 2;
-		bool flag = coneCount % 2 == 0;
-		float num2 = GetConeStartOffsetInAimDir() * Board.SquareSizeStatic;
-		float num3 = GetConeStartOffsetToSides() * Board.SquareSizeStatic;
-		for (int i = 0; i < coneCount; i++)
-		{
-			Vector3 b = Vector3.zero;
-			if (num2 != 0f)
-			{
-				b = num2 * aimDirection;
-			}
-			if (num3 > 0f)
-			{
-				if (flag)
-				{
-					if (i < num)
-					{
-						b -= (float)(num - i) * num3 * normalized;
-					}
-					else
-					{
-						b += (float)(i - num + 1) * num3 * normalized;
-					}
-				}
-				else if (i < num)
-				{
-					b -= (float)(num - i) * num3 * normalized;
-				}
-				else if (i > num)
-				{
-					b += (float)(i - num) * num3 * normalized;
-				}
-			}
-			list.Add(travelBoardSquareWorldPositionForLos + b);
-		}
-		if (GetConeStartOffsetInConeDir() > 0f)
-		{
-			List<Vector3> coneDirections = GetConeDirections(currentTarget, targeterFreePos, caster);
-			float d = GetConeStartOffsetInConeDir() * Board.SquareSizeStatic;
-			for (int j = 0; j < coneDirections.Count; j++)
-			{
-				list[j] += d * coneDirections[j];
-			}
-		}
-		return list;
-	}
-
-	public virtual List<Vector3> GetConeDirections(AbilityTarget currentTarget, Vector3 targeterFreePos, ActorData caster)
-	{
-		List<Vector3> list = new List<Vector3>();
-		float num = GetAngleInBetween();
-		int coneCount = GetConeCount();
-		if (ChangeAngleByCursorDistance())
-		{
-			float num2;
-			if (coneCount > 1)
-			{
-				num2 = AbilityCommon_FanLaser.CalculateFanAngleDegrees(currentTarget, caster, GetTargeterMinAngle(), GetTargeterMaxAngle(), m_targeterMinInterpDistance, m_targeterMaxInterpDistance, 0f);
-			}
-			else
-			{
-				num2 = 0f;
-			}
-			float num3 = num2;
-			float num4;
-			if (coneCount > 1)
-			{
-				num4 = num3 / (float)(coneCount - 1);
-			}
-			else
-			{
-				num4 = 0f;
-			}
-			num = num4;
-		}
-		float num5 = VectorUtils.HorizontalAngle_Deg(currentTarget.AimDirection) + GetStartAngleOffset();
-		float num6 = num5 - 0.5f * (float)(coneCount - 1) * num;
-		for (int i = 0; i < coneCount; i++)
-		{
-			list.Add(VectorUtils.AngleDegreesToVector(num6 + (float)i * num));
-		}
-		return list;
-	}
-
-	protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
-	{
-		m_targetSelMod = (modBase as TargetSelectMod_FanCones);
-	}
-
-	protected override void OnTargetSelModRemoved()
-	{
-		m_targetSelMod = null;
-	}
+    protected override void OnTargetSelModRemoved()
+    {
+        m_targetSelMod = null;
+    }
 }
