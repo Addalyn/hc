@@ -1,105 +1,90 @@
-using AbilityContextNamespace;
 using System.Collections.Generic;
+using AbilityContextNamespace;
 using UnityEngine;
 
 public class TargetSelect_AoeRadius : GenericAbility_TargetSelectBase
 {
-	[Separator("Targeting Properties", true)]
-	public float m_radius = 1f;
+    [Separator("Targeting Properties")]
+    public float m_radius = 1f;
+    [Space(10f)]
+    public bool m_useSquareCenterPos;
+    [Separator("Sequences")]
+    public GameObject m_castSequencePrefab;
 
-	[Space(10f)]
-	public bool m_useSquareCenterPos;
+    private TargetSelectMod_AoeRadius m_targetSelMod;
 
-	[Separator("Sequences", true)]
-	public GameObject m_castSequencePrefab;
+    public override string GetUsageForEditor()
+    {
+        return GetContextUsageStr(
+            ContextKeys.s_DistFromStart.GetName(),
+            "on every hit actor, distance from center of AoE, in squares");
+    }
 
-	private TargetSelectMod_AoeRadius m_targetSelMod;
+    public override void ListContextNamesForEditor(List<string> names)
+    {
+        names.Add(ContextKeys.s_DistFromStart.GetName());
+    }
 
-	public override string GetUsageForEditor()
-	{
-		return GetContextUsageStr(ContextKeys.s_DistFromStart.GetName(), "on every hit actor, distance from center of AoE, in squares");
-	}
+    public override void Initialize()
+    {
+        m_commonProperties.SetValue(ContextKeys.s_Radius.GetKey(), GetRadius());
+    }
 
-	public override void ListContextNamesForEditor(List<string> names)
-	{
-		names.Add(ContextKeys.s_DistFromStart.GetName());
-	}
+    public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
+    {
+        AbilityUtil_Targeter_AoE_Smooth targeter =
+            new AbilityUtil_Targeter_AoE_Smooth(ability, GetRadius(), IgnoreLos());
+        targeter.SetAffectedGroups(IncludeEnemies(), IncludeAllies(), IncludeCaster());
+        targeter.m_customCenterPosDelegate = GetCenterPos;
+        targeter.SetShowArcToShape(ability.GetTargetData().Length != 0);
+        return new List<AbilityUtil_Targeter> { targeter };
+    }
 
-	public override void Initialize()
-	{
-		m_commonProperties.SetValue(ContextKeys.s_Radius.GetKey(), GetRadius());
-	}
+    public Vector3 GetCenterPos(ActorData caster, AbilityTarget currentTarget)
+    {
+        if (UseSquareCenterPos())
+        {
+            BoardSquare square = Board.Get().GetSquare(currentTarget.GridPos);
+            if (square != null)
+            {
+                return square.ToVector3();
+            }
+        }
 
-	public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
-	{
-		AbilityUtil_Targeter_AoE_Smooth abilityUtil_Targeter_AoE_Smooth = new AbilityUtil_Targeter_AoE_Smooth(ability, GetRadius(), IgnoreLos());
-		abilityUtil_Targeter_AoE_Smooth.SetAffectedGroups(IncludeEnemies(), IncludeAllies(), IncludeCaster());
-		abilityUtil_Targeter_AoE_Smooth.m_customCenterPosDelegate = GetCenterPos;
-		bool flag = ability.GetTargetData().Length == 0;
-		abilityUtil_Targeter_AoE_Smooth.SetShowArcToShape(!flag);
-		List<AbilityUtil_Targeter> list = new List<AbilityUtil_Targeter>();
-		list.Add(abilityUtil_Targeter_AoE_Smooth);
-		return list;
-	}
+        return currentTarget.FreePos;
+    }
 
-	public Vector3 GetCenterPos(ActorData caster, AbilityTarget currentTarget)
-	{
-		if (UseSquareCenterPos())
-		{
-			BoardSquare boardSquareSafe = Board.Get().GetSquare(currentTarget.GridPos);
-			if (boardSquareSafe != null)
-			{
-				while (true)
-				{
-					switch (4)
-					{
-					case 0:
-						break;
-					default:
-						return boardSquareSafe.ToVector3();
-					}
-				}
-			}
-		}
-		return currentTarget.FreePos;
-	}
+    public float GetRadius()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_radiusMod.GetModifiedValue(m_radius)
+            : m_radius;
+    }
 
-	public float GetRadius()
-	{
-		return (m_targetSelMod == null) ? m_radius : m_targetSelMod.m_radiusMod.GetModifiedValue(m_radius);
-	}
+    public bool UseSquareCenterPos()
+    {
+        return m_targetSelMod != null
+            ? m_targetSelMod.m_useSquareCenterPosMod.GetModifiedValue(m_useSquareCenterPos)
+            : m_useSquareCenterPos;
+    }
 
-	public bool UseSquareCenterPos()
-	{
-		bool result;
-		if (m_targetSelMod != null)
-		{
-			result = m_targetSelMod.m_useSquareCenterPosMod.GetModifiedValue(m_useSquareCenterPos);
-		}
-		else
-		{
-			result = m_useSquareCenterPos;
-		}
-		return result;
-	}
+    public override bool CanShowTargeterRangePreview(TargetData[] targetData)
+    {
+        return true;
+    }
 
-	public override bool CanShowTargeterRangePreview(TargetData[] targetData)
-	{
-		return true;
-	}
+    public override float GetTargeterRangePreviewRadius(Ability ability, ActorData caster)
+    {
+        return GetRadius();
+    }
 
-	public override float GetTargeterRangePreviewRadius(Ability ability, ActorData caster)
-	{
-		return GetRadius();
-	}
+    protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
+    {
+        m_targetSelMod = modBase as TargetSelectMod_AoeRadius;
+    }
 
-	protected override void OnTargetSelModApplied(TargetSelectModBase modBase)
-	{
-		m_targetSelMod = (modBase as TargetSelectMod_AoeRadius);
-	}
-
-	protected override void OnTargetSelModRemoved()
-	{
-		m_targetSelMod = null;
-	}
+    protected override void OnTargetSelModRemoved()
+    {
+        m_targetSelMod = null;
+    }
 }
