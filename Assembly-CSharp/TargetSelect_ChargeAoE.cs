@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using AbilityContextNamespace;
 using UnityEngine;
@@ -16,8 +18,10 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
     private int m_maxTargets;
     private TargetSelectMod_ChargeAoE m_targetSelMod;
 
-    public static ContextNameKeyPair s_cvarInStart = new ContextNameKeyPair("InStart");
-    public static ContextNameKeyPair s_cvarInEnd = new ContextNameKeyPair("InEnd");
+#if SERVER
+    public static ContextNameKeyPair s_cvarInStart = new ContextNameKeyPair("InStart"); // added in rogues
+    public static ContextNameKeyPair s_cvarInEnd = new ContextNameKeyPair("InEnd"); // added in rogues
+#endif
 
     public override string GetUsageForEditor()
     {
@@ -215,6 +219,8 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
         m_targetSelMod = null;
     }
 
+#if SERVER
+    // rogues
     public override void CalcHitTargets(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -242,6 +248,7 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
         }
     }
 
+    // rogues
     protected List<ActorData> GetHitActorsInShape(
         Vector3 startPos,
         Vector3 endPos,
@@ -262,6 +269,7 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
         return actorsInRadiusOfLine;
     }
 
+    // rogues
     public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -279,4 +287,5 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
                 extraSequenceParams)
         };
     }
+#endif
 }

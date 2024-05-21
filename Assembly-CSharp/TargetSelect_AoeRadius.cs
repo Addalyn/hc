@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using AbilityContextNamespace;
 using UnityEngine;
@@ -88,6 +90,8 @@ public class TargetSelect_AoeRadius : GenericAbility_TargetSelectBase
         m_targetSelMod = null;
     }
 
+#if SERVER
+    // rogues
     public override void CalcHitTargets(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -105,6 +109,7 @@ public class TargetSelect_AoeRadius : GenericAbility_TargetSelectBase
         }
     }
 
+    // rogues
     public List<ActorData> GetHitActors(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -125,6 +130,7 @@ public class TargetSelect_AoeRadius : GenericAbility_TargetSelectBase
         return actorsInRadius;
     }
 
+    // rogues
     public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -149,4 +155,5 @@ public class TargetSelect_AoeRadius : GenericAbility_TargetSelectBase
                 sequenceParams.ToArray())
         };
     }
+#endif
 }

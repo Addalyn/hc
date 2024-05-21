@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using AbilityContextNamespace;
 using UnityEngine;
@@ -272,7 +274,9 @@ public class TargetSelect_FanCones : GenericAbility_TargetSelectBase
     {
         m_targetSelMod = null;
     }
-
+    
+#if SERVER
+    // rogues
     public override void CalcHitTargets(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -295,6 +299,7 @@ public class TargetSelect_FanCones : GenericAbility_TargetSelectBase
         }
     }
 
+    // rogues
     protected Dictionary<ActorData, int> GetHitActorsAndHitCount(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -362,6 +367,7 @@ public class TargetSelect_FanCones : GenericAbility_TargetSelectBase
         return dictionary;
     }
 
+    // rogues
     public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -411,6 +417,7 @@ public class TargetSelect_FanCones : GenericAbility_TargetSelectBase
         return list;
     }
 
+    // rogues
     public virtual Sequence.IExtraSequenceParams[] CreateConeSequenceExtraParam(
         Vector3 coneStartPos,
         Vector3 coneEndPos)
@@ -526,4 +533,5 @@ public class TargetSelect_FanCones : GenericAbility_TargetSelectBase
     }
 
     */
+#endif
 }

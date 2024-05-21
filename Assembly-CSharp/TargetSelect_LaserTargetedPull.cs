@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -203,6 +205,8 @@ public class TargetSelect_LaserTargetedPull : GenericAbility_TargetSelectBase
         return actorsInLaser;
     }
 
+#if SERVER
+    // rogues
     public override void CalcHitTargets(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -216,6 +220,7 @@ public class TargetSelect_LaserTargetedPull : GenericAbility_TargetSelectBase
         }
     }
 
+    // rogues
     public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -240,4 +245,5 @@ public class TargetSelect_LaserTargetedPull : GenericAbility_TargetSelectBase
                 extraSequenceParams)
         };
     }
+#endif
 }

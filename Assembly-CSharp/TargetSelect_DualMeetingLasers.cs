@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using AbilityContextNamespace;
 using UnityEngine;
@@ -166,7 +168,9 @@ public class TargetSelect_DualMeetingLasers : GenericAbility_TargetSelectBase
             ? m_targetSelMod.m_aoeIgnoreMinCoverDistMod.GetModifiedValue(m_aoeIgnoreMinCoverDist)
             : m_aoeIgnoreMinCoverDist;
     }
-
+    
+#if SERVER
+    // rogues
     public override void CalcHitTargets(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -218,6 +222,7 @@ public class TargetSelect_DualMeetingLasers : GenericAbility_TargetSelectBase
         }
     }
 
+    // rogues
     private void GetHitActors(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -282,6 +287,7 @@ public class TargetSelect_DualMeetingLasers : GenericAbility_TargetSelectBase
             out aoeHitActors);
     }
 
+    // rogues
     public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
         List<AbilityTarget> targets,
         ActorData caster,
@@ -372,4 +378,5 @@ public class TargetSelect_DualMeetingLasers : GenericAbility_TargetSelectBase
 
         return list;
     }
+#endif
 }
