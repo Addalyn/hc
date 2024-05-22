@@ -101,7 +101,7 @@ public abstract class GenericAbility_TargetSelectBase : MonoBehaviour
 		return AbilityUtils.GetCurrentRangeInSquares(ability, caster, 0);
 	}
 
-	// added in rogues
+	// rogues
 //#if SERVER
 //	public void CreateKnockbackPreviewLines(ActorData targetingActor, AbilityUtil_Targeter targeter, ActorData targetActor, OnHitKnockbackField knockbackField, TargetData targetData, ContextVars abilityContext)
 //	{

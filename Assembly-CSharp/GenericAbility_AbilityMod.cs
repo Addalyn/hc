@@ -56,13 +56,11 @@ public class GenericAbility_AbilityMod : AbilityMod
 			text += GetOnHitDataDesc(m_onHitDataMod, genericAbility_Container.m_onHitData);
 
 			// rogues
-//#if SERVER
-//			if (m_targetSelectOverride != null)
-//			{
-//				text += $"Target select {m_targetSelectOverride.GetType()} overriding " +
-//					((genericAbility_Container.m_targetSelectComp != null) ? genericAbility_Container.m_targetSelectComp.GetType().ToString() : "[not found]");
-//			}
-//#endif
+			// if (m_targetSelectOverride != null)
+			// {
+			// 	text += $"Target select {m_targetSelectOverride.GetType()} overriding " +
+			// 		((genericAbility_Container.m_targetSelectComp != null) ? genericAbility_Container.m_targetSelectComp.GetType().ToString() : "[not found]");
+			// }
 		}
 		return text;
 	}

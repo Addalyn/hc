@@ -666,8 +666,7 @@ public class SenseiYingYangDash : Ability
 				actorHitResults2.SetBaseHealing(currentAllyHeal);
 				actorHitResults2.AddStandardEffectInfo(GetAllyHitEffect());
 				
-				// TODO SENSEI
-				// rogues
+				// rogues - this ability does not use generic ability system in reactor
 				// GenericAbility_Container.CalcIntFieldValues(chargeHitActor, caster, actorContext, abilityContext, m_cachedOnHitData.m_allyHitIntFields, numericHitResultScratch);
 				// GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults2, numericHitResultScratch);
 				// GenericAbility_Container.SetKnockbackFieldsOnHitResults(chargeHitActor, caster, actorContext, abilityContext, actorHitResults2, m_cachedOnHitData.m_allyHitKnockbackFields);
@@ -680,8 +679,8 @@ public class SenseiYingYangDash : Ability
 				int currentDamage = GetCurrentDamage(chargeHitActor, caster);
 				actorHitResults2.SetBaseDamage(currentDamage);
 				actorHitResults2.AddStandardEffectInfo(GetEnemyHitEffect());
-				// TODO SENSEI
-				// rogues
+				
+				// rogues - this ability does not use generic ability system in reactor
 				// GenericAbility_Container.CalcIntFieldValues(chargeHitActor, caster, actorContext, abilityContext, m_cachedOnHitData.m_enemyHitIntFields, numericHitResultScratch);
 				// GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults2, numericHitResultScratch);
 				// GenericAbility_Container.SetKnockbackFieldsOnHitResults(chargeHitActor, caster, actorContext, abilityContext, actorHitResults2, m_cachedOnHitData.m_enemyHitKnockbackFields);

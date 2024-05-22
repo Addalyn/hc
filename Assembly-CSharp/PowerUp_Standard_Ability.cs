@@ -30,6 +30,7 @@ public class PowerUp_Standard_Ability : Ability
 	// removed in rogues
 	[Tooltip("Credits to give to each actor on the team of the actor who ran over the powerup (including the picker-upper).")]
 	public int m_teamCredits;
+	// TODO POWERUPS unused
 	public int m_objectivePointAdjust_casterTeam;
 	public int m_objectivePointAdjust_enemyTeam;
 	public bool m_applyEffect;
@@ -38,11 +39,10 @@ public class PowerUp_Standard_Ability : Ability
 	public StatusType[] m_permanentStatusChanges;
 	public bool m_awardCoins;
 
-	// added in rogues
-//#if SERVER
-//	public OnHitAuthoredData OnHitData;
-//#endif
+	// rogues
+	// public OnHitAuthoredData OnHitData;
 
+	// TODO POWERUPS
 	// removed in rogues
 	[Separator("Extra Effects, for one-off powerups", true)]
 	public List<ExtraEffectApplyData> m_extraEffectsToApply;
@@ -80,30 +80,31 @@ public class PowerUp_Standard_Ability : Ability
 			AbilityResults = new AbilityResults(null, this, null, true, false)
 		});
 		AppendToActorHitResults(powerUp, actorHitResults, targetActor, powerupMod, effectSourceOverride, isDirectActorHit);
-		ActorHitContext actorContext = new ActorHitContext();
-		ContextVars abilityContext = new ContextVars();
-		NumericHitResultScratch numericHitResultScratch = new NumericHitResultScratch();
-		// TODO POWERUPS
-		// rogues?
-		//GenericAbility_Container.SetEffectTemplateFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_effectTemplateFields);
-		//if (targetActor.GetTeam() == powerUp.PickupTeam || !powerUp.m_restrictPickupByTeam)
-		//{
-		//	GenericAbility_Container.CalcIntFieldValues(targetActor, targetActor, actorContext, abilityContext, OnHitData.m_allyHitIntFields, numericHitResultScratch);
-		//	//GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
-		//	GenericAbility_Container.SetKnockbackFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_allyHitKnockbackFields);
-		//	GenericAbility_Container.SetCooldownReductionFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_allyHitCooldownReductionFields, 1);
-		//	GenericAbility_Container.SetEffectFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_allyHitEffectFields);
-		//	//GenericAbility_Container.SetEffectTemplateFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_allyHitEffectTemplateFields);
-		//}
-		//else
-		//{
-		//	GenericAbility_Container.CalcIntFieldValues(targetActor, targetActor, actorContext, abilityContext, OnHitData.m_enemyHitIntFields, numericHitResultScratch);
-		//	//GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
-		//	GenericAbility_Container.SetKnockbackFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_enemyHitKnockbackFields);
-		//	GenericAbility_Container.SetCooldownReductionFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_enemyHitCooldownReductionFields, 1);
-		//	GenericAbility_Container.SetEffectFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_enemyHitEffectFields);
-		//	//GenericAbility_Container.SetEffectTemplateFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_enemyHitEffectTemplateFields);
-		//}
+		
+		// rogues
+		// ActorHitContext actorContext = new ActorHitContext();
+		// ContextVars abilityContext = new ContextVars();
+		// NumericHitResultScratch numericHitResultScratch = new NumericHitResultScratch();
+		// GenericAbility_Container.SetEffectTemplateFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_effectTemplateFields);
+		// if (targetActor.GetTeam() == powerUp.PickupTeam || !powerUp.m_restrictPickupByTeam)
+		// {
+		// 	GenericAbility_Container.CalcIntFieldValues(targetActor, targetActor, actorContext, abilityContext, OnHitData.m_allyHitIntFields, numericHitResultScratch);
+		// 	GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
+		// 	GenericAbility_Container.SetKnockbackFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_allyHitKnockbackFields);
+		// 	GenericAbility_Container.SetCooldownReductionFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_allyHitCooldownReductionFields, 1);
+		// 	GenericAbility_Container.SetEffectFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_allyHitEffectFields);
+		// 	GenericAbility_Container.SetEffectTemplateFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_allyHitEffectTemplateFields);
+		// }
+		// else
+		// {
+		// 	GenericAbility_Container.CalcIntFieldValues(targetActor, targetActor, actorContext, abilityContext, OnHitData.m_enemyHitIntFields, numericHitResultScratch);
+		// 	GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
+		// 	GenericAbility_Container.SetKnockbackFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_enemyHitKnockbackFields);
+		// 	GenericAbility_Container.SetCooldownReductionFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_enemyHitCooldownReductionFields, 1);
+		// 	GenericAbility_Container.SetEffectFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_enemyHitEffectFields);
+		// 	GenericAbility_Container.SetEffectTemplateFieldsOnHitResults(targetActor, targetActor, actorContext, abilityContext, actorHitResults, OnHitData.m_enemyHitEffectTemplateFields);
+		// }
+		
 		return actorHitResults;
 	}
 #endif
