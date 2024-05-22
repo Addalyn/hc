@@ -4,64 +4,44 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-// TODO ROGUES serializable fields added, probably they are for rogues but who knows
+// More stuff was added in rogues
 [Serializable]
 public class OnHitAuthoredData
 {
-	// added in rogues
-//#if SERVER
-//	[Header("-- For All Hits --")]
-//	public List<OnHitEffectTemplateField> m_effectTemplateFields = new List<OnHitEffectTemplateField>();
-//#endif
+	// rogues
+	// [Header("-- For All Hits --")]
+	// public List<OnHitEffectTemplateField> m_effectTemplateFields = new List<OnHitEffectTemplateField>();
 
 	[Header("-- For Enemy Hits --")]
 	public List<OnHitIntField> m_enemyHitIntFields = new List<OnHitIntField>();
 
-	// added in rogues
-//#if SERVER
-//	public List<OnHitKnockbackField> m_enemyHitKnockbackFields = new List<OnHitKnockbackField>();
-//#endif
-
-	// added in rogues
-//#if SERVER
-//	public List<OnHitCooldownReductionField> m_enemyHitCooldownReductionFields = new List<OnHitCooldownReductionField>();
-//#endif
-
+	// rogues
+	// public List<OnHitKnockbackField> m_enemyHitKnockbackFields = new List<OnHitKnockbackField>();
+	// public List<OnHitCooldownReductionField> m_enemyHitCooldownReductionFields = new List<OnHitCooldownReductionField>();
+	
 	public List<OnHitEffecField> m_enemyHitEffectFields = new List<OnHitEffecField>();
 
-	// added in rogues
-//#if SERVER
-//	public List<OnHitEffectTemplateField> m_enemyHitEffectTemplateFields = new List<OnHitEffectTemplateField>();
-//#endif
-
+	// rogues
+	// public List<OnHitEffectTemplateField> m_enemyHitEffectTemplateFields = new List<OnHitEffectTemplateField>();
+	
 	[Header("-- For Ally Hits --")]
 	public List<OnHitIntField> m_allyHitIntFields = new List<OnHitIntField>();
 
-	// added in rogues
-//#if SERVER
-//	public List<OnHitKnockbackField> m_allyHitKnockbackFields = new List<OnHitKnockbackField>();
-//#endif
-
-	// added in rogues
-//#if SERVER
-//	public List<OnHitCooldownReductionField> m_allyHitCooldownReductionFields = new List<OnHitCooldownReductionField>();
-//#endif
+	// rogues
+	// public List<OnHitKnockbackField> m_allyHitKnockbackFields = new List<OnHitKnockbackField>();
+	// public List<OnHitCooldownReductionField> m_allyHitCooldownReductionFields = new List<OnHitCooldownReductionField>();
 
 	public List<OnHitEffecField> m_allyHitEffectFields = new List<OnHitEffecField>();
 
 	// added in rogues
-//#if SERVER
-//	public List<OnHitEffectTemplateField> m_allyHitEffectTemplateFields = new List<OnHitEffectTemplateField>();
-//#endif
-
+	// public List<OnHitEffectTemplateField> m_allyHitEffectTemplateFields = new List<OnHitEffectTemplateField>();
+	
 	[Header("-- For Barriers --")]
 	public List<OnHitBarrierField> m_barrierSpawnFields = new List<OnHitBarrierField>();
 
-	// added in rogues
-	//#if SERVER
+	// rogues
 	//	[Header(" -- For Ground Effects --")]
 	//	public List<OnHitGroundEffectField> m_groundEffectFields = new List<OnHitGroundEffectField>();
-	//#endif
 
 	// added in rogues
 #if SERVER
@@ -76,35 +56,31 @@ public class OnHitAuthoredData
 
 	public void AddTooltipTokens(List<TooltipTokenEntry> tokens)
 	{
-		// rogues?
-		//AddTooltipTokens_EffectTemplateFields(tokens, m_effectTemplateFields);
+		// rogues
+		// AddTooltipTokens_EffectTemplateFields(tokens, m_effectTemplateFields);
 
 		AddTooltipTokens_IntList(tokens, m_enemyHitIntFields);
 
-		// added in rogues
-		//AddTooltipTokens_KnockbackList(tokens, m_enemyHitKnockbackFields);
+		// rogues
+		// AddTooltipTokens_KnockbackList(tokens, m_enemyHitKnockbackFields);
 
 		AddTooltipTokens_EffectFields(tokens, m_enemyHitEffectFields);
 
-		// rogues?
-		//AddTooltipTokens_EffectTemplateFields(tokens, m_enemyHitEffectTemplateFields);
-
-		// added in rogues
-		//AddTooltipTokens_CooldownReductionList(tokens, m_enemyHitCooldownReductionFields);
+		// rogues
+		// AddTooltipTokens_EffectTemplateFields(tokens, m_enemyHitEffectTemplateFields);
+		// AddTooltipTokens_CooldownReductionList(tokens, m_enemyHitCooldownReductionFields);
 
 		AddTooltipTokens_IntList(tokens, m_allyHitIntFields);
 		AddTooltipTokens_EffectFields(tokens, m_allyHitEffectFields);
 
-		// rogues?
-		//AddTooltipTokens_EffectTemplateFields(tokens, m_allyHitEffectTemplateFields);
-
-		// added in rogues
+		// rogues
+		// AddTooltipTokens_EffectTemplateFields(tokens, m_allyHitEffectTemplateFields);
 		//AddTooltipTokens_CooldownReductionList(tokens, m_allyHitCooldownReductionFields);
 
 		AddTooltipTokens_BarrierFields(tokens, m_barrierSpawnFields);
 
-		// added in rogues
-		//AddTooltipTokens_GroundEffectFields(tokens, m_groundEffectFields);
+		// rogues
+		// AddTooltipTokens_GroundEffectFields(tokens, m_groundEffectFields);
 	}
 
 	// removed in rogues
@@ -126,27 +102,23 @@ public class OnHitAuthoredData
 		}
 	}
 
-	// added in rogues
-//#if SERVER
-//	public static void AddTooltipTokens_KnockbackList(List<TooltipTokenEntry> tokens, List<OnHitKnockbackField> intFields)
-//	{
-//		foreach (OnHitKnockbackField field in intFields)
-//		{
-//			field.AddTooltipTokens(tokens);
-//		}
-//	}
-//#endif
+	// rogues
+	// public static void AddTooltipTokens_KnockbackList(List<TooltipTokenEntry> tokens, List<OnHitKnockbackField> intFields)
+	// {
+	// 	foreach (OnHitKnockbackField field in intFields)
+	// 	{
+	// 		field.AddTooltipTokens(tokens);
+	// 	}
+	// }
 
-	// added in rogues
-//#if SERVER
-//	public static void AddTooltipTokens_CooldownReductionList(List<TooltipTokenEntry> tokens, List<OnHitCooldownReductionField> intFields)
-//	{
-//		foreach (OnHitCooldownReductionField field in intFields)
-//		{
-//			field.AddTooltipTokens(tokens);
-//		}
-//	}
-//#endif
+	// rogues
+	// public static void AddTooltipTokens_CooldownReductionList(List<TooltipTokenEntry> tokens, List<OnHitCooldownReductionField> intFields)
+	// {
+	// 	foreach (OnHitCooldownReductionField field in intFields)
+	// 	{
+	// 		field.AddTooltipTokens(tokens);
+	// 	}
+	// }
 
 	public static void AddTooltipTokens_EffectFields(List<TooltipTokenEntry> tokens, List<OnHitEffecField> effectFields)
 	{
@@ -156,14 +128,14 @@ public class OnHitAuthoredData
 		}
 	}
 
-	// rogues?
-	//public static void AddTooltipTokens_EffectTemplateFields(List<TooltipTokenEntry> tokens, List<OnHitEffectTemplateField> effectTemplateFields)
-	//{
-	//	foreach (OnHitEffectTemplateField onHitEffectTemplateField in effectTemplateFields)
-	//	{
-	//		onHitEffectTemplateField.AddTooltipTokens(tokens, false, null, null);
-	//	}
-	//}
+	// rogues
+	// public static void AddTooltipTokens_EffectTemplateFields(List<TooltipTokenEntry> tokens, List<OnHitEffectTemplateField> effectTemplateFields)
+	// {
+	// 	foreach (OnHitEffectTemplateField onHitEffectTemplateField in effectTemplateFields)
+	// 	{
+	// 		onHitEffectTemplateField.AddTooltipTokens(tokens, false, null, null);
+	// 	}
+	// }
 
 	public static void AddTooltipTokens_BarrierFields(List<TooltipTokenEntry> tokens, List<OnHitBarrierField> barrierFields)
 	{
@@ -173,16 +145,14 @@ public class OnHitAuthoredData
 		}
 	}
 
-	// added in rogues
-//#if SERVER
-//	public static void AddTooltipTokens_GroundEffectFields(List<TooltipTokenEntry> tokens, List<OnHitGroundEffectField> groundEffectFields)
-//	{
-//		foreach (OnHitGroundEffectField field in groundEffectFields)
-//		{
-//			field.AddTooltipTokens(tokens);
-//		}
-//	}
-//#endif
+	// rogues
+	// public static void AddTooltipTokens_GroundEffectFields(List<TooltipTokenEntry> tokens, List<OnHitGroundEffectField> groundEffectFields)
+	// {
+	// 	foreach (OnHitGroundEffectField field in groundEffectFields)
+	// 	{
+	// 		field.AddTooltipTokens(tokens);
+	// 	}
+	// }
 
 	public string GetInEditorDesc()
 	{
@@ -208,7 +178,7 @@ public class OnHitAuthoredData
 			text += "\n";
 		}
 
-		// rogues?
+		// rogues
 		//if (m_enemyHitEffectTemplateFields.Count > 0)
 		//{
 		//	text += InEditorDescHelper.ColoredString("==== Enemy (New) Effects ====\n", "yellow", false);
@@ -219,8 +189,6 @@ public class OnHitAuthoredData
 		//	}
 		//	text += "\n";
 		//}
-
-		// added in rogues
 		//if (m_enemyHitKnockbackFields.Count > 0)
 		//{
 		//	text += InEditorDescHelper.ColoredString("==== Enemy Knockbacks ====\n", "yellow", false);
@@ -231,8 +199,6 @@ public class OnHitAuthoredData
 		//	}
 		//	text += "\n";
 		//}
-
-		// added in rogues
 		//if (m_enemyHitCooldownReductionFields.Count > 0)
 		//{
 		//	text += InEditorDescHelper.ColoredString("==== Cooldown Reductions ====\n", "yellow", false);
@@ -265,7 +231,7 @@ public class OnHitAuthoredData
 			text += "\n";
 		}
 
-		// rogues?
+		// rogues
 		//if (m_allyHitEffectTemplateFields.Count > 0)
 		//{
 		//	text += InEditorDescHelper.ColoredString("==== Ally (NEW) Effects ====\n", "yellow", false);
@@ -276,8 +242,6 @@ public class OnHitAuthoredData
 		//	}
 		//	text += "\n";
 		//}
-
-		// added in rogues
 		//if (m_allyHitCooldownReductionFields.Count > 0)
 		//{
 		//	text += InEditorDescHelper.ColoredString("==== Cooldown Reductions ====\n", "yellow", false);
@@ -299,9 +263,8 @@ public class OnHitAuthoredData
 			}
 			text += "\n";
 		}
-
-
-		// rogues?
+		
+		// rogues
 		//if (m_effectTemplateFields.Count > 0)
 		//{
 		//	text += InEditorDescHelper.ColoredString("==== Ability-wide Effect Templates ====\n", "yellow", false);
