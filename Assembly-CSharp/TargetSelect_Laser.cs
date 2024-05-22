@@ -160,11 +160,12 @@ public class TargetSelect_Laser : GenericAbility_TargetSelectBase
         actorsForSequence = AreaEffectUtils.GetActorsInLaser(
             caster.GetLoSCheckPos(),
             targets[0].AimDirection,
-            m_laserRange,
-            m_laserWidth,
+            GetLaserRange(), // m_laserRange in rogues
+            GetLaserWidth(), // m_laserWidth in rogues
             caster,
-            TargeterUtils.GetRelevantTeams(caster, m_includeAllies, m_includeEnemies), m_ignoreLos,
-            m_maxTargets,
+            TargeterUtils.GetRelevantTeams(caster, IncludeAllies(), IncludeEnemies()), //  m_includeAllies, m_includeEnemies in rogues
+            IgnoreLos(), // m_ignoreLos in rogues
+            GetMaxTargets(), // m_maxTargets in rogues
             false,
             true,
             out endPos,
