@@ -1152,7 +1152,7 @@ public class Barrier
 			if (isAlly)
 			{
 				GenericAbility_Container.CalcIntFieldValues(target, caster, actorContext, abilityContext, onHitAuthoredData.m_allyHitIntFields, numericHitResultScratch);
-				//GenericAbility_Container.SetNumericFieldsOnHitResults(hitRes, numericHitResultScratch); // rogues?
+				GenericAbility_Container.SetNumericFieldsOnHitResults(hitRes, numericHitResultScratch);
 				//GenericAbility_Container.SetKnockbackFieldsOnHitResults(target, caster, actorContext, abilityContext, hitRes, onHitAuthoredData.m_allyHitKnockbackFields);
 				//GenericAbility_Container.SetCooldownReductionFieldsOnHitResults(target, caster, actorContext, abilityContext, hitRes, onHitAuthoredData.m_allyHitCooldownReductionFields, numHits);
 				GenericAbility_Container.SetEffectFieldsOnHitResults(target, caster, actorContext, abilityContext, hitRes, onHitAuthoredData.m_allyHitEffectFields);
@@ -1162,7 +1162,7 @@ public class Barrier
 			else
 			{
 				GenericAbility_Container.CalcIntFieldValues(target, caster, actorContext, abilityContext, onHitAuthoredData.m_enemyHitIntFields, numericHitResultScratch);
-				//GenericAbility_Container.SetNumericFieldsOnHitResults(hitRes, numericHitResultScratch); // rogues?
+				GenericAbility_Container.SetNumericFieldsOnHitResults(hitRes, numericHitResultScratch);
 				//GenericAbility_Container.SetKnockbackFieldsOnHitResults(target, caster, actorContext, abilityContext, hitRes, onHitAuthoredData.m_enemyHitKnockbackFields);
 				//GenericAbility_Container.SetCooldownReductionFieldsOnHitResults(target, caster, actorContext, abilityContext, hitRes, onHitAuthoredData.m_enemyHitCooldownReductionFields, numHits);
 				GenericAbility_Container.SetEffectFieldsOnHitResults(target, caster, actorContext, abilityContext, hitRes, onHitAuthoredData.m_enemyHitEffectFields);

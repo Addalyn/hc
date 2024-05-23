@@ -1055,13 +1055,7 @@ public class GenericAbility_Container : Ability
 		{
 			if (TargetFilterHelper.ActorMeetsConditions(onHitEffecField.m_conditions, targetActor, caster, actorContext, abilityContext))
 			{
-				// TODO HACK?
-				// custom
-				StandardEffectInfo effectInfo = onHitEffecField.m_effect.GetShallowCopy();
-				hitRes.AddStandardEffectInfo(effectInfo);
-				// rogues
-				// hitRes.AddStandardEffectInfo(onHitEffecField.m_effect);
-				
+				hitRes.AddStandardEffectInfo(onHitEffecField.m_effect);
 				if (onHitEffecField.m_skipRemainingEffectEntriesIfMatch)
 				{
 					break;
