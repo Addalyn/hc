@@ -149,10 +149,20 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
         base.CalcHitTargets(targets, caster, nonActorTargetInfo);
         bool useCone = ShouldUseCone(targets[0].FreePos, caster);
         Vector3 loSCheckPos = caster.GetLoSCheckPos();
+        Vector3 aimDir = targets[0].AimDirection; // custom
         foreach (ActorData actor in GetHitActors(targets, caster, useCone, nonActorTargetInfo, out _))
         {
             AddHitActor(actor, loSCheckPos);
             SetActorContext(actor, s_cvarInCone.GetKey(), useCone ? 1 : 0);
+            
+            // custom
+            if (useCone)
+            {
+                Vector3 to = actor.GetFreePos() - caster.GetFreePos();
+                to.y = 0f;
+                float angleDegrees = Vector3.Angle(aimDir, to);
+                SetActorContext(actor, ContextKeys.s_AngleFromCenter.GetKey(), angleDegrees);
+            }
         }
     }
 
@@ -166,34 +176,35 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
     {
         Vector3 loSCheckPos = caster.GetLoSCheckPos();
         float coneCenterAngleDegrees = VectorUtils.HorizontalAngle_Deg(targets[0].AimDirection);
-        List<Team> affectedTeams = m_coneInfo.GetAffectedTeams(caster);
         List<ActorData> result;
         if (useCone)
         {
+            ConeTargetingInfo coneInfo = GetConeInfo(); // custom
             result = AreaEffectUtils.GetActorsInCone(loSCheckPos,
                 coneCenterAngleDegrees,
-                m_coneInfo.m_widthAngleDeg,
-                m_coneInfo.m_radiusInSquares,
-                m_coneInfo.m_backwardsOffset,
-                m_coneInfo.m_penetrateLos,
+                coneInfo.m_widthAngleDeg, // m_coneInfo in rogues
+                coneInfo.m_radiusInSquares, // m_coneInfo in rogues
+                coneInfo.m_backwardsOffset, // m_coneInfo in rogues
+                coneInfo.m_penetrateLos, // m_coneInfo in rogues
                 caster,
-                affectedTeams,
+                coneInfo.GetAffectedTeams(caster), // m_coneInfo.GetAffectedTeams(caster) in rogues
                 nonActorTargetInfo);
             endPosIfLaser = targets[0].FreePos;
         }
         else
         {
+            LaserTargetingInfo laserInfo = GetLaserInfo(); // custom
             VectorUtils.LaserCoords laserCoords;
             laserCoords.start = loSCheckPos;
             result = AreaEffectUtils.GetActorsInLaser(
                 laserCoords.start,
                 targets[0].AimDirection,
-                m_laserInfo.range,
-                m_laserInfo.width,
+                laserInfo.range, // m_laserInfo in rogues
+                laserInfo.width, // m_laserInfo in rogues
                 caster,
-                affectedTeams,
-                m_laserInfo.penetrateLos,
-                m_laserInfo.maxTargets,
+                laserInfo.GetAffectedTeams(caster), // m_coneInfo.GetAffectedTeams(caster) in rogues
+                laserInfo.penetrateLos, // m_laserInfo in rogues
+                laserInfo.maxTargets, // m_laserInfo in rogues
                 false,
                 true,
                 out laserCoords.end,
@@ -221,11 +232,12 @@ public class TargetSelect_ConeOrLaser : GenericAbility_TargetSelectBase
 
         if (useCone)
         {
+            ConeTargetingInfo coneInfo = GetConeInfo(); // custom
             sequenceParams.Add(new BlasterStretchConeSequence.ExtraParams
             {
                 forwardAngle = VectorUtils.HorizontalAngle_Deg(targets[0].AimDirection),
-                angleInDegrees = m_coneInfo.m_widthAngleDeg,
-                lengthInSquares = m_coneInfo.m_radiusInSquares
+                angleInDegrees = coneInfo.m_widthAngleDeg, // m_coneInfo in rogues
+                lengthInSquares = coneInfo.m_radiusInSquares // m_coneInfo in rogues
             });
         }
 
