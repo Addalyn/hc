@@ -181,7 +181,7 @@ public class TargetSelect_Laser : GenericAbility_TargetSelectBase
             GetNonActorSpecificContext().SetValue(ContextKeys.s_KnockbackOrigin.GetKey(), knockbackOriginFromLaser);
         }
 
-        if (m_includeCaster && !actorsForSequence.Contains(caster))
+        if (IncludeCaster() && !actorsForSequence.Contains(caster))
         {
             actorsForSequence.Add(caster);
         }
@@ -225,7 +225,7 @@ public class TargetSelect_Laser : GenericAbility_TargetSelectBase
         
         list.Add(new ServerClientUtils.SequenceStartData(
             m_castSequencePrefab,
-            Board.Get().GetSquareFromVec3(endPos), // TODO ICEBORG Board.Get().GetSquare(targets[0].GridPos) in rogues
+            Board.Get().GetSquareFromVec3(endPos), // Board.Get().GetSquare(targets[0].GridPos) in rogues
             actorsForSequence.ToArray(),
             caster,
             additionalData.m_sequenceSource,
