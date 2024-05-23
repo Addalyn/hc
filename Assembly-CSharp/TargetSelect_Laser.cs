@@ -12,10 +12,10 @@ public class TargetSelect_Laser : GenericAbility_TargetSelectBase
     public float m_laserWidth = 1f;
     public int m_maxTargets;
     [Separator("AoE around start")]
-    public float m_aoeRadiusAroundStart; // TODO ICEBORG removed in rogues
+    public float m_aoeRadiusAroundStart; // TODO GENERICABILITY removed in rogues
     [Separator("Sequences")]
     public GameObject m_castSequencePrefab;
-    public GameObject m_aoeAtStartSequencePrefab; // TODO ICEBORG removed in rogues
+    public GameObject m_aoeAtStartSequencePrefab; // TODO GENERICABILITY removed in rogues
 
     private TargetSelectMod_Laser m_targetSelMod; // removed in rogues
 

@@ -278,7 +278,7 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
             float sqrDistToEnd = (actorData.GetLoSCheckPos() - targetPos).sqrMagnitude;
             bool inStartAoe = sqrDitToStart <= m_radiusAroundStart * m_radiusAroundStart;
             bool inEndAoe = sqrDistToEnd <= m_radiusAroundEnd * m_radiusAroundEnd;
-            // TODO ICEBORG variables don't match the ones from reactor
+            // TODO LOW variables don't match the ones from reactor
             SetActorContext(actorData, s_cvarInStart.GetKey(), inStartAoe ? 1 : 0);
             SetActorContext(actorData, s_cvarInEnd.GetKey(), inEndAoe ? 1 : 0);
         }

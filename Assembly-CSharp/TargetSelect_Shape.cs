@@ -19,7 +19,7 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
     public bool m_canTargetOnEnemies = true;
     public bool m_canTargetOnAllies = true;
     public bool m_canTargetOnSelf = true;
-    public bool m_ignoreLosToTargetActor; // TODO ICEBORG removed in rogues
+    public bool m_ignoreLosToTargetActor; // removed in rogues
     [Separator("Show targeter arc?")]
     public bool m_showTargeterArc;
     [Separator("Use Move Shape Targeter? (for moving a shape similar to Grey drone)")]
@@ -32,7 +32,7 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
     public CenterSquareDelegate m_centerSquareDelegate;
     public IsMovingShapeDelegate m_isMovingShapeDelegate;
     public GetMoveStartSquareDelegate m_moveStartSquareDelegate;
-    public GetMoveStartFreePosDelegate m_moveStartFreePosDelegate; // TODO ICEBORG removed in rogues
+    public GetMoveStartFreePosDelegate m_moveStartFreePosDelegate; // TODO GENERICABILITY removed in rogues
 
     private const string c_shapeLayer = "ShapeLayer";
     public static ContextNameKeyPair s_cvarShapeLayer = new ContextNameKeyPair("ShapeLayer");
