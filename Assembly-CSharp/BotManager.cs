@@ -391,11 +391,11 @@ public class BotManager : MonoBehaviour
 		}
 	}
 
-	// rogues
-	// private void SortPvEBotsToProcess()
-	// {
-	// 	this.m_pveBotsToProcess.Sort(new Comparison<ActorData>(this.TurnPriorityComparison));
-	// }
+	
+	private void SortPvEBotsToProcess()
+	{
+		m_pveBotsToProcess.Sort(TurnPriorityComparison);
+	}
 
 	private int DecisionPriorityComparison(ActorData a1, ActorData a2)
 	{
@@ -420,12 +420,15 @@ public class BotManager : MonoBehaviour
 		return num.CompareTo(value);
 	}
 
-	// rogues
-	// private int TurnPriorityComparison(ActorData a1, ActorData a2)
-	// {
-	// 	int value = (a1 != null) ? a1.TurnPriority : 0;
-	// 	return ((a2 != null) ? a2.TurnPriority : 0).CompareTo(value);
-	// }
+	private int TurnPriorityComparison(ActorData a1, ActorData a2)
+	{
+		// custom
+		CharacterRole value = a1 != null ? a1.GetCharacterResourceLink().m_characterRole : CharacterRole.None;
+		return value.CompareTo(a2 != null ? a2.GetCharacterResourceLink().m_characterRole : CharacterRole.None);
+		// rogues
+		// int value = (a1 != null) ? a1.TurnPriority : 0;
+		// return ((a2 != null) ? a2.TurnPriority : 0).CompareTo(value);
+	}
 	
 	// custom
 	public void OnTurnStart()
@@ -473,7 +476,7 @@ public class BotManager : MonoBehaviour
 		{
 			UpdateBrainStack();
 			ChoosePvEBotBrainParameters();
-			// this.SortPvEBotsToProcess();
+			SortPvEBotsToProcess();
 			foreach (ActorData actorData2 in m_pveBotsToProcess)
 			{
 				BotController component2 = actorData2.GetComponent<BotController>();
