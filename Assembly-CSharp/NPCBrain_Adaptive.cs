@@ -3896,7 +3896,11 @@ public class NPCBrain_Adaptive : NPCBrain
 			ActorCover component = actorData.GetComponent<ActorCover>();
 			if (component != null)
 			{
-				score += component.CoverRating(boardSquare) * 70f;  // CoverRating(boardSquare, 100f) in rogues
+				// custom
+				float coverScore = GetCoverScore(component, boardSquare);
+				score += coverScore;
+				// rogues
+				// score += CoverRating(boardSquare, 100f) 
 			}
 			if (!WillHaveLOSToAlliesFromSquare(actorData, boardSquare))
 			{
@@ -4026,7 +4030,11 @@ public class NPCBrain_Adaptive : NPCBrain
 			ActorCover component = actorData.GetComponent<ActorCover>();
 			if (component != null)
 			{
-				score += component.CoverRating(boardSquare) * 40f;  // CoverRating(boardSquare, 100f) in rogues
+				// custom
+				float coverScore = GetCoverScore(component, boardSquare);
+				score += coverScore;
+				// rogues
+				// score += CoverRating(boardSquare, 100f) 
 			}
 			// if (boardSquare.OccupantActor != null && boardSquare.OccupantActor != actorData)
 			// {
@@ -4069,6 +4077,39 @@ public class NPCBrain_Adaptive : NPCBrain
 			turnSM.SelectMovementSquareForMovement(bestSquare); // , true in rogues
 			BotManager.Get().SelectDestination(actorData, bestSquare);
 		}
+	}
+
+	// custom
+	private static float GetCoverScore(ActorCover component, BoardSquare boardSquare)
+	{
+		float coverRating = component.CoverRating(boardSquare);
+		float coverScore;
+		if (coverRating > 3)
+		{
+			coverScore = 95;
+		}
+		else if (coverRating > 2)
+		{
+			coverScore = 90;
+		}
+		else if (coverRating > 1)
+		{
+			coverScore = 80;
+		}
+		else if (coverRating > 0.5f)
+		{
+			coverScore = 50;
+		}
+		else if (coverRating > 0)
+		{
+			coverScore = 25;
+		}
+		else
+		{
+			coverScore = 0;
+		}
+
+		return coverScore;
 	}
 
 	// added in rogues
