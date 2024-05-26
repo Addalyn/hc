@@ -91,6 +91,8 @@ public class SenseiYingYangDash : Ability
 			m_myActionType = abilityData.GetActionTypeOfAbility(this);
 		}
 		m_passive = GetPassiveOfType(typeof(Passive_Sensei)) as Passive_Sensei;
+		// custom
+		ClearTargeters();
 #endif
 		
 		SetCachedFields();
