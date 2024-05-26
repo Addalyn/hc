@@ -1179,7 +1179,8 @@ public class NPCBrain_Adaptive : NPCBrain
 		
 		if (actorData.GetCharacterResourceLink().m_characterRole != CharacterRole.Tank
 		    && actorData.GetHitPointPercent() > 0.9f
-		    && actorData.TechPoints < 100)
+		    && actorData.TechPoints < 100
+		    && actorData.m_characterType != CharacterType.Sensei) // custom
 		{
 			choice.score *= 0.5f;
 			choice.reasoning += "Not a frontline & over 90% hp: Dividing score by 2.\n";
