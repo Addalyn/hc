@@ -24,7 +24,10 @@ public class IceborgSelfShield : GenericAbility_Container
 	public override string GetUsageForEditor()
 	{
 		string usageForEditor = base.GetUsageForEditor();
-		return usageForEditor + ContextVars.GetContextUsageStr(ContextKeys.s_CasterLowHealth.GetName(), "set to 1 if caster is low health, 0 otherwise", false);
+		return usageForEditor + ContextVars.GetContextUsageStr(
+			ContextKeys.s_CasterLowHealth.GetName(), 
+			"set to 1 if caster is low health, 0 otherwise",
+			false);
 	}
 
 	protected override void SetupTargetersAndCachedVars()
@@ -78,4 +81,21 @@ public class IceborgSelfShield : GenericAbility_Container
 	{
 		m_abilityMod = null;
 	}
+	
+#if SERVER
+	// custom
+	protected override void PreProcessForCalcAbilityHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		Dictionary<ActorData, ActorHitContext> actorHitContextMap,
+		ContextVars abilityContext)
+	{
+		base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
+
+		if (m_syncComp.m_selfShieldLowHealthOnTurnStart)
+		{
+			abilityContext.SetValue(ContextKeys.s_CasterLowHealth.GetKey(), 1);
+		}
+	}
+#endif
 }

@@ -4,14 +4,14 @@ using AbilityContextNamespace;
 public class IceborgConeOrLaser : GenericAbility_Container
 {
 	[Separator("Shielding per enemy hit on cast")]
-	public int m_shieldPerEnemyHit;
-	public int m_shieldDuration = 1;
+	public int m_shieldPerEnemyHit; // TODO ICEBORG unused in any mods
+	public int m_shieldDuration = 1; // TODO ICEBORG unused in any mods
 	[Separator("Apply Nova effect?")]
 	public bool m_applyDelayedAoeEffect;
 	public bool m_skipDelayedAoeEffectIfHasExisting;
 	[Separator("Cdr Per Hit Enemy with Nova Core")]
 	public int m_cdrPerEnemyWithNovaCore;
-	public static ContextNameKeyPair s_cvarHasSlow = new ContextNameKeyPair("HasSlow");
+	public static ContextNameKeyPair s_cvarHasSlow = new ContextNameKeyPair("HasSlow"); // TODO ICEBORG unused in any mods
 
 	private Iceborg_SyncComponent m_syncComp;
 	private AbilityMod_IceborgConeOrLaser m_abilityMod;
@@ -19,9 +19,13 @@ public class IceborgConeOrLaser : GenericAbility_Container
 
 	public override string GetUsageForEditor()
 	{
-		string usageForEditor = base.GetUsageForEditor();
-		usageForEditor += ContextVars.GetContextUsageStr(s_cvarHasSlow.GetName(), "Set on enemies hit, 1 if has Slow, 0 otherwise");
-		return usageForEditor + ContextVars.GetContextUsageStr(Iceborg_SyncComponent.s_cvarHasNova.GetName(), "set to 1 if target has nova core on start of turn, 0 otherwise");
+		return base.GetUsageForEditor()
+		       + ContextVars.GetContextUsageStr( // TODO ICEBORG unused in any mods
+			       s_cvarHasSlow.GetName(),
+			       "Set on enemies hit, 1 if has Slow, 0 otherwise")
+		       + ContextVars.GetContextUsageStr(
+			       Iceborg_SyncComponent.s_cvarHasNova.GetName(),
+			       "set to 1 if target has nova core on start of turn, 0 otherwise");
 	}
 
 	public override List<string> GetContextNamesForEditor()
@@ -59,7 +63,8 @@ public class IceborgConeOrLaser : GenericAbility_Container
 			m_syncComp.AddTooltipTokens(tokens);
 		}
 	}
-
+	
+	// TODO ICEBORG unused in any mods
 	public int GetShieldPerEnemyHit()
 	{
 		return m_abilityMod != null
@@ -67,6 +72,7 @@ public class IceborgConeOrLaser : GenericAbility_Container
 			: m_shieldPerEnemyHit;
 	}
 
+	// TODO ICEBORG unused in any mods
 	public int GetShieldDuration()
 	{
 		return m_abilityMod != null
@@ -180,4 +186,80 @@ public class IceborgConeOrLaser : GenericAbility_Container
 	{
 		m_abilityMod = null;
 	}
+
+#if SERVER
+	// custom
+	protected override void PreProcessForCalcAbilityHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		Dictionary<ActorData, ActorHitContext> actorHitContextMap,
+		ContextVars abilityContext)
+	{
+		base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
+
+		foreach (ActorData hitActor in actorHitContextMap.Keys)
+		{
+			actorHitContextMap[hitActor].m_contextVars.SetValue(
+				Iceborg_SyncComponent.s_cvarHasNova.GetKey(),
+				m_syncComp.HasNovaCore(hitActor) ? 1 : 0);
+		}
+	}
+
+	// custom
+	protected override void ProcessGatheredHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		AbilityResults abilityResults,
+		List<ActorHitResults> actorHitResults,
+		List<PositionHitResults> positionHitResults,
+		List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		AbilityData abilityData = GetComponent<AbilityData>();
+		ActorHitResults casterHitResults = null;
+		
+		int targetsWithNovaCoreNum = 0;
+		foreach (ActorHitResults actorHitResult in actorHitResults)
+		{
+			ActorData hitActor = actorHitResult.m_hitParameters.Target;
+
+			if (hitActor == caster)
+			{
+				casterHitResults = actorHitResult;
+				continue;
+			}
+			
+			bool hasNovaCore = m_syncComp.HasNovaCore(hitActor);
+
+			if (ApplyDelayedAoeEffect() && (!SkipDelayedAoeEffectIfHasExisting() || !hasNovaCore))
+			{
+				actorHitResult.AddEffect(
+					m_syncComp.CreateNovaCoreEffect(
+						AsEffectSource(),
+						hitActor.GetCurrentBoardSquare(),
+						hitActor,
+						caster));
+			}
+
+			if (hasNovaCore)
+			{
+				targetsWithNovaCoreNum++;
+			}
+		}
+		
+		int cdr = targetsWithNovaCoreNum * GetCdrPerEnemyWithNovaCore();
+		if (cdr > 0)
+		{
+			if (casterHitResults == null) // never happens though
+			{
+				ActorHitParameters casterHitParams = new ActorHitParameters(caster, caster.GetFreePos());
+				casterHitResults = new ActorHitResults(casterHitParams);
+			}
+			
+			casterHitResults.AddMiscHitEvent(
+				new MiscHitEventData_AddToCasterCooldown(
+					abilityData.GetActionTypeOfAbility(this),
+					-1 * cdr));
+		}
+	}
+#endif
 }

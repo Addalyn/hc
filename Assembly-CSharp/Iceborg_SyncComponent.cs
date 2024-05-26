@@ -18,18 +18,18 @@ public class Iceborg_SyncComponent : NetworkBehaviour
 	[Separator("(Normal) Nova Trigger On Hit Data. Context Var [NovaCenter] is 1 if enemy has core, 0 otherwise", "yellow")]
 	public OnHitAuthoredData m_delayedAoeOnHitData;
 	[Separator("Shield per delayed aoe hit")]
-	public int m_delayedAoeShieldPerEnemyHit;
-	public int m_delayedAoeShieldPerExplosion;
-	public int m_delayedAoeShieldDuration = 1;
+	public int m_delayedAoeShieldPerEnemyHit; // TODO ICEBORG usused, always 0
+	public int m_delayedAoeShieldPerExplosion; // TODO ICEBORG usused, always 0
+	public int m_delayedAoeShieldDuration = 1; // TODO ICEBORG unused because above
 	[Separator("Energy Gain on Delayed Aoe Trigger")]
 	public int m_delayedAoeEnergyPerEnemyHit;
 	public int m_delayedAoeEnergyPerExplosion;
 	[Separator("Sequences for delayed Aoe Effect")]
 	public GameObject m_delayedAoePersistentSeqPrefab;
 	public GameObject m_delayedAoeTriggerSeqPrefab;
-	public GameObject m_empoweredDelayedAoeTriggerSeqPrefab;
+	public GameObject m_empoweredDelayedAoeTriggerSeqPrefab; // TODO ICEBORG unused, was not used for when Iceborg has might
 	[Header("-- for when shielding is applied to caster on beginning of turn")]
-	public GameObject m_delayedAoeShieldApplySeqPrefab;
+	public GameObject m_delayedAoeShieldApplySeqPrefab; // TODO ICEBORG unused, shields are 0
 
 	internal int m_clientDetonateNovaUsedTurn = -1;
 
@@ -46,15 +46,23 @@ public class Iceborg_SyncComponent : NetworkBehaviour
 	[SyncVar]
 	internal Vector3 m_damageAreaFreePos;
 	[SyncVar]
-	internal short m_numNovaEffectsOnTurnStart;
+	internal short m_numNovaEffectsOnTurnStart; // TODO ICEBORG not set, needed for unused abilities
 	[SyncVar]
 	internal bool m_selfShieldLowHealthOnTurnStart;
 
 	private static int kListm_actorsWithNovaCore = 1707706451;
 	
 #if SERVER
+	// custom
+	private StandardActorEffectData m_cachedNovaCenterEffectData;
+	// custom
+	private StandardActorEffectData m_cachedNovaCenterEffectDataFake; // dummy for repeated application
     // custom
-    private StandardActorEffectData m_cachedNovaCenterEffectData;
+    internal HashSet<ActorData> m_actorsHitByDamageAreaOnPrevTurn = new HashSet<ActorData>();
+    // custom
+    internal HashSet<ActorData> m_actorsReceivingNovaCoreThisTurn = new HashSet<ActorData>();
+    // custom
+    internal HashSet<ActorData> m_actorsReceivingNovaCoreThisTurn_Fake = new HashSet<ActorData>();
 #endif
 
 	public short Networkm_damageFieldLastCastTurn
@@ -115,6 +123,16 @@ public class Iceborg_SyncComponent : NetworkBehaviour
 	private void Start()
 	{
 		m_cachedNovaTriggerDamage = m_delayedAoeOnHitData.GetFirstDamageValue();
+#if SERVER
+		// custom
+        m_cachedNovaCenterEffectData = new StandardActorEffectData();
+        m_cachedNovaCenterEffectData.InitWithDefaultValues();
+        m_cachedNovaCenterEffectData.m_effectName = "NovaCoreVisualEffect";
+        m_cachedNovaCenterEffectData.m_duration = m_delayedAoeDuration + 1;
+        m_cachedNovaCenterEffectData.m_sequencePrefabs = new[] { m_delayedAoePersistentSeqPrefab };
+        m_cachedNovaCenterEffectDataFake = new StandardActorEffectData();
+        m_cachedNovaCenterEffectDataFake.InitWithDefaultValues();
+#endif
 	}
 
 	public void AddTooltipTokens(List<TooltipTokenEntry> tokens)
@@ -148,7 +166,6 @@ public class Iceborg_SyncComponent : NetworkBehaviour
 		if (actorHitContext.ContainsKey(targetActor) && caster.GetTeam() != targetActor.GetTeam())
 		{
 			actorHitContext[targetActor].m_contextVars.SetValue(s_cvarHasNova.GetKey(), HasNovaCore(targetActor) ? 1 : 0);
-			
 		}
 	}
 
@@ -353,52 +370,35 @@ public class Iceborg_SyncComponent : NetworkBehaviour
 		m_actorsWithNovaCore.Remove((uint)actorIndex);
 	}
 
-	// custom
-	public void ClearNovaCoreActors() 
-	{
-		m_actorsWithNovaCore.Clear();
-	}
-
-	// custom
-    public StandardActorEffectData GetNovaCoreEffectData()
-    {
-        if (m_cachedNovaCenterEffectData == null)
-        {
-			m_cachedNovaCenterEffectData = new StandardActorEffectData();
-            m_cachedNovaCenterEffectData.SetValues(
-	            "NovaCoreVisualEffect",
-	            2,
-	            0,
-	            0,
-	            0,
-	            ServerCombatManager.HealingType.Effect,
-	            0,
-	            0,
-	            new AbilityStatMod[0],
-	            new StatusType[0],
-	            StandardActorEffectData.StatusDelayMode.DefaultBehavior);
-            m_cachedNovaCenterEffectData.m_sequencePrefabs = new[] { m_delayedAoePersistentSeqPrefab };
-        }
-        return m_cachedNovaCenterEffectData;
-    }
-
     // custom
-    public IceborgNovaCoreEffect CreateNovaCoreEffect(
+    public StandardActorEffect CreateNovaCoreEffect(
 	    EffectSource effectSource,
 	    BoardSquare targetSquare,
 	    ActorData target,
-	    ActorData caster,
-	    int extraEnergy = 0) 
-	{
-        return new IceborgNovaCoreEffect(
-	        effectSource,
-	        targetSquare,
-	        target,
-	        caster,
-	        GetNovaCoreEffectData(),
-	        GetNovaCoreTriggerDamage(),
-	        m_delayedAoeTriggerSeqPrefab,
-	        extraEnergy);
-	}
+	    ActorData caster)
+    {
+	    HashSet<ActorData> set = ServerActionBuffer.Get().GatheringFakeResults
+		    ? m_actorsReceivingNovaCoreThisTurn_Fake 
+		    : m_actorsReceivingNovaCoreThisTurn;
+	    if (set.Add(target))
+	    {
+		    return new IceborgNovaCoreEffect(
+			    effectSource,
+			    targetSquare,
+			    target,
+			    caster,
+			    m_cachedNovaCenterEffectData);
+	    }
+	    else
+	    {
+		    // dummy for repeated application
+		    return new StandardActorEffect(
+			    effectSource,
+			    targetSquare,
+			    target,
+			    caster,
+			    m_cachedNovaCenterEffectDataFake);
+	    }
+    }
 #endif
 }

@@ -1,18 +1,20 @@
 ﻿using System.Collections.Generic;
+using AbilityContextNamespace;
 using UnityEngine;
 
 #if SERVER
 // custom
 public class IceborgNovaOnReactEffect : StandardActorEffect
 {
-    private int m_damageAmount;
+    private OnHitAuthoredData m_hitData;
+    private bool m_reactRequireDamage;
     private int m_energyOnTargetPerReaction;
     private int m_energyOnCasterPerReaction;
-    private int m_extraEnergyPerNovaCoreTrigger;
     private Iceborg_SyncComponent m_syncComp;
     private GameObject m_onTriggerSeqPrefab;
     private List<ActorData> m_actorsHitThisTurn;
     private List<ActorData> m_actorsHitThisTurn_fake;
+    private bool m_endEarlyIfTriggered;
     private bool m_endEarly;
 
     public IceborgNovaOnReactEffect(
@@ -20,22 +22,24 @@ public class IceborgNovaOnReactEffect : StandardActorEffect
         BoardSquare targetSquare, 
         ActorData target, 
         ActorData caster, 
-        StandardActorEffectData data, 
-        int damageAmount, 
+        StandardActorEffectData data,
+        bool endEarlyIfTriggered,
+        OnHitAuthoredData hitData, 
+        bool reactRequireDamage,
         GameObject onTriggerSeqPrefab,
         int energyOnTargetPerReaction,
-        int energyOnCasterPerReaction,
-        int extraEnergyPerNovaCoreTrigger) : base(parent, targetSquare, target, caster, data)
+        int energyOnCasterPerReaction)
+        : base(parent, targetSquare, target, caster, data)
     {
         m_actorsHitThisTurn = new List<ActorData>();
         m_actorsHitThisTurn_fake = new List<ActorData>();
-        m_damageAmount = damageAmount;
+        m_endEarlyIfTriggered = endEarlyIfTriggered;
+        m_hitData = hitData;
+        m_reactRequireDamage = reactRequireDamage;
         m_syncComp = parent.Ability.GetComponent<Iceborg_SyncComponent>();
         m_onTriggerSeqPrefab = onTriggerSeqPrefab;
         m_energyOnTargetPerReaction = energyOnTargetPerReaction;
         m_energyOnCasterPerReaction = energyOnCasterPerReaction;
-        m_extraEnergyPerNovaCoreTrigger = extraEnergyPerNovaCoreTrigger;
-        m_endEarly = false;
     }
 
     public override void OnTurnStart()
@@ -50,7 +54,7 @@ public class IceborgNovaOnReactEffect : StandardActorEffect
         ref List<AbilityResults_Reaction> reactions,
         bool isReal)
     {
-        if (!incomingHit.HasDamage)
+        if (!incomingHit.HasDamage && m_reactRequireDamage)
         {
             return;
         }
@@ -70,47 +74,48 @@ public class IceborgNovaOnReactEffect : StandardActorEffect
     private void GetReactionsForCaster(ActorHitResults incomingHit, bool isReal, ref List<AbilityResults_Reaction> reactions)
     {
         // Give energy to caster for each hit
-        if (m_energyOnCasterPerReaction > 0)
+        if (m_energyOnCasterPerReaction <= 0)
         {
-            ActorHitParameters actorHitParameters = new ActorHitParameters(Caster, Caster.GetFreePos());
-            ActorHitResults actorHitResults = new ActorHitResults(m_energyOnCasterPerReaction, HitActionType.TechPointsGain, actorHitParameters);
-            AbilityResults_Reaction targetAbilityResultsReaction = new AbilityResults_Reaction();
-            targetAbilityResultsReaction.SetupGameplayData(
-                this,
-                actorHitResults,
-                incomingHit.m_reactionDepth,
-                null,
-                isReal,
-                incomingHit);
-            targetAbilityResultsReaction.SetupSequenceData(null, Caster.GetCurrentBoardSquare(), SequenceSource);
-            reactions.Add(targetAbilityResultsReaction);
+            return;
         }
+        
+        ActorHitParameters actorHitParameters = new ActorHitParameters(Caster, Caster.GetFreePos());
+        ActorHitResults actorHitResults = new ActorHitResults(m_energyOnCasterPerReaction, HitActionType.TechPointsGain, actorHitParameters);
+        AbilityResults_Reaction targetAbilityResultsReaction = new AbilityResults_Reaction();
+        targetAbilityResultsReaction.SetupGameplayData(
+            this,
+            actorHitResults,
+            incomingHit.m_reactionDepth,
+            null,
+            isReal,
+            incomingHit);
+        targetAbilityResultsReaction.SetupSequenceData(null, Caster.GetCurrentBoardSquare(), SequenceSource);
+        reactions.Add(targetAbilityResultsReaction);
     }
 
     private void GetReactionsForTarget(ActorHitResults incomingHit, bool isReal, ref List<AbilityResults_Reaction> reactions)
     {
         // Give energy to target if needed
-        if (m_energyOnTargetPerReaction > 0)
+        if (m_energyOnTargetPerReaction <= 0)
         {
-            ActorHitParameters targetActorHitParameters = new ActorHitParameters(Target, Target.GetFreePos());
-            ActorHitResults targetActorHitResults = new ActorHitResults(
-                m_energyOnTargetPerReaction,
-                HitActionType.TechPointsGain,
-                targetActorHitParameters);
-            AbilityResults_Reaction targetAbilityResultsReaction = new AbilityResults_Reaction();
-            targetAbilityResultsReaction.SetupGameplayData(
-                this,
-                targetActorHitResults,
-                incomingHit.m_reactionDepth,
-                null,
-                isReal,
-                incomingHit);
-            targetAbilityResultsReaction.SetupSequenceData(
-                m_onTriggerSeqPrefab,
-                Target.GetCurrentBoardSquare(),
-                SequenceSource);
-            reactions.Add(targetAbilityResultsReaction);
+            return;
         }
+        
+        ActorHitParameters targetActorHitParameters = new ActorHitParameters(Target, Target.GetFreePos());
+        ActorHitResults targetActorHitResults = new ActorHitResults(
+            m_energyOnTargetPerReaction,
+            HitActionType.TechPointsGain,
+            targetActorHitParameters);
+        AbilityResults_Reaction targetAbilityResultsReaction = new AbilityResults_Reaction();
+        targetAbilityResultsReaction.SetupGameplayData(
+            this,
+            targetActorHitResults,
+            incomingHit.m_reactionDepth,
+            null,
+            isReal,
+            incomingHit);
+        targetAbilityResultsReaction.SetupSequenceData(null, Caster.GetCurrentBoardSquare(), SequenceSource);
+        reactions.Add(targetAbilityResultsReaction);
     }
 
     private void GetReactionsForEnemy(ActorHitResults incomingHit, bool isReal, ref List<AbilityResults_Reaction> reactions)
@@ -118,20 +123,35 @@ public class IceborgNovaOnReactEffect : StandardActorEffect
         // Deal damage and give NovaCore Effect
         ActorData incomingHitCaster = incomingHit.m_hitParameters.Caster;
         AbilityResults_Reaction abilityResults_Reaction = new AbilityResults_Reaction();
+        
         ActorHitParameters hitParameters = new ActorHitParameters(incomingHitCaster, Target.GetFreePos());
-        ActorHitResults actorHitResults = new ActorHitResults(
-            m_damageAmount,
-            HitActionType.Damage,
-            (StandardEffectInfo)null,
-            hitParameters);
+        ActorHitResults actorHitResults = new ActorHitResults(hitParameters);
         actorHitResults.CanBeReactedTo = false;
+        NumericHitResultScratch numericHitResultScratch = new NumericHitResultScratch();
+        ActorHitContext actorContext = new ActorHitContext();
+        ContextVars abilityContext = new ContextVars();
+        GenericAbility_Container.CalcIntFieldValues(
+            incomingHitCaster,
+            Caster,
+            actorContext,
+            abilityContext,
+            m_hitData.m_enemyHitIntFields,
+            numericHitResultScratch);
+        GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
+        GenericAbility_Container.SetEffectFieldsOnHitResults(
+            incomingHitCaster,
+            Caster,
+            actorContext,
+            abilityContext,
+            actorHitResults,
+            m_hitData.m_enemyHitEffectFields);
         actorHitResults.AddEffect(
             m_syncComp.CreateNovaCoreEffect(
                 Parent,
                 incomingHitCaster.GetCurrentBoardSquare(),
                 incomingHitCaster,
-                Caster,
-                m_extraEnergyPerNovaCoreTrigger));
+                Caster));
+        
         abilityResults_Reaction.SetupGameplayData(
             this,
             actorHitResults,
@@ -139,8 +159,12 @@ public class IceborgNovaOnReactEffect : StandardActorEffect
             null,
             isReal,
             incomingHit);
-        abilityResults_Reaction.SetupSequenceData(m_onTriggerSeqPrefab, Target.GetCurrentBoardSquare(), SequenceSource);
-        abilityResults_Reaction.SetExtraFlag(ClientReactionResults.ExtraFlags.ClientExecuteOnFirstDamagingHit);
+        abilityResults_Reaction.SetupSequenceData(m_onTriggerSeqPrefab, incomingHitCaster.GetCurrentBoardSquare(), SequenceSource);
+        abilityResults_Reaction.SetSequenceCaster(Target);
+        if (m_reactRequireDamage)
+        {
+            abilityResults_Reaction.SetExtraFlag(ClientReactionResults.ExtraFlags.ClientExecuteOnFirstDamagingHit);
+        }
         reactions.Add(abilityResults_Reaction);
     }
 
@@ -152,7 +176,8 @@ public class IceborgNovaOnReactEffect : StandardActorEffect
         }
         return m_actorsHitThisTurn_fake.Contains(actor);
     }
-
+    
+    // TODO LOW how is it reset for non-real results?
     private void SetWasHitThisTurn(ActorData actor, bool isReal)
     {
         if (isReal)
@@ -165,10 +190,10 @@ public class IceborgNovaOnReactEffect : StandardActorEffect
         }
     }
 
-    public override void OnAbilityAndMovementDone()
+    public override void OnTurnEnd()
     {
-        base.OnAbilityAndMovementDone();
-        if(m_actorsHitThisTurn != null && m_actorsHitThisTurn.Count > 0) 
+        base.OnTurnEnd();
+        if (m_endEarlyIfTriggered && m_actorsHitThisTurn.Count > 0) 
         {
             m_endEarly = true;
         }

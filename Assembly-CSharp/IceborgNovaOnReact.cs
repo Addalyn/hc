@@ -15,7 +15,7 @@ public class IceborgNovaOnReact : GenericAbility_Container
 	[Separator("Passive Bonus Energy Gain for Nova Core Triggering")]
 	public int m_extraEnergyPerNovaCoreTrigger;
 	[Separator("Damage Threshold to apply instance to self on turn start. Ignored if <= 0")]
-	public int m_damageThreshForInstanceOnSelf;
+	public int m_damageThreshForInstanceOnSelf; // TODO ICEBORG unused in any mod
 	[Separator("Sequences")]
 	public GameObject m_reactPersistentSeqPrefab;
 	public GameObject m_reactOnTriggerSeqPrefab;
@@ -109,6 +109,7 @@ public class IceborgNovaOnReact : GenericAbility_Container
 			: m_extraEnergyPerNovaCoreTrigger;
 	}
 
+	// TODO ICEBORG unused in any mod
 	public int GetDamageThreshForInstanceOnSelf()
 	{
 		return m_abilityMod != null
@@ -139,12 +140,7 @@ public class IceborgNovaOnReact : GenericAbility_Container
         base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
 		foreach (ActorHitResults hitResults in actorHitResults)
 		{
-			Log.Info("IceborgNovaOnReact actor hit: " + hitResults.m_hitParameters.Target);
-			IceborgNovaOnReactEffect effect = CreateNovaOnReactEffect(hitResults.m_hitParameters.Target, caster);
-			hitResults.AddEffect(effect);
-
-			OnHitAuthoredData hitData = GetReactOnHitData();
-            Log.Info(hitData.ToString());
+			hitResults.AddEffect(CreateNovaOnReactEffect(hitResults.m_hitParameters.Target, caster));
 		}
     }
 
@@ -152,18 +148,8 @@ public class IceborgNovaOnReact : GenericAbility_Container
     public IceborgNovaOnReactEffect CreateNovaOnReactEffect(ActorData target, ActorData caster)
     {
 		StandardActorEffectData effectData = new StandardActorEffectData();
-		effectData.SetValues(
-			"NovaOnReactEffect",
-			GetReactDuration(),
-			0,
-			0,
-			0,
-			ServerCombatManager.HealingType.Effect,
-			0,
-			0,
-			new AbilityStatMod[0],
-			new StatusType[0],
-			StandardActorEffectData.StatusDelayMode.DefaultBehavior);
+		effectData.InitWithDefaultValues();
+		effectData.m_duration = GetReactDuration();
 		effectData.m_sequencePrefabs = new[] { m_reactPersistentSeqPrefab };
 		return new IceborgNovaOnReactEffect(
 			AsEffectSource(), 
@@ -171,11 +157,12 @@ public class IceborgNovaOnReact : GenericAbility_Container
 			target, 
 			caster, 
 			effectData, 
-			GetReactOnHitData().GetFirstDamageValue(), 
+			ReactEffectEndEarlyIfTriggered(),
+			GetReactOnHitData(),
+			ReactRequireDamage(),
 			m_reactOnTriggerSeqPrefab,
 			GetEnergyOnTargetPerReaction(),
-			GetEnergyOnCasterPerReaction(),
-			GetExtraEnergyPerNovaCoreTrigger());
+			GetEnergyOnCasterPerReaction());
     }
 #endif
 }

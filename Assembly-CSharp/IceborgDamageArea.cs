@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using AbilityContextNamespace;
 using UnityEngine;
 
@@ -13,8 +14,8 @@ public class IceborgDamageArea : GenericAbility_Container
 	public MovementAdjustment m_moveAreaMovementAdjustType;
 	[Separator("Whether to add damage field")]
 	public bool m_addGroundField;
-	public bool m_stopMoversWithSlowStatus;
-	public bool m_stopMoverIfHitPreviousTurn;
+	public bool m_stopMoversWithSlowStatus; // TODO ICEBORG unused, always false
+	public bool m_stopMoverIfHitPreviousTurn; // TODO ICEBORG unused, always false
 	public GroundEffectField m_groundFieldData;
 	[Separator("Extra Damage on Initial Cast")]
 	public int m_extraDamageOnInitialCast;
@@ -23,12 +24,12 @@ public class IceborgDamageArea : GenericAbility_Container
 	[Separator("Min Damage")]
 	public int m_minDamage;
 	[Separator("Shielding per enemy hit on cast")]
-	public int m_shieldPerEnemyHit;
-	public int m_shieldDuration = 1;
+	public int m_shieldPerEnemyHit; // TODO ICEBORG unused, always 0
+	public int m_shieldDuration = 1; // TODO ICEBORG unused, always 0
 	[Separator("Effect to apply if target has been hit by this ability on previous turn")]
 	public StandardEffectInfo m_effectOnEnemyIfHitPreviousTurn;
 	[Separator("Apply Nova effect?")]
-	public bool m_applyDelayedAoeEffect;
+	public bool m_applyDelayedAoeEffect; // TODO ICEBORG unused, always false
 	public bool m_applyNovaCoreIfHitPreviousTurn;
 	[Separator("Animation index for moving field")]
 	public int m_animationIndexForMoveArea;
@@ -47,9 +48,13 @@ public class IceborgDamageArea : GenericAbility_Container
 
 	public override string GetUsageForEditor()
 	{
-		string usageForEditor = base.GetUsageForEditor();
-		usageForEditor += ContextVars.GetContextUsageStr(IceborgConeOrLaser.s_cvarHasSlow.GetName(), "Set on enemies hit, 1 if has Slow, 0 otherwise");
-		return usageForEditor + ContextVars.GetContextUsageStr(s_cvarTurnsSinceInitialCast.GetName(), "turns since initial cast, 0 on first turn", false);
+		return base.GetUsageForEditor()
+		       + ContextVars.GetContextUsageStr(
+			       IceborgConeOrLaser.s_cvarHasSlow.GetName(),
+			       "Set on enemies hit, 1 if has Slow, 0 otherwise")
+		       + ContextVars.GetContextUsageStr(
+			       s_cvarTurnsSinceInitialCast.GetName(),
+			       "turns since initial cast, 0 on first turn", false);
 	}
 
 	public override List<string> GetContextNamesForEditor()
@@ -143,6 +148,7 @@ public class IceborgDamageArea : GenericAbility_Container
 			: m_addGroundField;
 	}
 
+	// TODO ICEBORG unused, always false
 	public bool StopMoversWithSlowStatus()
 	{
 		return m_abilityMod != null
@@ -150,6 +156,7 @@ public class IceborgDamageArea : GenericAbility_Container
 			: m_stopMoversWithSlowStatus;
 	}
 
+	// TODO ICEBORG unused, always false
 	public bool StopMoverIfHitPreviousTurn()
 	{
 		return m_abilityMod != null
@@ -183,6 +190,7 @@ public class IceborgDamageArea : GenericAbility_Container
 			: m_minDamage;
 	}
 
+	// TODO ICEBORG unused, always 0
 	public int GetShieldPerEnemyHit()
 	{
 		return m_abilityMod != null
@@ -190,6 +198,7 @@ public class IceborgDamageArea : GenericAbility_Container
 			: m_shieldPerEnemyHit;
 	}
 
+	// TODO ICEBORG unused, always 0
 	public int GetShieldDuration()
 	{
 		return m_abilityMod != null
@@ -202,6 +211,7 @@ public class IceborgDamageArea : GenericAbility_Container
 		return m_cachedEffectOnEnemyIfHitPreviousTurn ?? m_effectOnEnemyIfHitPreviousTurn;
 	}
 
+	// TODO ICEBORG unused, always false
 	public bool ApplyDelayedAoeEffect()
 	{
 		return m_abilityMod != null
@@ -361,6 +371,20 @@ public class IceborgDamageArea : GenericAbility_Container
 	}
 
 #if SERVER
+
+	public override void Run(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		base.Run(targets, caster, additionalData);
+		
+		BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
+		m_syncComp.Networkm_damageAreaCenterX = (short)targetSquare.x;
+		m_syncComp.Networkm_damageAreaCenterY = (short)targetSquare.y;
+		m_syncComp.Networkm_damageAreaFreePos = targets[0].FreePos;
+	}
+
 	// custom
 	protected override void PreProcessForCalcAbilityHits(
 		List<AbilityTarget> targets,
@@ -370,23 +394,13 @@ public class IceborgDamageArea : GenericAbility_Container
 	{
 		//BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
 		base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
-
-
-		BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
-		m_syncComp.Networkm_damageAreaCenterX = (short)targetSquare.x;
-		m_syncComp.Networkm_damageAreaCenterY = (short)targetSquare.y;
-		m_syncComp.Networkm_damageAreaFreePos = targets[0].FreePos;
-
 		// When casting the ability, we set the context vars and syncvars of the turn it was casted
 		if (!CanCastToMoveArea())
 		{
 			m_syncComp.Networkm_damageFieldLastCastTurn = (short)GameFlowData.Get().CurrentTurn;
-			abilityContext.SetValue(s_cvarTurnsSinceInitialCast.GetKey(), m_syncComp.m_damageFieldLastCastTurn);
 		}
-
-		Log.Info($"minDamage: {GetMinDamage()}, "
-		         + $"groundFieldDamageChangePerTurn: {GetGroundFieldDamageChangePerTurn()}, "
-		         + $"ExtraDamageOnInitialCast: {GetExtraDamageOnInitialCast()}");
+		
+		abilityContext.SetValue(s_cvarTurnsSinceInitialCast.GetKey(), m_syncComp.GetTurnsSinceInitialCast());
 	}
 
 	// custom
@@ -400,44 +414,76 @@ public class IceborgDamageArea : GenericAbility_Container
 	{
 		base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
 
-		if(IsMovingShape(caster))
+		if (IsMovingShape(caster))
 		{
-			ProcessGatheredHitsForMovingShape(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+			ProcessGatheredHitsForMovingShape(
+				targets,
+				caster,
+				abilityResults,
+				actorHitResults,
+				positionHitResults,
+				nonActorTargetInfo);
 		}
 		else
 		{
-            ProcessGatheredHitsForCast(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
-        }
+			ProcessGatheredHitsForCast(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+		}
+
+		if (AddGroundField())
+		{
+			List<ActorData> hitActors = actorHitResults.Select(ahr => ahr.m_hitParameters.Target).ToList();
+			AddDamageAreaEffect(targets, caster, positionHitResults, hitActors);
+		}
 	}
 
-	// custom
 	private void ProcessGatheredHitsForCast(
 		List<AbilityTarget> targets,
 		ActorData caster,
 		AbilityResults abilityResults,
 		List<ActorHitResults> actorHitResults,
 		List<PositionHitResults> positionHitResults,
-		List<NonActorTargetInfo> nonActorTargetInfo) 
+		List<NonActorTargetInfo> nonActorTargetInfo)
 	{
-        BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
+		foreach (ActorHitResults hitResults in actorHitResults)
+		{
+			if (hitResults.m_hitParameters.Target.GetTeam() == caster.GetTeam())
+			{
+				continue;
+			}
+	        
+			hitResults.AddBaseDamage(GetExtraDamageOnInitialCast());
+		}
+	}
+	
+	// custom
+	private void AddDamageAreaEffect(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		List<PositionHitResults> positionHitResults,
+		List<ActorData> alreadyHitActors)
+	{
+		BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
+		Vector3 centerOfShape = AreaEffectUtils.GetCenterOfShape(GetGroundFieldData().shape, targets[0]);
 
-        // Add Damage Area Effect
-        IceborgDamageAreaEffect standardGroundEffect = new IceborgDamageAreaEffect(
-	        AsEffectSource(),
-	        targetSquare,
-	        targets[0].FreePos,
-	        null,
-	        caster,
-	        GetGroundFieldData(),
-	        m_fieldRemoveOnMoveSeqPrefab,
-	        GetGroundFieldDamageChangePerTurn(),
-	        GetExtraDamageOnInitialCast(),
-	        GetMinDamage());
-        PositionHitParameters positionHitParameters = new PositionHitParameters(targets[0].FreePos);
-        positionHitParameters.Caster = caster;
-        PositionHitResults positionHit = new PositionHitResults(standardGroundEffect, positionHitParameters);
-        positionHitResults.Add(positionHit);
-    }
+		// Add Damage Area Effect
+		IceborgDamageAreaEffect standardGroundEffect = new IceborgDamageAreaEffect(
+			AsEffectSource(),
+			targetSquare,
+			targets[0].FreePos,
+			caster,
+			alreadyHitActors,
+			GetGroundFieldData(),
+			GetGroundFieldDamageChangePerTurn(),
+			GetExtraDamageOnInitialCast(),
+			GetMinDamage(),
+			GetEffectOnEnemyIfHitPreviousTurn(),
+			ApplyNovaCoreIfHitPreviousTurn());
+		standardGroundEffect.m_time.duration -= m_syncComp.GetTurnsSinceInitialCast();
+		PositionHitParameters positionHitParameters = new PositionHitParameters(centerOfShape);
+		// positionHitParameters.Caster = caster;
+		PositionHitResults positionHit = new PositionHitResults(standardGroundEffect, positionHitParameters);
+		positionHitResults.Add(positionHit);
+	}
 
 	// custom
 	private void ProcessGatheredHitsForMovingShape(
@@ -451,33 +497,43 @@ public class IceborgDamageArea : GenericAbility_Container
         // If we move the area, we have to modify the damage
         foreach (ActorHitResults hitResults in actorHitResults)
         {
+	        ActorData hitActor = hitResults.m_hitParameters.Target;
+	        if (hitActor.GetTeam() == caster.GetTeam())
+	        {
+		        continue;
+	        }
+	        
             hitResults.AddBaseDamage(GetGroundFieldDamageChangePerTurn() * m_syncComp.GetTurnsSinceInitialCast());
             if (hitResults.BaseDamage < GetMinDamage())
             {
                 hitResults.SetBaseDamage(GetMinDamage());
             }
+
+            if (m_syncComp.m_actorsHitByDamageAreaOnPrevTurn.Contains(hitActor))
+            {
+	            hitResults.AddStandardEffectInfo(GetEffectOnEnemyIfHitPreviousTurn());
+	            if (ApplyNovaCoreIfHitPreviousTurn())
+	            {
+		            hitResults.AddEffect(
+			            m_syncComp.CreateNovaCoreEffect(
+				            AsEffectSource(),
+				            hitActor.GetCurrentBoardSquare(),
+				            hitActor,
+				            caster));
+	            }
+            }
         }
 
-        List<Effect> effects = ServerEffectManager.Get().GetWorldEffectsByCaster(caster, typeof(IceborgDamageAreaEffect));
-        foreach (Effect effect in effects)
+        IceborgDamageAreaEffect effect = ServerEffectManager.Get()
+	        .GetWorldEffectsByCaster(caster, typeof(IceborgDamageAreaEffect))
+	        .FirstOrDefault() as IceborgDamageAreaEffect;
+        if (effect != null)
         {
-            IceborgDamageAreaEffect damageAreaEffect = (IceborgDamageAreaEffect)effect;
-            damageAreaEffect.TargetSquare = Board.Get().GetSquare(targets[0].GridPos);
-
-            // If and actor is going to be hit by the effect this turn, we set damage to 0 for the ability damage to avoid doing double damage
-            foreach (var hitResult in actorHitResults)
-            {
-                if (hitResult.m_hitParameters.Target != null
-                    && damageAreaEffect.IsActorHitThisTurn(hitResult.m_hitParameters.Target, true))
-                {
-                    hitResult.SetBaseDamage(0);
-                }
-            }
-			
-			PositionHitParameters posHitParams = new PositionHitParameters(targets[0].FreePos);
-            PositionHitResults positionHitResults1 = new PositionHitResults(posHitParams);
-			positionHitResults1.AddEffectSequenceToEnd(GetGroundFieldData().persistentSequencePrefab, damageAreaEffect.m_guid);
-			positionHitResults.Add(positionHitResults1);
+	        PositionHitParameters posHitParams = new PositionHitParameters(Vector3.zero);
+	        PositionHitResults positionHitResults1 = new PositionHitResults(posHitParams);
+	        positionHitResults1.AddEffectForRemoval(effect, ServerEffectManager.Get().GetWorldEffects());
+	        // positionHitResults1.AddEffectSequenceToEnd(GetGroundFieldData().persistentSequencePrefab, effect.m_guid);
+	        positionHitResults.Add(positionHitResults1);
         }
     }
 	
@@ -486,37 +542,40 @@ public class IceborgDamageArea : GenericAbility_Container
 	    List<AbilityTarget> targets,
 	    ActorData caster,
 	    ServerAbilityUtils.AbilityRunData additionalData)
-	{
-		var seqDataList = base.GetAbilityRunSequenceStartDataList(targets, caster, additionalData);
+    {
+	    if (!IsMovingShape(caster))
+	    {
+		    return base.GetAbilityRunSequenceStartDataList(targets, caster, additionalData);
+	    }
 
         BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
-		Vector3 shapeCenter = AreaEffectUtils.GetCenterOfShape(GetGroundFieldData().shape, m_syncComp.m_damageAreaFreePos, targetSquare);
-
-		//GameObject persistentPrefab = GetGroundFieldData().persistentSequencePrefab;
-		//seqDataList.Add(new ServerClientUtils.SequenceStartData(prefab, shapeCenter, additionalData.m_abilityResults.HitActorsArray(), caster, additionalData.m_sequenceSource));
-
-		if (IsMovingShape(caster))
+		Vector3 shapeCenter = AreaEffectUtils.GetCenterOfShape(GetGroundFieldData().shape, targets[0].FreePos, targetSquare);
+		return new List<ServerClientUtils.SequenceStartData>
 		{
-            //seqDataList.Add(new ServerClientUtils.SequenceStartData(m_fieldRemoveOnMoveSeqPrefab, targetSquare, additionalData.m_abilityResults.HitActorsArray(), caster, additionalData.m_sequenceSource));
-            seqDataList.Add(
-	            new ServerClientUtils.SequenceStartData(
-		            m_moveFieldSeqPrefab,
-		            shapeCenter,
-		            additionalData.m_abilityResults.HitActorsArray(),
-		            caster,
-		            additionalData.m_sequenceSource));
-            SequenceSource src = ServerEffectManager.Get().GetWorldEffectsByCaster(caster, typeof(IceborgDamageAreaEffect))[0].SequenceSource;
-
-            ServerClientUtils.SequenceStartData persistentSequenceStartData = new ServerClientUtils.SequenceStartData(
-	            GetGroundFieldData().persistentSequencePrefab,
-	            shapeCenter,
-	            null,
-	            caster,
-	            src);
-            seqDataList.Add(persistentSequenceStartData);
-        }
-		
-        return seqDataList;
+			new ServerClientUtils.SequenceStartData(
+				m_moveFieldSeqPrefab,
+				shapeCenter,
+				additionalData.m_abilityResults.HitActorsArray(),
+				caster,
+				additionalData.m_sequenceSource,
+				new Sequence.IExtraSequenceParams[]
+				{
+					new SplineProjectileSequence.DelayedProjectileExtraParams
+					{
+						useOverrideStartPos = true,
+						overrideStartPos = Board.Get().GetSquareFromIndex(
+							m_syncComp.m_damageAreaCenterX,
+							m_syncComp.m_damageAreaCenterY)
+							.ToVector3()
+					}
+				}),
+			new ServerClientUtils.SequenceStartData(
+				m_fieldRemoveOnMoveSeqPrefab,
+				Vector3.zero, 
+				null,
+				caster,
+				additionalData.m_sequenceSource)
+		};
     }
 #endif
 }

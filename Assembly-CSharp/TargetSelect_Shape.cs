@@ -305,12 +305,12 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
         List<List<ActorData>> hitActors = GetHitActors(targets, caster, nonActorTargetInfo);
         BoardSquare shapeCenterSquare = GetShapeCenterSquare(targets[0], caster);
         Vector3 centerOfShape = AreaEffectUtils.GetCenterOfShape(GetShape(), targets[0].FreePos, shapeCenterSquare);
-        ContextVars nonActorSpecificContext = GetNonActorSpecificContext();
+        // ContextVars nonActorSpecificContext = GetNonActorSpecificContext();
         // nonActorSpecificContext.SetValue(m_centerPosContextKey.GetKey(), centerOfShape);
-        List<BarrierPoseInfo> barrierPosesForRegularPolygon = BarrierPoseInfo.GetBarrierPosesForRegularPolygon(
-            centerOfShape,
-            AreaEffectUtils.GetNumberOfSidesForShape(GetShape()),
-            AreaEffectUtils.GetWidthForShape(GetShape()) * 0.5f * Board.SquareSizeStatic);
+        // List<BarrierPoseInfo> barrierPosesForRegularPolygon = BarrierPoseInfo.GetBarrierPosesForRegularPolygon(
+        //     centerOfShape,
+        //     AreaEffectUtils.GetNumberOfSidesForShape(GetShape()),
+        //     AreaEffectUtils.GetWidthForShape(GetShape()) * 0.5f * Board.SquareSizeStatic);
         //if (!barrierPosesForRegularPolygon.IsNullOrEmpty())
         //{
         //    nonActorSpecificContext.SetValue(s_cvarShapeSideWidth.GetKey(), barrierPosesForRegularPolygon[0].widthInWorld);
@@ -333,7 +333,7 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
         BoardSquare moveStartSquare = GetMoveStartSquare(targets[0], caster);
         if (isMovingShape && moveStartSquare != null)
         {
-            Vector3 vector = moveStartSquare.ToVector3();
+            Vector3 vector = GetMoveStartFreePos(targets[0], caster); // moveStartSquare.ToVector3() in rogues
             Vector3 endPos = centerOfShape;
             List<Team> relevantTeams = TargeterUtils.GetRelevantTeams(caster, IncludeAllies(), IncludeEnemies());
             List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(

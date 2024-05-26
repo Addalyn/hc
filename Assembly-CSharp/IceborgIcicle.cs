@@ -8,8 +8,8 @@ public class IceborgIcicle : GenericAbility_Container
 	[Separator("Energy on caster if target has nova core on start of turn")]
 	public int m_energyOnCasterIfTargetHasNovaCore;
 	[Separator("Cdr if has hit (applied to Cdr Target Ability)")]
-	public int m_cdrIfHasHit;
-	public AbilityData.ActionType m_cdrTargetAbility = AbilityData.ActionType.ABILITY_2;
+	public int m_cdrIfHasHit; // TODO ICEBORG unused in any mods
+	public AbilityData.ActionType m_cdrTargetAbility = AbilityData.ActionType.ABILITY_2; // TODO ICEBORG unused in any mods
 
 	private Iceborg_SyncComponent m_syncComp;
 	private AbilityMod_IceborgIcicle m_abilityMod;
@@ -23,7 +23,10 @@ public class IceborgIcicle : GenericAbility_Container
 
 	public override string GetUsageForEditor()
 	{
-		return base.GetUsageForEditor() + ContextVars.GetContextUsageStr(Iceborg_SyncComponent.s_cvarHasNova.GetName(), "set to 1 if target has nova core on start of turn, 0 otherwise");
+		return base.GetUsageForEditor()
+		       + ContextVars.GetContextUsageStr(
+			       Iceborg_SyncComponent.s_cvarHasNova.GetName(),
+			       "set to 1 if target has nova core on start of turn, 0 otherwise");
 	}
 
 	protected override void SetupTargetersAndCachedVars()
@@ -93,6 +96,7 @@ public class IceborgIcicle : GenericAbility_Container
 			: m_energyOnCasterIfTargetHasNovaCore;
 	}
 
+	// TODO ICEBORG unused in any mods
 	public int GetCdrIfHasHit()
 	{
 		return m_abilityMod != null
@@ -127,10 +131,6 @@ public class IceborgIcicle : GenericAbility_Container
                 actorHitContextMap[hitActor].m_contextVars.SetValue(Iceborg_SyncComponent.s_cvarHasNova.GetKey(), 1);
             }
         }
-		if (m_abilityMod != null) 
-		{
-			Log.Info($"status thing: {m_abilityMod.m_useStatusWhenRequestedOverride}");
-        }
     }
 
 	// custom
@@ -142,17 +142,24 @@ public class IceborgIcicle : GenericAbility_Container
 	    List<PositionHitResults> positionHitResults,
 	    List<NonActorTargetInfo> nonActorTargetInfo)
     {
-		foreach (var actorHitResult in actorHitResults)
+		foreach (ActorHitResults actorHitResult in actorHitResults)
 		{
 			ActorData hitActor = actorHitResult.m_hitParameters.Target;
+
+			if (hitActor.GetTeam() == caster.GetTeam())
+			{
+				continue;
+			}
 
 			if (m_syncComp.HasNovaCore(hitActor))
 			{
 				actorHitResult.AddTechPointGainOnCaster(GetEnergyOnCasterIfTargetHasNovaCore());
 			}
-			actorHitResult.AddTechPointGainOnCaster(100);
-			actorHitResult.AddEffect(m_syncComp.CreateNovaCoreEffect(AsEffectSource(), hitActor.GetCurrentBoardSquare(), hitActor, caster));
-			m_syncComp.AddNovaCoreActorIndex(hitActor.ActorIndex);
+
+			if (m_applyDelayedAoeEffect)
+			{
+				actorHitResult.AddEffect(m_syncComp.CreateNovaCoreEffect(AsEffectSource(), hitActor.GetCurrentBoardSquare(), hitActor, caster));
+			}
         }
     }
 #endif
