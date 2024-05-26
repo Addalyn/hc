@@ -72,6 +72,9 @@ public class NekoFlipDash : Ability
 
 	private void Setup()
 	{
+#if SERVER
+		ClearTargeters(); // custom
+#endif
 		SetCachedFields();
 		m_syncComp = GetComponent<Neko_SyncComponent>();
 		m_throwDiscTargeterIndex = -1;
