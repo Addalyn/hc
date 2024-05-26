@@ -3863,7 +3863,7 @@ public class NPCBrain_Adaptive : NPCBrain
 					}
 					else if (distanceToActor > optimalRange - 1f)
 					{
-						score += 90f - Mathf.Pow(distanceToActor - (optimalRange - 2f), 1.25f);
+						score += 90f - Mathf.Pow(distanceToActor - (optimalRange - 2f), 2.5f); // power 1.25 in rogues
 					}
 					else
 					{
@@ -3935,7 +3935,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		ActorMovement actorMovement = actorData.GetActorMovement();
 		ActorTurnSM turnSM = actorData.GetActorTurnSM();
 		HydrogenConfig config = HydrogenConfig.Get();
-		HashSet<BoardSquare> nonSprintSquares = actorMovement.SquaresCanMoveToWithQueuedAbility;
+		// HashSet<BoardSquare> nonSprintSquares = actorMovement.SquaresCanMoveToWithQueuedAbility;
 		if (optimalRange < 4.5f)
 		{
 			optimalRange = 4.5f;
@@ -3973,22 +3973,27 @@ public class NPCBrain_Adaptive : NPCBrain
 				// float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor)); // rogues
 				if (otherActor.GetTeam() == actorData.GetTeam())
 				{
+					float optimalAllyRange = 7.5f; // custom, optimalAllyRange = optimalRange in rogues
 					float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(BotManager.Get().GetPendingDestinationOrCurrentSquare(otherActor, actorData)); // custom
-					if (distanceToActor < optimalRange - 2f)
+					float allyScore;
+					if (distanceToActor < optimalAllyRange - 2f)
 					{
-						score += 90f * distanceToActor / (1f * optimalRange - 2f);
+						allyScore = 90f * distanceToActor / (1f * optimalAllyRange - 2f);
 					}
-					else if (distanceToActor > optimalRange - 1f)
+					else if (distanceToActor > optimalAllyRange - 1f)
 					{
-						score += 90f - Mathf.Pow(distanceToActor - (optimalRange - 2f), 1.25f);
+						allyScore = 90f - Mathf.Pow(distanceToActor - (optimalAllyRange - 2f), 1.25f);
 					}
 					else
 					{
-						score += 100f - (optimalRange - 3f) * Mathf.Abs(distanceToActor - (optimalRange - 3f));
+						allyScore = 100f - (optimalAllyRange - 3f) * Mathf.Abs(distanceToActor - (optimalAllyRange - 3f));
 					}
+					
+					score += allyScore;
 				}
-				else
+				else if (GetEnemyPlayerAliveAndVisibleMultiplier(otherActor) > 0 || GameFlowData.Get().CurrentTurn == 1) // custom condition
 				{
+					float stayInRangePower = GameFlowData.Get().CurrentTurn <= 2 ? 1.25f : 2.5f; // custom, 1.25f in rogues
 					float distanceToActor = boardSquare.HorizontalDistanceOnBoardTo(otherActor.CurrentBoardSquare); // custom
 					float enemyScore = 0f;
 					if (distanceToActor < optimalRange - 2.5)
@@ -3998,7 +4003,7 @@ public class NPCBrain_Adaptive : NPCBrain
 					}
 					else if (distanceToActor > optimalRange)
 					{
-						enemyScore += 90f - Mathf.Pow(distanceToActor - (optimalRange - 1f), 1.25f);
+						enemyScore += 90f - Mathf.Pow(distanceToActor - (optimalRange - 1f), stayInRangePower);
 					}
 					else
 					{
@@ -4031,7 +4036,7 @@ public class NPCBrain_Adaptive : NPCBrain
 			{
 				score -= 200f;
 			}
-			if (nonSprintSquares.Contains(boardSquare) && hasEnemiesWithinOptimalRange)
+			if (/*nonSprintSquares.Contains(boardSquare) &&*/ hasEnemiesWithinOptimalRange)
 			{
 				score += 70f;
 			}
