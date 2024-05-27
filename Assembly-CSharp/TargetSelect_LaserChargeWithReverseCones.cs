@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using AbilityContextNamespace;
 using UnityEngine;
@@ -39,11 +41,14 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
     public override void Initialize()
     {
         SetCachedFields();
+
+        // removed in rogues
         ConeTargetingInfo coneInfo = GetConeInfo();
         coneInfo.m_affectsAllies = IncludeAllies();
         coneInfo.m_affectsEnemies = IncludeEnemies();
         coneInfo.m_affectsCaster = IncludeCaster();
         coneInfo.m_penetrateLos = IgnoreLos();
+        // end removed in rogues
     }
 
     public override List<AbilityUtil_Targeter> CreateTargeters(Ability ability)
@@ -62,7 +67,7 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
                 GetConeOrigins,
                 GetConeDirections)
             {
-                m_coneLosCheckDelegate = CustomLosForCone
+                m_coneLosCheckDelegate = CustomLosForCone // removed in rogues
             }
         };
     }
@@ -176,6 +181,7 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
         return list;
     }
 
+    // removed in rogues
     public static bool CustomLosForCone(
         ActorData actor,
         ActorData caster,
@@ -190,4 +196,251 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
             true,
             nonActorTargetInfo);
     }
+
+#if SERVER
+    // rogues
+    public override ServerEvadeUtils.ChargeSegment[] GetChargePath(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        ServerAbilityUtils.AbilityRunData additionalData)
+    {
+        Vector3 chargeEndPos = GetChargeEndPos(targets, caster, out _);
+        return new[]
+        {
+            new ServerEvadeUtils.ChargeSegment
+            {
+                m_pos = caster.GetCurrentBoardSquare(),
+                m_cycle = BoardSquarePathInfo.ChargeCycleType.Movement,
+                m_end = BoardSquarePathInfo.ChargeEndType.Impact
+            },
+            new ServerEvadeUtils.ChargeSegment
+            {
+                m_cycle = BoardSquarePathInfo.ChargeCycleType.Movement,
+                m_pos = Board.Get().GetSquareFromVec3(chargeEndPos)
+            }
+        };
+    }
+
+    // rogues
+    private Vector3 GetChargeEndPos(List<AbilityTarget> targets, ActorData caster, out ActorData directHitActor)
+    {
+        Vector3 loSCheckPos = caster.GetLoSCheckPos(caster.GetSquareAtPhaseStart());
+        Vector3 laserEndPoint = VectorUtils.GetLaserEndPoint(
+            loSCheckPos,
+            targets[0].AimDirection,
+            GetLaserRange() * Board.Get().squareSize,
+            false,
+            caster);
+        float magnitude = (laserEndPoint - loSCheckPos).magnitude;
+        List<ActorData> actorsInLaser = AreaEffectUtils.GetActorsInLaser(
+            loSCheckPos,
+            targets[0].AimDirection,
+            magnitude / Board.Get().squareSize,
+            GetLaserWidth(),
+            caster,
+            caster.GetOtherTeams(),
+            true,
+            1,
+            true,
+            true,
+            out laserEndPoint,
+            null);
+        ServerAbilityUtils.RemoveEvadersFromHitTargets(ref actorsInLaser);
+        directHitActor = actorsInLaser.IsNullOrEmpty() ? null : actorsInLaser[0];
+        Vector3 vector = laserEndPoint - loSCheckPos;
+        vector.y = 0f;
+        float magnitude2 = vector.magnitude;
+        vector.Normalize();
+        return laserEndPoint - Mathf.Min(0.5f, magnitude2 / 2f) * vector;
+    }
+
+    // rogues
+    public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        ServerAbilityUtils.AbilityRunData additionalData,
+        Sequence.IExtraSequenceParams[] extraSequenceParams = null)
+    {
+        List<ServerClientUtils.SequenceStartData> list = new List<ServerClientUtils.SequenceStartData>();
+        bool includeCaster = additionalData.m_abilityResults.HitActorList().Contains(caster);
+        GetHitActorsAndHitCount(
+            targets,
+            caster,
+            out List<List<ActorData>> actorsForSequence,
+            out List<Vector3> coneEndPosList,
+            out List<Vector3> coneStartPosList,
+            out _,
+            out ActorData directChargeHit,
+            out Vector3 chargeEndPos,
+            null);
+        list.Add(
+            new ServerClientUtils.SequenceStartData(
+                m_castSequencePrefab,
+                chargeEndPos,
+                directChargeHit != null ? new[] { directChargeHit } : null,
+                caster,
+                additionalData.m_sequenceSource,
+                extraSequenceParams));
+        ConeTargetingInfo coneInfo = GetConeInfo();
+        for (int i = 0; i < actorsForSequence.Count; i++)
+        {
+            list.Add(
+                new ServerClientUtils.SequenceStartData(
+                    m_coneSequencePrefab,
+                    coneStartPosList[i],
+                    actorsForSequence[i].ToArray(),
+                    caster,
+                    additionalData.m_sequenceSource,
+                    new List<Sequence.IExtraSequenceParams>
+                    {
+                        new BlasterStretchConeSequence.ExtraParams
+                        {
+                            lengthInSquares = coneInfo.m_radiusInSquares,
+                            angleInDegrees = coneInfo.m_widthAngleDeg,
+                            forwardAngle = VectorUtils.HorizontalAngle_Deg(coneEndPosList[i] - coneStartPosList[i]),
+                            useStartPosOverride = true,
+                            startPosOverride = coneStartPosList[i]
+                        }
+                    }.ToArray()));
+        }
+
+        if (includeCaster)
+        {
+            list.Add(
+                new ServerClientUtils.SequenceStartData(
+                    SequenceLookup.Get().GetSimpleHitSequencePrefab(),
+                    caster.GetFreePos(),
+                    caster.AsArray(),
+                    caster,
+                    additionalData.m_sequenceSource,
+                    extraSequenceParams));
+        }
+
+        return list;
+    }
+
+    // rogues
+    public override void CalcHitTargets(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        ResetContextData();
+        base.CalcHitTargets(targets, caster, nonActorTargetInfo);
+        Dictionary<ActorData, int> hitActorsAndHitCount = GetHitActorsAndHitCount(
+            targets,
+            caster,
+            out _,
+            out _,
+            out _,
+            out _,
+            out ActorData actorData,
+            out _,
+            nonActorTargetInfo);
+        if (actorData != null)
+        {
+            AddHitActor(actorData, actorData.GetLoSCheckPos());
+            SetActorContext(actorData, s_cvarDirectChargeHit.GetKey(), 1);
+        }
+
+        foreach (ActorData hitActor in hitActorsAndHitCount.Keys)
+        {
+            AddHitActor(hitActor, caster.GetLoSCheckPos(caster.GetSquareAtPhaseStart()));
+            SetActorContext(hitActor, s_cvarDirectChargeHit.GetKey(), 0);
+            SetActorContext(hitActor, ContextKeys.s_HitCount.GetKey(), hitActorsAndHitCount[hitActor]);
+        }
+    }
+
+    // rogues
+    private Dictionary<ActorData, int> GetHitActorsAndHitCount(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        out List<List<ActorData>> actorsForSequence,
+        out List<Vector3> coneEndPosList,
+        out List<Vector3> coneStartPosList,
+        out int numConesWithHits,
+        out ActorData directChargeHit,
+        out Vector3 chargeEndPos,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        actorsForSequence = new List<List<ActorData>>();
+        coneEndPosList = new List<Vector3>();
+        numConesWithHits = 0;
+        Dictionary<ActorData, int> actorToHitCount = new Dictionary<ActorData, int>();
+        chargeEndPos = GetChargeEndPos(targets, caster, out directChargeHit);
+        GetNonActorSpecificContext().SetValue(ContextKeys.s_KnockbackOrigin.GetKey(), chargeEndPos);
+        List<Vector3> coneDirections = GetConeDirections(targets[0], chargeEndPos, caster);
+        coneStartPosList = GetConeOrigins(targets[0], chargeEndPos, caster);
+        ConeTargetingInfo coneInfo = GetConeInfo();
+        for (int i = 0; i < coneDirections.Count; i++)
+        {
+            Vector3 coneDir = coneDirections[i];
+            Vector3 coneOrigin = coneStartPosList[i];
+            List<ActorData> actorsInCone = AreaEffectUtils.GetActorsInCone(
+                coneOrigin,
+                VectorUtils.HorizontalAngle_Deg(coneDir),
+                coneInfo.m_widthAngleDeg,
+                coneInfo.m_radiusInSquares,
+                coneInfo.m_backwardsOffset,
+                coneInfo.m_penetrateLos,
+                caster,
+                TargeterUtils.GetRelevantTeams(caster, coneInfo.m_affectsAllies, coneInfo.m_affectsEnemies),
+                nonActorTargetInfo);
+            ServerAbilityUtils.RemoveEvadersFromHitTargets(ref actorsInCone);
+            if (directChargeHit != null)
+            {
+                actorsInCone.Remove(directChargeHit);
+            }
+
+            if (coneInfo.m_affectsCaster && i == 0)
+            {
+                actorsInCone.Add(caster);
+            }
+
+            foreach (ActorData actorData in actorsInCone.ToArray())
+            {
+                // custom
+                if (!CustomLosForCone(actorData, caster, chargeEndPos, nonActorTargetInfo))
+                // rogues
+                // if (!CustomLosForCone(actorData, caster, nonActorTargetInfo))
+                {
+                    actorsInCone.Remove(actorData);
+                }
+            }
+
+            actorsForSequence.Add(actorsInCone);
+            coneEndPosList.Add(coneOrigin + coneInfo.m_radiusInSquares * Board.SquareSizeStatic * coneDir);
+            if (actorsInCone.Count > 0)
+            {
+                numConesWithHits++;
+            }
+
+            foreach (ActorData actorData in actorsInCone)
+            {
+                if (actorToHitCount.ContainsKey(actorData))
+                {
+                    actorToHitCount[actorData]++;
+                }
+                else
+                {
+                    actorToHitCount[actorData] = 1;
+                }
+            }
+        }
+
+        return actorToHitCount;
+    }
+
+    // rogues
+    protected bool CustomLosForCone(
+        ActorData actor,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        BoardSquare actorSquare = actor.GetCurrentBoardSquare();
+        BoardSquare casterSquare = caster.GetCurrentBoardSquare();
+        return casterSquare.GetLOS(actorSquare.x, actorSquare.y)
+               && !BarrierManager.Get().AreAbilitiesBlocked(caster, casterSquare, actorSquare, nonActorTargetInfo);
+    }
+#endif
 }
