@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using AbilityContextNamespace;
 using UnityEngine;
@@ -8,6 +10,7 @@ public class TargetSelect_LayerCones : GenericAbility_TargetSelectBase
 
     [Separator("Targeting Properties")]
     public float m_coneWidthAngle = 90f;
+    // public float m_backwardsDistanceOffset; // rogues
     public List<float> m_coneRadiusList;
     [Separator("Sequences")]
     public GameObject m_coneSequencePrefab;
@@ -48,7 +51,7 @@ public class TargetSelect_LayerCones : GenericAbility_TargetSelectBase
             ability,
             GetConeWidthAngle(),
             m_cachedRadiusList,
-            0f,
+            0f, // m_backwardsDistanceOffset in rogues
             IgnoreLos());
         targeter.SetAffectedGroups(IncludeEnemies(), IncludeAllies(), IncludeCaster());
         return new List<AbilityUtil_Targeter> { targeter };
@@ -92,4 +95,124 @@ public class TargetSelect_LayerCones : GenericAbility_TargetSelectBase
     {
         m_targetSelMod = null;
     }
+    
+#if SERVER
+    // rogues
+    public override List<ServerClientUtils.SequenceStartData> CreateSequenceStartData(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        ServerAbilityUtils.AbilityRunData additionalData,
+        Sequence.IExtraSequenceParams[] extraSequenceParams = null)
+    {
+        List<Sequence.IExtraSequenceParams> sequenceExtraParams = new List<Sequence.IExtraSequenceParams>();
+        if (extraSequenceParams != null)
+        {
+            sequenceExtraParams.AddRange(extraSequenceParams);
+        }
+
+        BlasterStretchConeSequence.ExtraParams extraParams = new BlasterStretchConeSequence.ExtraParams
+        {
+            angleInDegrees = GetConeWidthAngle(),
+            forwardAngle = VectorUtils.HorizontalAngle_Deg(targets[0].AimDirection),
+            lengthInSquares = GetMaxConeRadius()
+        };
+        
+        // rogues, offset is 0 in reactor
+        // if (!Mathf.Approximately(m_backwardsDistanceOffset, 0f))
+        // {
+        //     extraParams.useStartPosOverride = true;
+        //     extraParams.startPosOverride =
+        //         targets[0].FreePos - targets[0].AimDirection.normalized * m_backwardsDistanceOffset;
+        // }
+
+        sequenceExtraParams.Add(extraParams);
+        return new List<ServerClientUtils.SequenceStartData>
+        {
+            new ServerClientUtils.SequenceStartData(
+                m_coneSequencePrefab,
+                caster.GetCurrentBoardSquare(),
+                additionalData.m_abilityResults.HitActorsArray(),
+                caster,
+                additionalData.m_sequenceSource,
+                sequenceExtraParams.ToArray())
+        };
+    }
+    
+    // rogues
+    public override void CalcHitTargets(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        ResetContextData();
+        base.CalcHitTargets(targets, caster, nonActorTargetInfo);
+        Vector3 vector = caster.GetLoSCheckPos();
+        Vector3 aimDirection = targets[0].AimDirection;
+        
+        // rogues, offset is 0 in reactor
+        // if (!Mathf.Approximately(m_backwardsDistanceOffset, 0f))
+        // {
+        //     vector = caster.GetLoSCheckPos() - aimDirection.normalized * m_backwardsDistanceOffset;
+        // }
+
+        float coneCenterAngleDegrees = VectorUtils.HorizontalAngle_Deg(aimDirection);
+        int numActiveLayers = GetNumActiveLayers();
+        GetNonActorSpecificContext().SetValue(ContextKeys.s_LayersActive.GetKey(), numActiveLayers);
+        foreach (ActorData actorData in GetConeHitActors(targets, caster, nonActorTargetInfo))
+        {
+            AddHitActor(actorData, vector);
+            for (int i = 0; i < m_cachedRadiusList.Count && i < numActiveLayers; i++)
+            {
+                if (AreaEffectUtils.IsSquareInConeByActorRadius(
+                        actorData.GetCurrentBoardSquare(),
+                        vector,
+                        coneCenterAngleDegrees,
+                        GetConeWidthAngle(),
+                        m_cachedRadiusList[i],
+                        0f,
+                        IgnoreLos(),
+                        caster))
+                {
+                    SetActorContext(actorData, ContextKeys.s_Layer.GetKey(), i);
+                    break;
+                }
+            }
+        }
+    }
+
+    // rogues
+    private List<ActorData> GetConeHitActors(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        Vector3 aimDirection = targets[0].AimDirection;
+        float coneCenterAngleDegrees = VectorUtils.HorizontalAngle_Deg(aimDirection);
+        Vector3 vector = caster.GetLoSCheckPos();
+        
+        // rogues, offset is 0 in reactor
+        // if (!Mathf.Approximately(m_backwardsDistanceOffset, 0f))
+        // {
+        //     vector = caster.GetLoSCheckPos() - aimDirection.normalized * m_backwardsDistanceOffset;
+        // }
+
+        List<ActorData> actorsInCone = AreaEffectUtils.GetActorsInCone(
+            vector,
+            coneCenterAngleDegrees,
+            GetConeWidthAngle(),
+            GetMaxConeRadius(),
+            0f,
+            IgnoreLos(),
+            caster,
+            TargeterUtils.GetRelevantTeams(caster, IncludeAllies(), IncludeEnemies()),
+            nonActorTargetInfo);
+        if (IncludeCaster() && !actorsInCone.Contains(caster))
+        {
+            actorsInCone.Add(caster);
+        }
+
+        TargeterUtils.SortActorsByDistanceToPos(ref actorsInCone, vector);
+        return actorsInCone;
+    }
+#endif
 }
