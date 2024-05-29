@@ -577,5 +577,23 @@ public class IceborgDamageArea : GenericAbility_Container
 				additionalData.m_sequenceSource)
 		};
     }
+	
+    // custom
+    public override void OnExecutedActorHit_Ability(ActorData caster, ActorData target, ActorHitResults results)
+    {
+	    if (results.AppliedStatus(StatusType.Rooted) || results.AppliedStatus(StatusType.Snared))
+	    {
+		    caster.GetFreelancerStats().IncrementValueOfStat(FreelancerStats.IceborgStats.NumSlowsPlusRootsApplied);
+	    }
+    }
+
+    // custom
+    public override void OnExecutedActorHit_General(ActorData caster, ActorData target, ActorHitResults results)
+    {
+	    if (results.FinalDamage > 0)
+	    {
+		    caster.GetFreelancerStats().AddToValueOfStat(FreelancerStats.IceborgStats.UltDamage, results.FinalDamage);
+	    }
+    }
 #endif
 }

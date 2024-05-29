@@ -44,25 +44,6 @@ public class IceborgNovaCoreEffect : StandardActorEffect
         }
     }
 
-    // public override void OnAbilityPhaseEnd(AbilityPriority phase)
-    // {
-    //     base.OnAbilityPhaseEnd(phase);
-    //     if (m_wasHitThisTurn && phase == AbilityPriority.Combat_Final)
-    //     {
-    //         m_readyToEnd = true;
-    //     }
-    // }
-    //
-    // public override bool ShouldEndEarly()
-    // {
-    //     return base.ShouldEndEarly() || m_readyToEnd;
-    // }
-
-    // public override List<ServerClientUtils.SequenceStartData> GetEffectHitSeqDataList()
-    // {
-    //     return new List<ServerClientUtils.SequenceStartData>();
-    // }
-
     public override bool ShouldForceReactToHit(ActorHitResults incomingHit)
     {
         return m_syncComp.m_delayedAoeCanReactToIndirectHits;
@@ -170,7 +151,6 @@ public class IceborgNovaCoreEffect : StandardActorEffect
             : m_wasHitThisTurn_fake;
     }
 
-    // TODO LOW how is it reset for non-real results?
     private void SetWasHitThisTurn(bool wasHitThisTurn, bool isReal)
     {
         if (isReal)
@@ -187,6 +167,16 @@ public class IceborgNovaCoreEffect : StandardActorEffect
     {
         base.OnEnd();
         m_syncComp.RemoveNovaCoreActorIndex(TargetActorIndex);
+    }
+
+    public override void OnTurnEnd()
+    {
+        base.OnTurnEnd();
+
+        if (GetWasHitThisTurn(true))
+        {
+            Caster.GetFreelancerStats().IncrementValueOfStat(FreelancerStats.IceborgStats.NumCoresTriggered);
+        }
     }
 }
 #endif

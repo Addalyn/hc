@@ -117,10 +117,10 @@ public class FreelancerStats : NetworkBehaviour
 	// removed in rogues
 	public enum IceborgStats
 	{
-		NumCoresTriggered,
-		NumSlowsPlusRootsApplied,
-		UltDamage,
-		SelfShieldEffectiveShielding
+		NumCoresTriggered, // How many [^Cryo Cores^] were detonated.
+		NumSlowsPlusRootsApplied, // How many enemies were [^slowed^] or [^rooted^] by your abilities.
+		UltDamage, // How much damage you dealt to enemies with [ABILITY_4].
+		SelfShieldEffectiveShielding // How much damage you absorbed with [ABILITY_3].
 	}
 
 	public enum MantaStats

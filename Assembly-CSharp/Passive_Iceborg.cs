@@ -1,6 +1,5 @@
 using System.Linq;
 
-// TODO ICEBORG freelancer stats
 // TODO ICEBORG bot
 // empty in reactor
 public class Passive_Iceborg : Passive

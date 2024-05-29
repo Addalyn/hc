@@ -162,5 +162,14 @@ public class IceborgIcicle : GenericAbility_Container
 			}
         }
     }
+	
+    // custom
+    public override void OnExecutedActorHit_Ability(ActorData caster, ActorData target, ActorHitResults results)
+    {
+	    if (results.AppliedStatus(StatusType.Rooted) || results.AppliedStatus(StatusType.Snared))
+	    {
+		    caster.GetFreelancerStats().IncrementValueOfStat(FreelancerStats.IceborgStats.NumSlowsPlusRootsApplied);
+	    }
+    }
 #endif
 }

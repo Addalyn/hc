@@ -261,5 +261,14 @@ public class IceborgConeOrLaser : GenericAbility_Container
 					-1 * cdr));
 		}
 	}
+	
+	// custom
+	public override void OnExecutedActorHit_Ability(ActorData caster, ActorData target, ActorHitResults results)
+	{
+		if (results.AppliedStatus(StatusType.Rooted) || results.AppliedStatus(StatusType.Snared))
+		{
+			caster.GetFreelancerStats().IncrementValueOfStat(FreelancerStats.IceborgStats.NumSlowsPlusRootsApplied);
+		}
+	}
 #endif
 }

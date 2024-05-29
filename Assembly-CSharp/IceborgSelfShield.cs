@@ -97,5 +97,20 @@ public class IceborgSelfShield : GenericAbility_Container
 			abilityContext.SetValue(ContextKeys.s_CasterLowHealth.GetKey(), 1);
 		}
 	}
+	
+	// custom
+	public override void OnExecutedActorHit_Ability(ActorData caster, ActorData target, ActorHitResults results)
+	{
+		if (results.AppliedStatus(StatusType.Rooted) || results.AppliedStatus(StatusType.Snared))
+		{
+			caster.GetFreelancerStats().IncrementValueOfStat(FreelancerStats.IceborgStats.NumSlowsPlusRootsApplied);
+		}
+	}
+	
+	// custom
+	public override void OnEffectAbsorbedDamage(ActorData effectCaster, int damageAbsorbed)
+	{
+		effectCaster.GetFreelancerStats().AddToValueOfStat(FreelancerStats.IceborgStats.SelfShieldEffectiveShielding, damageAbsorbed);
+	}
 #endif
 }
