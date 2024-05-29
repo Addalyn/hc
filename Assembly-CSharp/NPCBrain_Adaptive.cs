@@ -1018,7 +1018,13 @@ public class NPCBrain_Adaptive : NPCBrain
 				break;
 			}
 			case AbilityUtil_Targeter_AoE_AroundActor _:
+			case AbilityUtil_Targeter_MultipleShapes _: // custom
 			{
+				if (thisAbility.Targeter is AbilityUtil_Targeter_MultipleShapes && !(thisAbility is IceborgNovaOnReact)) // custom
+				{
+					goto default;
+				}
+				
 				List<ActorData> allies = GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam());
 				List<AbilityTarget> tempTargetList = new List<AbilityTarget>();
 				foreach (ActorData ally in allies)
@@ -3315,6 +3321,14 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 				float factor = IsLikelyToDash(target, true) ? 0.3f : 1f;
 				float damageScore = ConvertDamageToScore(caster, target, (int)(baseAbility.m_knockbackDamage * factor));
+				potentialChoice.score += damageScore;
+				potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
+				return true;
+			}
+			case IceborgNovaOnReactEffect _:
+			{
+				// TODO BOTS ICEBORG prefer teammates that are likely to be targeted
+				int damageScore = 7;
 				potentialChoice.score += damageScore;
 				potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
 				return true;
