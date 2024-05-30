@@ -35,6 +35,10 @@ public class NPCBrain_Adaptive : NPCBrain
 	public MovementType m_movementType;
 	// added in rogues
 	public float m_optimalRange = 7.5f;
+	
+	// custom
+	// TODO LOW bouncing laser math explodes when zero vectors get normalized
+	private const float c_angleShiftRad = 0.005f;
 #endif
 	
 	public int[] m_allowedAbilities;
@@ -213,7 +217,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		float step = 360f / numDegrees;
 		for (int i = 0; i < numDegrees; i++)
 		{
-			float angleRad = Mathf.Deg2Rad * i * step;
+			float angleRad = Mathf.Deg2Rad * i * step + c_angleShiftRad;
 			float sin = Mathf.Sin(angleRad);
 			float cos = Mathf.Cos(angleRad);
 			Vector3 targetWorldPos = pos;
