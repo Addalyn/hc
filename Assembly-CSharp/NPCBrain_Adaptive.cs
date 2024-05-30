@@ -3315,6 +3315,23 @@ public class NPCBrain_Adaptive : NPCBrain
 				potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
 				return true;
 			}
+			case MantaDirtyFightingEffect mantaEffect:
+			{
+				if (GetEnemyPlayerAliveAndVisibleMultiplier(target) <= 0f)
+				{
+					return false;
+				}
+				potentialChoice.score += mantaEffect.m_damageAmount;
+				potentialChoice.reasoning += $"Added {mantaEffect.m_damageAmount} score for projected damage.\n";
+				if (IsLikelyToDash(target, true))
+				{
+					int dashBonus = 16;
+					potentialChoice.score += dashBonus;
+					potentialChoice.reasoning += $"Added {dashBonus} score for potential dash.\n";
+				}
+
+				return false; // also process standard effect data
+			}
 			default:
 				return false;
 		}
