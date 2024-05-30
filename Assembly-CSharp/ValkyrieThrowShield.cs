@@ -1,5 +1,6 @@
 ﻿// ROGUES
 // SERVER
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -266,6 +267,7 @@ public class ValkyrieThrowShield : Ability
 			targets[0],
 			caster,
 			pierceTargetsToHitCaster,
+			out _, // custom
 			out List<Vector3> segmentPts,
 			out _,
 			null,
@@ -308,6 +310,7 @@ public class ValkyrieThrowShield : Ability
 			caster,
 			pierceTargetsToHitCaster,
 			out List<Vector3> laserEndPoints,
+			out _, // custom
 			out List<ActorData> orderedHitActors,
 			nonActorTargetInfoInSegment,
 			out bool hitCaster);
@@ -387,6 +390,7 @@ public class ValkyrieThrowShield : Ability
 			targets[0],
 			caster,
 			false,
+			out _, // custom
 			out List<Vector3> laserEndPoints,
 			out List<ActorData> orderedHitActors,
 			null,
@@ -409,6 +413,7 @@ public class ValkyrieThrowShield : Ability
 		ActorData caster, 
 		bool pierceTargetsToHitCaster, 
 		out List<Vector3> laserEndPoints, 
+		out List<Vector3> laserEndPointsForAnimation, // custom
 		out List<ActorData> orderedHitActors, 
 		List<List<NonActorTargetInfo>> nonActorTargetInfoInSegment, 
 		out bool hitCaster)
@@ -431,28 +436,65 @@ public class ValkyrieThrowShield : Ability
 			out orderedHitActors, 
 			nonActorTargetInfoInSegment, 
 			pierceTargetsToHitCaster);
+        laserEndPointsForAnimation = laserEndPoints; // custom
         if (pierceTargetsToHitCaster && laserEndPoints.Count > 1)
 		{
-			float totalMaxDistanceInSquares = GetMaxTotalDistance() - (laserEndPoints[0] - loSCheckPos).magnitude / Board.Get().squareSize;
-			Vector3 normalized = (laserEndPoints[1] - laserEndPoints[0]).normalized;
-			VectorUtils.CalculateBouncingLaserEndpoints(
-				laserEndPoints[0],
-				normalized,
-				GetMaxDistancePerBounce(),
-				totalMaxDistanceInSquares,
-				GetMaxBounces(),
-				caster,
-				m_width,
-				0,
-				false,
-				caster.GetTeamAsList(),
-				BounceOnHitActor(),
-				out _,
-				out List<ActorData> hitActors,
-				null,
-				false,
-				false);
-			hitCaster = hitActors.Contains(caster);
+			// custom
+			int lastHitActor = Math.Min(GetMaxTargetsHit(), orderedHitActors.Count) - 1;
+			int lastHitActorEndpoint = lastHitActor >= 0
+				? bounceHitActors[orderedHitActors[lastHitActor]].m_endpointIndex
+				: 0;
+			List<Team> casterTeamAsList = caster.GetTeamAsList();
+			for (int i = lastHitActorEndpoint; i < laserEndPoints.Count - 1; i++)
+			{
+				List<ActorData> hitActorsForReturn = GameWideData.Get().UseActorRadiusForLaser()
+					? AreaEffectUtils.GetActorsInBoxByActorRadius(
+						laserEndPoints[i],
+						laserEndPoints[i + 1],
+						GetLaserWidth(),
+						false,
+						caster,
+						casterTeamAsList)
+					: AreaEffectUtils.GetActorsInBox(
+						laserEndPoints[i],
+						laserEndPoints[i + 1],
+						GetLaserWidth(),
+						true,
+						caster,
+						casterTeamAsList);
+
+				if (hitActorsForReturn.Contains(caster))
+				{
+					hitCaster = true;
+
+					if (orderedHitActors.Count > 0)
+					{
+						laserEndPointsForAnimation = laserEndPoints.Take(i+1).ToList();
+					}
+					break;
+				}
+			}
+			// rogues
+			// float totalMaxDistanceInSquares = GetMaxTotalDistance() - (laserEndPoints[0] - loSCheckPos).magnitude / Board.Get().squareSize;
+			// Vector3 normalized = (laserEndPoints[1] - laserEndPoints[0]).normalized;
+			// VectorUtils.CalculateBouncingLaserEndpoints(
+			// 	laserEndPoints[0],
+			// 	normalized,
+			// 	GetMaxDistancePerBounce(),
+			// 	totalMaxDistanceInSquares,
+			// 	GetMaxBounces(),
+			// 	caster,
+			// 	m_width,
+			// 	0,
+			// 	false,
+			// 	caster.GetTeamAsList(),
+			// 	BounceOnHitActor(),
+			// 	out _,
+			// 	out List<ActorData> hitActors,
+			// 	null,
+			// 	false,
+			// 	false);
+			// hitCaster = hitActors.Contains(caster);
 		}
 		return bounceHitActors;
 	}
