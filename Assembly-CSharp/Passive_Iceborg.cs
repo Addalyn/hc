@@ -49,6 +49,8 @@ public class Passive_Iceborg : Passive
             }
         }
 
+        // these will be updated in corresponding effects if needed
+        m_syncComp.Networkm_damageAreaCanMoveThisTurn = false;
         m_syncComp.ClearNovaCoreActorIndex();
     }
 

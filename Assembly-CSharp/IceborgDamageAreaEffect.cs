@@ -105,7 +105,6 @@ public class IceborgDamageAreaEffect : StandardGroundEffect
     public override void OnEnd()
     {
         base.OnEnd();
-        m_syncComp.Networkm_damageAreaCanMoveThisTurn = false;
         m_syncComp.m_actorsHitByDamageAreaOnPrevTurn = new HashSet<ActorData>();
     }
 }
