@@ -32,6 +32,7 @@ public class Passive_Iceborg : Passive
                 int shieldOnNextTurnIfDepleted = m_shieldAbility.GetShieldOnNextTurnIfDepleted();
                 if (shieldOnNextTurnIfDepleted > 0)
                 {
+                    Log.Info($"ICEBORG PASSIVE {Owner.m_displayName} applying additional shielding");
                     StandardActorEffect shieldEffect = GenericAbility_Container.CreateShieldEffect(
                         m_shieldAbility,
                         Owner,
@@ -46,7 +47,19 @@ public class Passive_Iceborg : Passive
                         actorHitResults,
                         m_shieldAbility);
                 }
+                else
+                {
+                    Log.Info($"ICEBORG PASSIVE {Owner.m_displayName} has no additional shielding");
+                }
             }
+            else
+            {
+                Log.Info($"ICEBORG PASSIVE {Owner.m_displayName}'s shield is not depleted: {Owner.AbsorbPoints}");
+            }
+        }
+        else
+        {
+            Log.Info($"ICEBORG PASSIVE {Owner.m_displayName} did not use shield this turn");
         }
 
         // these will be updated in corresponding effects if needed
