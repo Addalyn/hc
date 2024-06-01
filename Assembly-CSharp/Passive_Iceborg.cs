@@ -48,6 +48,8 @@ public class Passive_Iceborg : Passive
                 }
             }
         }
+
+        m_syncComp.ClearNovaCoreActorIndex();
     }
 
     public override void OnTurnStart()

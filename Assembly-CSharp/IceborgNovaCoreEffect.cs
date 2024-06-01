@@ -163,12 +163,6 @@ public class IceborgNovaCoreEffect : StandardActorEffect
         }
     }
 
-    public override void OnEnd()
-    {
-        base.OnEnd();
-        m_syncComp.RemoveNovaCoreActorIndex(TargetActorIndex);
-    }
-
     public override void OnTurnEnd()
     {
         base.OnTurnEnd();

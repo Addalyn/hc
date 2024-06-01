@@ -364,10 +364,10 @@ public class Iceborg_SyncComponent : NetworkBehaviour
     }
 
 	// custom
-	public void RemoveNovaCoreActorIndex(int actorIndex)
+	public void ClearNovaCoreActorIndex()
 	{
-		Log.Info("Removing actor from NovaCore list -> " +  GameFlowData.Get().FindActorByActorIndex(actorIndex));
-		m_actorsWithNovaCore.Remove((uint)actorIndex);
+		Log.Info("Clearing NovaCore list");
+		m_actorsWithNovaCore.Clear();
 	}
 
     // custom
