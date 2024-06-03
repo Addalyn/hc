@@ -5,11 +5,8 @@ using UnityEngine.UI;
 public class UINameplateStatus : MonoBehaviour
 {
 	public Image m_StatusIcon;
-
 	public TextMeshProUGUI m_StatusText;
-
 	public Animator m_animController;
-
 	public UINameplateItem m_parent;
 
 	private bool gainedStatus;
@@ -37,14 +34,9 @@ public class UINameplateStatus : MonoBehaviour
 
 	public void AnimDone()
 	{
-		if (!(m_parent != null))
-		{
-			return;
-		}
-		while (true)
+		if (m_parent != null)
 		{
 			m_parent.NotifyStatusAnimationDone(this, gainedStatus);
-			return;
 		}
 	}
 
@@ -52,7 +44,7 @@ public class UINameplateStatus : MonoBehaviour
 	{
 		if (m_parent == null)
 		{
-			Object.Destroy(base.gameObject);
+			Destroy(gameObject);
 		}
 	}
 }
