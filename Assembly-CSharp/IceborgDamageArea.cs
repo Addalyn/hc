@@ -494,6 +494,10 @@ public class IceborgDamageArea : GenericAbility_Container
 		List<PositionHitResults> positionHitResults,
 		List<NonActorTargetInfo> nonActorTargetInfo)
     {
+	    IceborgDamageAreaEffect effect = ServerEffectManager.Get()
+		    .GetWorldEffectsByCaster(caster, typeof(IceborgDamageAreaEffect))
+		    .FirstOrDefault() as IceborgDamageAreaEffect;
+	    
         // If we move the area, we have to modify the damage
         foreach (ActorHitResults hitResults in actorHitResults)
         {
@@ -507,6 +511,11 @@ public class IceborgDamageArea : GenericAbility_Container
             if (hitResults.BaseDamage < GetMinDamage())
             {
                 hitResults.SetBaseDamage(GetMinDamage());
+            }
+            
+            if (effect != null && effect.IsActorHitThisTurn(hitActor, true))
+            {
+	            hitResults.SetBaseDamage(0);
             }
 
             if (m_syncComp.m_actorsHitByDamageAreaOnPrevTurn.Contains(hitActor))
@@ -524,9 +533,6 @@ public class IceborgDamageArea : GenericAbility_Container
             }
         }
 
-        IceborgDamageAreaEffect effect = ServerEffectManager.Get()
-	        .GetWorldEffectsByCaster(caster, typeof(IceborgDamageAreaEffect))
-	        .FirstOrDefault() as IceborgDamageAreaEffect;
         if (effect != null)
         {
 	        PositionHitParameters posHitParams = new PositionHitParameters(Vector3.zero);
