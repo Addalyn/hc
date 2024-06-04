@@ -353,6 +353,7 @@ public class AbilityData : NetworkBehaviour
 		return result;
 	}
 
+	// TODO check it is used carefully as forced chase cancels queued abilities to free up movement
 	public bool HasQueuedAbilityOfType(Type abilityType)  // , checkExecutedForPve in rogues
 	{
 		ActionType actionTypeOfAbility = GetActionTypeOfAbility(GetAbilityOfType(abilityType));

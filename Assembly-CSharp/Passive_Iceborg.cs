@@ -9,6 +9,7 @@ public class Passive_Iceborg : Passive
     Iceborg_SyncComponent m_syncComp;
     private IceborgSelfShield m_shieldAbility;
     private bool m_pendingShieldDepletionAnimation;
+    private int m_lastSelfShieldCastTurn;
     
     protected override void OnStartup()
     {
@@ -17,35 +18,30 @@ public class Passive_Iceborg : Passive
         m_syncComp = Owner.GetComponent<Iceborg_SyncComponent>();
         m_shieldAbility = Owner.GetAbilityData().GetAbilityOfType(typeof(IceborgSelfShield)) as IceborgSelfShield;
     }
-    
+
+    public void OnSelfShieldCast()
+    {
+        m_lastSelfShieldCastTurn = GameFlowData.Get().CurrentTurn;
+        m_pendingShieldDepletionAnimation = true;
+    }
+
     public override void OnTurnEnd()
     {
         base.OnTurnEnd();
         
-        AbilityData abilityData = Owner.GetAbilityData();
-        if (abilityData != null && abilityData.HasQueuedAbilityOfType(typeof(IceborgSelfShield)))
+        if (m_lastSelfShieldCastTurn == GameFlowData.Get().CurrentTurn)
         {
-            m_pendingShieldDepletionAnimation = true;
-            
-            if (Owner.AbsorbPoints == 0)
+            if (Owner.AbsorbPoints == 0) // or shieldEffect == null || shieldEffect.GetRemainingAbsorb() <= 0?
+                // Shorter shields like NanoSmithBlastShield will be consumed first anyway.
+                // Fellow two-turn shields are consumed in undefined order, so we need to define a consistent behaviour ourselves.
+                // And for e.g. NanoSmithWeaponsOfWar to be consistent with NanoSmithBlastShield, it makes sense to consume this shield first.
+                // The only longer shield is modded NanoSmithWeaponsOfWar but do we want to make it an exception to the pattern?
             {
                 int shieldOnNextTurnIfDepleted = m_shieldAbility.GetShieldOnNextTurnIfDepleted();
                 if (shieldOnNextTurnIfDepleted > 0)
                 {
                     Log.Info($"ICEBORG PASSIVE {Owner.m_displayName} applying additional shielding");
-                    StandardActorEffect shieldEffect = GenericAbility_Container.CreateShieldEffect(
-                        m_shieldAbility,
-                        Owner,
-                        shieldOnNextTurnIfDepleted,
-                        1);
-                
-                    ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(Owner, Owner.GetFreePos()));
-                    actorHitResults.AddEffect(shieldEffect);
-                    MovementResults.SetupAndExecuteAbilityResultsOutsideResolution(
-                        Owner,
-                        Owner,
-                        actorHitResults,
-                        m_shieldAbility);
+                    ApplyAdditionalShieldEffect();
                 }
                 else
                 {
@@ -84,10 +80,7 @@ public class Passive_Iceborg : Passive
             }
             else
             {
-                Effect activeEffect = ServerEffectManager.Get()
-                    .GetEffectsOnTargetByCaster(Owner, Owner, typeof(StandardActorEffect))
-                    .FirstOrDefault(eff => eff.Parent.Ability is IceborgSelfShield);
-                if (activeEffect is null)
+                if (GetActiveSelfShieldEffect() is null)
                 {
                     // play shield depletion animation
                     MovementResults.SetupAndExecuteAbilityResultsOutsideResolution(
@@ -101,6 +94,30 @@ public class Passive_Iceborg : Passive
                 }
             }
         }
+    }
+
+    private Effect GetActiveSelfShieldEffect()
+    {
+        return ServerEffectManager.Get()
+            .GetEffectsOnTargetByCaster(Owner, Owner, typeof(StandardActorEffect))
+            .FirstOrDefault(eff => eff.Parent.Ability is IceborgSelfShield);
+    }
+
+    private void ApplyAdditionalShieldEffect()
+    {
+        StandardActorEffect shieldEffect = GenericAbility_Container.CreateShieldEffect(
+            m_shieldAbility,
+            Owner,
+            m_shieldAbility.GetShieldOnNextTurnIfDepleted(),
+            1);
+                
+        ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(Owner, Owner.GetFreePos()));
+        actorHitResults.AddEffect(shieldEffect);
+        MovementResults.SetupAndExecuteAbilityResultsOutsideResolution(
+            Owner,
+            Owner,
+            actorHitResults,
+            m_shieldAbility);
     }
 #endif
 }

@@ -14,6 +14,11 @@ public class IceborgSelfShield : GenericAbility_Container
 	private AbilityMod_IceborgSelfShield m_abilityMod;
 	private Iceborg_SyncComponent m_syncComp;
 
+#if SERVER
+	// custom
+	private Passive_Iceborg m_passive;
+#endif
+
 	public override List<string> GetContextNamesForEditor()
 	{
 		List<string> contextNamesForEditor = base.GetContextNamesForEditor();
@@ -34,6 +39,15 @@ public class IceborgSelfShield : GenericAbility_Container
 	{
 		m_syncComp = GetComponent<Iceborg_SyncComponent>();
 		base.SetupTargetersAndCachedVars();
+		
+#if SERVER
+		// custom
+		PassiveData passiveData = GetComponent<PassiveData>();
+		if (passiveData != null)
+		{
+			m_passive = passiveData.GetPassiveOfType(typeof(Passive_Iceborg)) as Passive_Iceborg;
+		}
+#endif
 	}
 
 	protected override void AddSpecificTooltipTokens(List<TooltipTokenEntry> tokens, AbilityMod modAsBase)
@@ -83,6 +97,13 @@ public class IceborgSelfShield : GenericAbility_Container
 	}
 	
 #if SERVER
+	// custom
+	public override void Run(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		base.Run(targets, caster, additionalData);
+		m_passive?.OnSelfShieldCast();
+	}
+
 	// custom
 	protected override void PreProcessForCalcAbilityHits(
 		List<AbilityTarget> targets,
