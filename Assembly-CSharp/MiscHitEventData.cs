@@ -26,12 +26,13 @@ public class MiscHitEventData
                 if (!ServerActionBuffer.Get().HasPendingForcedChaseRequest(hitParameters.Caster))
                 {
                     ServerAbilityUtils.ForceChase(hitParameters.Caster, hitParameters.Target, true);
-                    if (hitParameters.Ability != null)
-                    {
-                        AbilityData.ActionType actionTypeOfAbility = hitParameters.Caster.GetAbilityData()
-                            .GetActionTypeOfAbility(hitParameters.Ability);
-                        hitParameters.Caster.GetAbilityData().SetQueuedAction(actionTypeOfAbility, false);
-                    }
+                    // TODO rogues??
+                    // if (hitParameters.Ability != null)
+                    // {
+                    //     AbilityData.ActionType actionTypeOfAbility = hitParameters.Caster.GetAbilityData()
+                    //         .GetActionTypeOfAbility(hitParameters.Ability);
+                    //     hitParameters.Caster.GetAbilityData().SetQueuedAction(actionTypeOfAbility, false);
+                    // }
                 }
 
                 break;
@@ -39,7 +40,8 @@ public class MiscHitEventData
                 if (!hitParameters.Target.GetActorStatus().IsImmuneToForcedChase())
                 {
                     ServerAbilityUtils.ForceChase(hitParameters.Target, hitParameters.Caster, false);
-                    hitParameters.Target.GetAbilityData().UnqueueActions();
+                    // TODO rogues??
+                    // hitParameters.Target.GetAbilityData().UnqueueActions();
                 }
 
                 break;
