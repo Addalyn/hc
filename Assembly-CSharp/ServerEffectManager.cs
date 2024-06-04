@@ -910,22 +910,18 @@ public class ServerEffectManager : MonoBehaviour
 	public int AdjustDamage(ActorData target, int damage)
 	{
 		int result = damage;
-		List<Effect> list = new List<Effect>();
-		if (m_actorEffects.ContainsKey(target))
+		List<Effect> absorbingEffects = new List<Effect>();
+		if (m_actorEffects.TryGetValue(target, out List<Effect> actorEffects) && actorEffects != null)
 		{
-			List<Effect> list2 = m_actorEffects[target];
-			if (list2 != null)
+			foreach (Effect effect in actorEffects)
 			{
-				foreach (Effect effect in list2)
+				if (effect.CanAbsorb())
 				{
-					if (effect.CanAbsorb())
-					{
-						list.Add(effect);
-					}
+					absorbingEffects.Add(effect);
 				}
 			}
 		}
-		list.Sort(delegate (Effect x, Effect y)
+		absorbingEffects.Sort(delegate (Effect x, Effect y)
 		{
 			if (x == y)
 			{
@@ -939,21 +935,21 @@ public class ServerEffectManager : MonoBehaviour
 			{
 				return 1;
 			}
-			int num = x.m_time.duration - x.m_time.age;
+			int xTimeRemaining = x.m_time.duration - x.m_time.age;
 			if (x.m_time.duration <= 0)
 			{
-				num = 10000;
+				xTimeRemaining = 10000;
 			}
-			int value = y.m_time.duration - y.m_time.age;
+			int yTimeRemaining = y.m_time.duration - y.m_time.age;
 			if (y.m_time.duration <= 0)
 			{
-				value = 10000;
+				yTimeRemaining = 10000;
 			}
-			return num.CompareTo(value);
+			return xTimeRemaining.CompareTo(yTimeRemaining);
 		});
-		foreach (Effect effect2 in list)
+		foreach (Effect absorbingEffect in absorbingEffects)
 		{
-			effect2.AbsorbDamage(ref result);
+			absorbingEffect.AbsorbDamage(ref result);
 		}
 		return result;
 	}
