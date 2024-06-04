@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 #if SERVER
+// added in rogues
 public class BazookaGirlDelayedBombDropsEffect : Effect
 {
 	public List<ActorData> m_targetActors;
@@ -102,10 +103,11 @@ public class BazookaGirlDelayedBombDropsEffect : Effect
 		return true;
 	}
 
-	public override bool CanExecuteForTeam_FCFS(Team team)
-	{
-		return team == Caster.GetTeam();
-	}
+	// rogues
+	// public override bool CanExecuteForTeam_FCFS(Team team)
+	// {
+	// 	return team == Caster.GetTeam();
+	// }
 
 	public override void GatherEffectResults(ref EffectResults effectResults, bool isReal)
 	{

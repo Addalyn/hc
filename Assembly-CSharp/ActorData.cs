@@ -4746,7 +4746,7 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 		{
 			ClientMovementManager.Get().OnActorMoveStart_ClientMovementManager(this, endpoint, movementType, path);
 			ClientResolutionManager.Get().OnActorMoveStart_ClientResolutionManager(this, path);
-			// TODO added in rogues -- check this
+			// rogues
 			//if (movementType == ActorData.MovementType.Normal)
 			//{
 			//	if (HUD_UI.Get() != null)
@@ -4761,7 +4761,7 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 			//}
 		}
 
-		// TODO added in rogues -- check this
+		// rogues
 		//if (this == GameFlowData.ClientActor && CameraManager.Get() != null)
 		//{
 		//	CameraManager.Get().SetTargetObject(base.gameObject, CameraManager.CameraTargetReason.MoveStart);
@@ -4884,7 +4884,7 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 				KnockbackMoveStarted = true;
 			}
 		}
-		// server-only? -- added in rogues
+		// added in rogues
 #if SERVER
 		if (GetPassiveData() != null)
 		{

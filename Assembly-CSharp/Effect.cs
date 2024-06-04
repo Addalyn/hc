@@ -134,11 +134,11 @@ public class Effect
 
 	public int CasterActorIndex { get; set; }
 
-	// TODO EFFECTS
-	public virtual bool CanExecuteForTeam_FCFS(Team team)
-	{
-		return (Caster == null && team == Team.TeamB) || (Caster != null && Caster.GetTeam() == team) || (Caster != null && Caster.GetTeam() == Team.Objects);
-	}
+	// rogues
+	// public virtual bool CanExecuteForTeam_FCFS(Team team)
+	// {
+	// 	return (Caster == null && team == Team.TeamB) || (Caster != null && Caster.GetTeam() == team) || (Caster != null && Caster.GetTeam() == Team.Objects);
+	// }
 
 	// custom
 	public virtual int GetTheatricsSortPriority(AbilityData.ActionType actionType)

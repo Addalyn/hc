@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 #if SERVER
+// added in rogues
 public class BazookaGirlStickyBombEffect : Effect
 {
 	public ThiefPartingGiftBombInfo m_bombInfo;
@@ -30,10 +31,11 @@ public class BazookaGirlStickyBombEffect : Effect
 		m_effectName = "Zuki - Sticky Bomb";
 	}
 
-	public override bool CanExecuteForTeam_FCFS(Team team)
-	{
-		return Caster.GetTeam() != team;
-	}
+	// rogues
+	// public override bool CanExecuteForTeam_FCFS(Team team)
+	// {
+	// 	return Caster.GetTeam() != team;
+	// }
 
 	public void OverrideOnExplosionEffectInfo(StandardEffectInfo effectInfo)
 	{
@@ -55,8 +57,13 @@ public class BazookaGirlStickyBombEffect : Effect
 		{
 			foreach (ActorData actorData in m_hitActors)
 			{
-				ServerClientUtils.SequenceStartData item = new ServerClientUtils.SequenceStartData(m_bombInfo.sequencePrefab, actorData.GetCurrentBoardSquare(), actorData.AsArray(), Caster, SequenceSource);
-				effectStartSeqDataList.Add(item);
+				effectStartSeqDataList.Add(
+					new ServerClientUtils.SequenceStartData(
+						m_bombInfo.sequencePrefab,
+						actorData.GetCurrentBoardSquare(),
+						actorData.AsArray(),
+						Caster,
+						SequenceSource));
 			}
 		}
 		return effectStartSeqDataList;
@@ -75,8 +82,13 @@ public class BazookaGirlStickyBombEffect : Effect
 			}
 			foreach (ActorData actorData in m_effectResults.HitActorsArray())
 			{
-				ServerClientUtils.SequenceStartData item = new ServerClientUtils.SequenceStartData(m_bombInfo.explosionSequencePrefab, actorData.GetCurrentBoardSquare(), actorData.AsArray(), Caster, source);
-				effectHitSeqDataList.Add(item);
+				effectHitSeqDataList.Add(
+					new ServerClientUtils.SequenceStartData(
+						m_bombInfo.explosionSequencePrefab,
+						actorData.GetCurrentBoardSquare(),
+						actorData.AsArray(),
+						Caster,
+						source));
 			}
 		}
 		return effectHitSeqDataList;
@@ -104,23 +116,25 @@ public class BazookaGirlStickyBombEffect : Effect
 
 	public override void GatherEffectResults(ref EffectResults effectResults, bool isReal)
 	{
-		if (m_time.age >= m_bombInfo.damageDelay)
+		if (m_time.age < m_bombInfo.damageDelay)
 		{
-			foreach (ActorData actorData in GetTargetsInExplosion())
+			return;
+		}
+		
+		foreach (ActorData actorData in GetTargetsInExplosion())
+		{
+			ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(actorData, actorData.GetFreePos()));
+			actorHitResults.AddSpoilSpawnData(new SpoilSpawnDataForAbilityHit(actorData, Caster.GetTeam(), m_spoilSpawnOnExplosion));
+			actorHitResults.AddBaseDamage(m_bombInfo.damageAmount);
+			actorHitResults.AddStandardEffectInfo(m_onExplosionEffectInfo);
+			if (m_onExplosionCooldownEvents.Count > 0)
 			{
-				ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(actorData, actorData.GetFreePos()));
-				actorHitResults.AddSpoilSpawnData(new SpoilSpawnDataForAbilityHit(actorData, Caster.GetTeam(), m_spoilSpawnOnExplosion));
-				actorHitResults.AddBaseDamage(m_bombInfo.damageAmount);
-				actorHitResults.AddStandardEffectInfo(m_onExplosionEffectInfo);
-				if (m_onExplosionCooldownEvents.Count > 0)
+				foreach (MiscHitEventData_AddToCasterCooldown e in m_onExplosionCooldownEvents)
 				{
-					foreach (MiscHitEventData_AddToCasterCooldown e in m_onExplosionCooldownEvents)
-					{
-						actorHitResults.AddMiscHitEvent(e);
-					}
+					actorHitResults.AddMiscHitEvent(e);
 				}
-				effectResults.StoreActorHit(actorHitResults);
 			}
+			effectResults.StoreActorHit(actorHitResults);
 		}
 	}
 

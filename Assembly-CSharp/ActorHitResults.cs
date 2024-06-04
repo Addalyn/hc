@@ -1141,12 +1141,15 @@ public class ActorHitResults
 						{
 							m_hitParameters.Caster.UpdateServerLastKnownPosForHit();
 						}
-						bool flag5 = relevantAbility.ShouldRevealTargetOnHostileAbilityHit();
-						if (flag5 && IsReaction && TriggeringHit != null && TriggeringHit.m_hitParameters != null && TriggeringHit.m_hitParameters.GetRelevantAbility() != null && AbilityUtils.AbilityHasTag(TriggeringHit.m_hitParameters.GetRelevantAbility(), AbilityTags.DontRevealCasterWhenTriggeringHostileReactionHit))
-						{
-							flag5 = false;
-						}
-						if (flag5)
+
+						if (relevantAbility.ShouldRevealTargetOnHostileAbilityHit()
+						    && (!IsReaction
+						        || TriggeringHit == null
+						        || TriggeringHit.m_hitParameters == null
+						        || TriggeringHit.m_hitParameters.GetRelevantAbility() == null
+						        || !AbilityUtils.AbilityHasTag(
+							        TriggeringHit.m_hitParameters.GetRelevantAbility(),
+							        AbilityTags.DontRevealCasterWhenTriggeringHostileReactionHit)))
 						{
 							m_hitParameters.Target.UpdateServerLastKnownPosForHit();
 						}
@@ -1157,27 +1160,33 @@ public class ActorHitResults
 						{
 							m_hitParameters.Caster.UpdateServerLastKnownPosForHit();
 						}
-						bool flag6 = relevantAbility.ShouldRevealTargetOnHostileEffectOrBarrierHit();
-						if (flag6 && IsReaction && TriggeringHit != null && TriggeringHit.m_hitParameters != null && TriggeringHit.m_hitParameters.GetRelevantAbility() != null && AbilityUtils.AbilityHasTag(TriggeringHit.m_hitParameters.GetRelevantAbility(), AbilityTags.DontRevealCasterWhenTriggeringHostileReactionHit))
-						{
-							flag6 = false;
-						}
-						if (flag6)
+
+						if (relevantAbility.ShouldRevealTargetOnHostileEffectOrBarrierHit()
+						    && (!IsReaction
+						        || TriggeringHit == null
+						        || TriggeringHit.m_hitParameters == null
+						        || TriggeringHit.m_hitParameters.GetRelevantAbility() == null
+						        || !AbilityUtils.AbilityHasTag(
+							        TriggeringHit.m_hitParameters.GetRelevantAbility(),
+							        AbilityTags.DontRevealCasterWhenTriggeringHostileReactionHit)))
 						{
 							m_hitParameters.Target.UpdateServerLastKnownPosForHit();
 						}
 					}
 				}
-				if (m_hitParameters.Effect != null && m_hitParameters.Effect.Target != null && m_hitParameters.Effect.Target.GetTeam() != m_hitParameters.Target.GetTeam() && relevantAbility.ShouldRevealEffectHolderOnHostileEffectHit())
+				if (m_hitParameters.Effect != null
+				    && m_hitParameters.Effect.Target != null
+				    && m_hitParameters.Effect.Target.GetTeam() != m_hitParameters.Target.GetTeam()
+				    && relevantAbility.ShouldRevealEffectHolderOnHostileEffectHit())
 				{
 					m_hitParameters.Effect.Target.UpdateServerLastKnownPosForHit();
 				}
 			}
 			if (m_actorsToReveal != null)
 			{
-				for (int i = 0; i < m_actorsToReveal.Count; i++)
+				foreach (ActorData actor in m_actorsToReveal)
 				{
-					m_actorsToReveal[i].UpdateServerLastKnownPosForHit();
+					actor.UpdateServerLastKnownPosForHit();
 				}
 			}
 		}

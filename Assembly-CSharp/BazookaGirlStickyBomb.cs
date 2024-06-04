@@ -150,14 +150,6 @@ public class BazookaGirlStickyBomb : Ability
 			additionalData.m_abilityResults.HitActorsArray(),
 			caster,
 			additionalData.m_sequenceSource);
-		
-		// TODO is this sequence supposed to be added automatically?
-		// new ServerClientUtils.SequenceStartData(
-		// 	5,
-		// 	caster.GetCurrentBoardSquare(),
-		// 	new[]{ caster },
-		// 	caster,
-		// 	additionalData.m_sequenceSource)
 	}
 	
 	// custom

@@ -109,10 +109,11 @@ public class FishManRoamingDebuffEffect : StandardActorEffect
 		return actorsInRadius;
 	}
 
-	public override bool CanExecuteForTeam_FCFS(Team team)
-	{
-		return Caster.GetTeam() != team;
-	}
+	// rogues
+	// public override bool CanExecuteForTeam_FCFS(Team team)
+	// {
+	// 	return Caster.GetTeam() != team;
+	// }
 
 	private bool CanJump(AbilityPriority phaseIndex)
 	{
