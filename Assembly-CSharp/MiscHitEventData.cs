@@ -26,13 +26,12 @@ public class MiscHitEventData
                 if (!ServerActionBuffer.Get().HasPendingForcedChaseRequest(hitParameters.Caster))
                 {
                     ServerAbilityUtils.ForceChase(hitParameters.Caster, hitParameters.Target, true);
-                    // TODO rogues??
-                    // if (hitParameters.Ability != null)
-                    // {
-                    //     AbilityData.ActionType actionTypeOfAbility = hitParameters.Caster.GetAbilityData()
-                    //         .GetActionTypeOfAbility(hitParameters.Ability);
-                    //     hitParameters.Caster.GetAbilityData().SetQueuedAction(actionTypeOfAbility, false);
-                    // }
+                    if (hitParameters.Ability != null)
+                    {
+                        AbilityData.ActionType actionTypeOfAbility = hitParameters.Caster.GetAbilityData()
+                            .GetActionTypeOfAbility(hitParameters.Ability);
+                        hitParameters.Caster.GetAbilityData().SetQueuedAction(actionTypeOfAbility, false);  // as it generally does not allow movement
+                    }
                 }
 
                 break;
@@ -40,8 +39,7 @@ public class MiscHitEventData
                 if (!hitParameters.Target.GetActorStatus().IsImmuneToForcedChase())
                 {
                     ServerAbilityUtils.ForceChase(hitParameters.Target, hitParameters.Caster, false);
-                    // TODO rogues??
-                    // hitParameters.Target.GetAbilityData().UnqueueActions();
+                    hitParameters.Target.GetAbilityData().UnqueueActions(); // as queued abilities can disallow movement
                 }
 
                 break;
