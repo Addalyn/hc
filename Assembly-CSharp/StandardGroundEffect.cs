@@ -182,8 +182,8 @@ public class StandardGroundEffect : Effect
 
 	public override void OnAbilityPhaseStart(AbilityPriority phase)
 	{
-		// TODO ROGUES
-		Log.Error("Effect Phase Start called");
+		// rogues
+		// Log.Error("Effect Phase Start called");
 	}
 
 	public virtual void SetupActorHitResults(ref ActorHitResults actorHitRes, BoardSquare targetSquare)
