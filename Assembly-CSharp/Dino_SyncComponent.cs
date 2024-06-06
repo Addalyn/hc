@@ -14,8 +14,8 @@ public class Dino_SyncComponent : NetworkBehaviour
 	private ActorData m_actor;
 	private DinoDashOrShield m_dashOrShieldAbility;
 	
-	private static readonly int s_aHashIdleType;
-	private static readonly int s_aHashForceIdle;
+	private static readonly int s_aHashIdleType = Animator.StringToHash("IdleType");
+	private static readonly int s_aHashForceIdle = Animator.StringToHash("ForceIdle");
 	private static int kRpcRpcResetDashOrShieldTargeter = 1094008940;
 	private static int kRpcRpcSetDashReadyStanceAnimParams = 423013429;
 
@@ -42,8 +42,6 @@ public class Dino_SyncComponent : NetworkBehaviour
 
 	static Dino_SyncComponent()
 	{
-		s_aHashIdleType = Animator.StringToHash("IdleType");
-		s_aHashForceIdle = Animator.StringToHash("ForceIdle");
 		RegisterRpcDelegate(typeof(Dino_SyncComponent), kRpcRpcResetDashOrShieldTargeter, InvokeRpcRpcResetDashOrShieldTargeter);
 		RegisterRpcDelegate(typeof(Dino_SyncComponent), kRpcRpcSetDashReadyStanceAnimParams, InvokeRpcRpcSetDashReadyStanceAnimParams);
 		NetworkCRC.RegisterBehaviour("Dino_SyncComponent", 0);
