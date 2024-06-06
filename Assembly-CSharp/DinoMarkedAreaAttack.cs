@@ -1,4 +1,7 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
+using System.Linq;
 using AbilityContextNamespace;
 using UnityEngine;
 
@@ -163,4 +166,45 @@ public class DinoMarkedAreaAttack : GenericAbility_Container
 	{
 		m_abilityMod = null;
 	}
+	
+#if SERVER
+	// custom
+	protected override void ProcessGatheredHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		AbilityResults abilityResults,
+		List<ActorHitResults> actorHitResults,
+		List<PositionHitResults> positionHitResults,
+		List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+
+		AbilityTarget target = targets[0];
+
+		List<ActorData> hitEnemies = actorHitResults
+			.Select(acr => acr.m_hitParameters.Target)
+			.Where(actor => actor.GetTeam() != caster.GetTeam())
+			.ToList();
+		if (hitEnemies.Count > 0)
+		{
+			PositionHitResults positionHitResult = new PositionHitResults(new PositionHitParameters(target.FreePos));
+			positionHitResult.AddEffect(
+				new DinoMarkedAreaEffect(
+					AsEffectSource(),
+					Board.Get().GetSquare(target.GridPos),
+					caster,
+					hitEnemies,
+					GetDelayTurns(),
+					GetShape(),
+					DelayedHitIgnoreLos(),
+					hitEnemies.Count == 1 ? GetExtraDamageForSingleMark() : 0,
+					GetEnergyToAllyOnDamageHit(),
+					m_delayedOnHitData,
+					m_firstTurnMarkerSeqPrefab,
+					m_markerSeqPrefab,
+					m_triggerSeqPrefab));
+			positionHitResults.Add(positionHitResult);
+		}
+	}
+#endif
 }
