@@ -1,11 +1,16 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
+using System.Linq;
+using AbilityContextNamespace;
 using UnityEngine;
 
+// missing in rogues
 public class DinoLayerCones : GenericAbility_Container
 {
 	[Separator("Powering Up Params")]
-	public int m_powerupPauseTurnsAfterCast = 1;
-	public int m_initialPowerupStartDelay = 1;
+	public int m_powerupPauseTurnsAfterCast = 1; // TODO DINO unused
+	public int m_initialPowerupStartDelay = 1; // TODO DINO unused
 	[Header("-- Power level if no inner hits")]
 	public int m_powerLevelAdjustIfNoInnerHits;
 
@@ -14,9 +19,19 @@ public class DinoLayerCones : GenericAbility_Container
 	private AbilityData m_abilityData;
 	private DinoDashOrShield m_dashOrShieldAbility;
 	private AbilityData.ActionType m_dashOrShieldActionType = AbilityData.ActionType.INVALID_ACTION;
-
+	
+#if SERVER
+	// custom
+	private Passive_Dino m_passive;
+#endif
+	
 	protected override void SetupTargetersAndCachedVars()
 	{
+#if SERVER
+		// custom
+		m_passive = GetPassiveOfType(typeof(Passive_Dino)) as Passive_Dino;
+#endif
+		
 		m_syncComp = GetComponent<Dino_SyncComponent>();
 		m_abilityData = GetComponent<AbilityData>();
 		if (m_abilityData != null)
@@ -90,4 +105,45 @@ public class DinoLayerCones : GenericAbility_Container
 	{
 		m_abilityMod = null;
 	}
+	
+#if SERVER
+	// custom
+	protected override void ProcessGatheredHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		AbilityResults abilityResults,
+		List<ActorHitResults> actorHitResults,
+		List<PositionHitResults> positionHitResults,
+		List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+
+		ActorHitResults casterHitResults = actorHitResults
+			.FirstOrDefault(ahr => ahr.m_hitParameters.Target == caster);
+		if (casterHitResults == null)
+		{
+			casterHitResults = new ActorHitResults(new ActorHitParameters(caster, caster.GetLoSCheckPos()));
+			actorHitResults.Add(casterHitResults);
+		}
+
+		int nextTurnPowerLevel = 0;
+		if (GetPowerLevelAdjustIfNoInnerHits() > 0)
+		{
+			bool noInnerHits = GetTargetSelectComp().GetActorHitContextMap().Values
+				.All(ahc => ahc.m_contextVars.GetValueInt(ContextKeys.s_Layer.GetKey()) > 0);
+			if (noInnerHits)
+			{
+				nextTurnPowerLevel = GetPowerLevelAdjustIfNoInnerHits();
+			}
+		}
+		
+		casterHitResults.AddMiscHitEvent(
+			new MiscHitEventData_UpdatePassive(
+				m_passive, 
+				new List<MiscHitEventPassiveUpdateParams> 
+				{
+					new Passive_Dino.SetPowerLevelParam(nextTurnPowerLevel)
+				}));
+	}
+#endif
 }

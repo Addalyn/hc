@@ -23,14 +23,14 @@ public class Dino_SyncComponent : NetworkBehaviour
 	{
 		get => m_dashOrShieldLastCastTurn;
 		[param: In]
-		set => SetSyncVar(value, ref m_dashOrShieldLastCastTurn, 1u);
+		set => SetSyncVar(value, ref m_dashOrShieldLastCastTurn, 1u); // TODO DINO unused
 	}
 
 	public bool Networkm_dashOrShieldInReadyStance
 	{
 		get => m_dashOrShieldInReadyStance;
 		[param: In]
-		set => SetSyncVar(value, ref m_dashOrShieldInReadyStance, 2u);
+		set => SetSyncVar(value, ref m_dashOrShieldInReadyStance, 2u); // TODO DINO unused
 	}
 
 	public short Networkm_layerConePowerLevel
@@ -55,7 +55,7 @@ public class Dino_SyncComponent : NetworkBehaviour
 	}
 
 	[ClientRpc]
-	public void RpcResetDashOrShieldTargeter(bool inReadyStance)
+	public void RpcResetDashOrShieldTargeter(bool inReadyStance) // TODO DINO to line up animations??
 	{
 		if (!NetworkServer.active)
 		{
@@ -77,7 +77,7 @@ public class Dino_SyncComponent : NetworkBehaviour
 	}
 
 	[ClientRpc]
-	public void RpcSetDashReadyStanceAnimParams(int idleType, bool forceIdle)
+	public void RpcSetDashReadyStanceAnimParams(int idleType, bool forceIdle) // TODO DINO to line up animations??
 	{
 		SetDashReadyStanceAnimParams(idleType, forceIdle);
 	}
