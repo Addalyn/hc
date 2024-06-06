@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 
 public class DinoForceChase : GenericAbility_Container
@@ -52,4 +54,42 @@ public class DinoForceChase : GenericAbility_Container
     {
         m_abilityMod = null;
     }
+    
+#if SERVER
+    // custom
+    protected override void ProcessGatheredHits(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        AbilityResults abilityResults,
+        List<ActorHitResults> actorHitResults,
+        List<PositionHitResults> positionHitResults,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+
+        foreach (ActorHitResults actorHitResult in actorHitResults)
+        {
+            ActorData hitActor = actorHitResult.m_hitParameters.Target;
+
+            if (hitActor.GetTeam() == caster.GetTeam())
+            {
+                continue;
+            }
+            
+            actorHitResult.AddMiscHitEvent(new MiscHitEventData(MiscHitEventType.TargetForceChaseCaster));
+
+            if (hitActor.GetActorStatus().IsMovementDebuffImmune())
+            {
+                actorHitResult.AddTechPointGainOnCaster(GetEnergyPerUnstoppableEnemyHit());
+            }
+        }
+
+        if (GetCdrOnKnockbackAbility() > 0 && m_knockbackActionType != AbilityData.ActionType.INVALID_ACTION)
+        {
+            GetOrAddHitResults(caster, actorHitResults)
+                .AddMiscHitEvent(new MiscHitEventData_AddToCasterCooldown(
+                    m_knockbackActionType, -1 * GetCdrOnKnockbackAbility()));
+        }
+    }
+#endif
 }
