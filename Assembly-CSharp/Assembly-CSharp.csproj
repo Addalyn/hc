@@ -823,6 +823,7 @@
     <Compile Include="DinoMultiCone.cs" />
     <Compile Include="DinoPowerLevelAttachedSequence.cs" />
     <Compile Include="DinoTargetedKnockback.cs" />
+    <Compile Include="DinoTargetedKnockbackEffect.cs" />
     <Compile Include="DinoVfxController.cs" />
     <Compile Include="Dino_SyncComponent.cs" />
     <Compile Include="DisableGameObjectWithAnimOutInfo.cs" />

@@ -1001,6 +1001,20 @@ public class GenericAbility_Container : Ability
 			actorHitResults,
 			isEnemy ? hitData.m_enemyHitEffectFields : hitData.m_allyHitEffectFields);
 	}
+	
+	// custom
+	public static ActorHitResults GetOrAddHitResults(ActorData actor, List<ActorHitResults> actorHitResults)
+	{
+		ActorHitResults casterHitResults = actorHitResults
+			.FirstOrDefault(ahr => ahr.m_hitParameters.Target == actor);
+		if (casterHitResults == null)
+		{
+			casterHitResults = new ActorHitResults(new ActorHitParameters(actor, actor.GetLoSCheckPos()));
+			actorHitResults.Add(casterHitResults);
+		}
+
+		return casterHitResults;
+	}
 
 	// custom
 	public static void SetNumericFieldsOnHitResults(ActorHitResults hitRes, NumericHitResultScratch calcScratch)

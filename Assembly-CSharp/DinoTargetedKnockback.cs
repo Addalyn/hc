@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using AbilityContextNamespace;
 using UnityEngine;
@@ -131,4 +133,62 @@ public class DinoTargetedKnockback : GenericAbility_Container
 	{
 		m_abilityMod = null;
 	}
+	
+#if SERVER
+	// custom
+	protected override void ProcessGatheredHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		AbilityResults abilityResults,
+		List<ActorHitResults> actorHitResults,
+		List<PositionHitResults> positionHitResults,
+		List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+
+		BoardSquare targetSquare = Board.Get().GetSquare(targets[1].GridPos);
+		int enemiesHit = 0;
+		foreach (ActorHitResults actorHitResult in actorHitResults)
+		{
+			ActorData hitActor = actorHitResult.m_hitParameters.Target;
+
+			if (hitActor.GetTeam() == caster.GetTeam())
+			{
+				continue;
+			}
+
+			enemiesHit++;
+
+			actorHitResult.AddKnockbackData(new KnockbackHitData(
+				hitActor,
+				caster,
+				KnockbackType.PullToSource,
+				targets[0].AimDirection,
+				targetSquare.ToVector3(),
+				0));
+			
+			actorHitResult.AddEffect(new DinoTargetedKnockbackEffect(
+				AsEffectSource(),
+				hitActor.GetCurrentBoardSquare(),
+				hitActor,
+				caster,
+				DoHitsAroundKnockbackDest(),
+				GetHitsAroundKnockbackDestShape(),
+				GetKnockbackDestOnHitData(),
+				m_onKnockbackDestHitSeqPrefab));
+			
+			if (actorHitResult.BaseDamage > 0
+			    && m_layerConeAbility != null
+			    && GetExtraDamageIfFullPowerLayerCone() > 0
+			    && m_layerConeAbility.IsAtMaxPowerLevel())
+			{
+				actorHitResult.AddBaseDamage(GetExtraDamageIfFullPowerLayerCone());
+			}
+		}
+		
+		ActorHitResults casterHitResults = GetOrAddHitResults(caster, actorHitResults);
+		casterHitResults.AddEffect(CreateShieldEffect(
+			this, caster, GetShieldPerEnemyHit() * enemiesHit, GetShieldDuration()));
+	}
+#endif
 }
