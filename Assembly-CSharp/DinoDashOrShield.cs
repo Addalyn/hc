@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using AbilityContextNamespace;
 using UnityEngine;
 
@@ -288,4 +289,62 @@ public class DinoDashOrShield : GenericAbility_Container
 			m_targetSelectForDash.ClearTargetSelectMod();
 		}
 	}
+	
+#if SERVER
+	// custom
+	public override void Run(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		base.Run(targets, caster, additionalData);
+
+		if (m_syncComp != null)
+		{
+			m_syncComp.Networkm_dashOrShieldLastCastTurn = IsInReadyStance() ? -1 : GameFlowData.Get().CurrentTurn;
+		}
+	}
+
+	// custom
+	protected override void ProcessGatheredHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		AbilityResults abilityResults,
+		List<ActorHitResults> actorHitResults,
+		List<PositionHitResults> positionHitResults,
+		List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+
+		AbilityData.ActionType abilityActionType = caster.GetAbilityData().GetActionTypeOfAbility(this);
+		ActorHitResults casterHitResults = actorHitResults
+			.FirstOrDefault(ahr => ahr.m_hitParameters.Target == caster);
+		if (casterHitResults == null)
+		{
+			casterHitResults = new ActorHitResults(new ActorHitParameters(caster, caster.GetLoSCheckPos()));
+			actorHitResults.Add(casterHitResults);
+		}
+		
+		if (!IsInReadyStance())
+		{
+			casterHitResults.AddEffect(new DinoDashOrShieldEffect(
+					AsEffectSource(),
+					caster.GetCurrentBoardSquare(),
+					caster,
+					caster,
+					GetShieldEffect(),
+					GetHealIfNoDash(),
+					m_noDashShieldAnimIndex,
+					abilityActionType,
+					GetDelayedCooldown() - GetCdrIfNoDash(),
+					m_onTriggerSequencePrefab));
+		}
+		else
+		{
+			int enemiesHit = actorHitResults
+				.Count(ahr => ahr.m_hitParameters.Target.GetTeam() != caster.GetTeam());
+			casterHitResults.AddEffect(CreateShieldEffect(
+				this, caster, GetShieldPerEnemyHit() * enemiesHit, GetShieldDuration()));
+			casterHitResults.AddMiscHitEvent(
+				new MiscHitEventData_AddToCasterCooldown(abilityActionType, GetDelayedCooldown() + 1));
+		}
+	}
+#endif
 }

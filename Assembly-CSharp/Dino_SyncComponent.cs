@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 public class Dino_SyncComponent : NetworkBehaviour
 {
 	[SyncVar]
-	internal int m_dashOrShieldLastCastTurn = -1;
+	internal int m_dashOrShieldLastCastTurn = -1; // not used on the client
 	[SyncVar]
 	internal bool m_dashOrShieldInReadyStance;
 	[SyncVar]

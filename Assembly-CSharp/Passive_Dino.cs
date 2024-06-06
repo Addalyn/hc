@@ -22,18 +22,24 @@ public class Passive_Dino : Passive
     {
         base.OnTurnEnd();
 
-        if (m_syncComp != null && m_primaryAbility != null)
+        if (m_syncComp != null)
         {
-            if (m_pendingPowerLevel >= 0)
+            if (m_primaryAbility != null)
             {
-                m_syncComp.Networkm_layerConePowerLevel = (short)m_pendingPowerLevel;
-            }
-            else
-            {
-                m_syncComp.Networkm_layerConePowerLevel++;
+                if (m_pendingPowerLevel >= 0)
+                {
+                    m_syncComp.Networkm_layerConePowerLevel = (short)m_pendingPowerLevel;
+                }
+                else
+                {
+                    m_syncComp.Networkm_layerConePowerLevel++;
+                }
+
+                m_pendingPowerLevel = -1;
             }
 
-            m_pendingPowerLevel = -1;
+            m_syncComp.Networkm_dashOrShieldInReadyStance =
+                m_syncComp.m_dashOrShieldLastCastTurn == GameFlowData.Get().CurrentTurn;
         }
     }
 

@@ -813,6 +813,7 @@
     <Compile Include="DialogBoxType.cs" />
     <Compile Include="DinoCounterAttack.cs" />
     <Compile Include="DinoDashOrShield.cs" />
+    <Compile Include="DinoDashOrShieldEffect.cs" />
     <Compile Include="DinoForceChase.cs" />
     <Compile Include="DinoLayerCones.cs" />
     <Compile Include="DinoLayeredRings.cs" />
