@@ -2,53 +2,54 @@ using System.Collections.Generic;
 
 public class DinoForceChase : GenericAbility_Container
 {
-	[Separator("Cooldown reduction on knockback ability", true)]
-	public int m_cdrOnKnockbackAbility;
-	[Separator("Energy Per Unstoppable Enemy (if ability is combat phase or later)", true)]
-	public int m_energyPerUnstoppableEnemyHit;
+    [Separator("Cooldown reduction on knockback ability")]
+    public int m_cdrOnKnockbackAbility;
+    [Separator("Energy Per Unstoppable Enemy (if ability is combat phase or later)")]
+    public int m_energyPerUnstoppableEnemyHit;
 
-	private AbilityMod_DinoForceChase m_abilityMod;
-	private AbilityData.ActionType m_knockbackActionType = AbilityData.ActionType.INVALID_ACTION;
+    private AbilityMod_DinoForceChase m_abilityMod;
+    private AbilityData.ActionType m_knockbackActionType = AbilityData.ActionType.INVALID_ACTION;
 
-	protected override void SetupTargetersAndCachedVars()
-	{
-		AbilityData abilityData = GetComponent<AbilityData>();
-		DinoTargetedKnockback knockbackAbility = GetAbilityOfType<DinoTargetedKnockback>();
-		if (abilityData != null && knockbackAbility != null)
-		{
-			m_knockbackActionType = abilityData.GetActionTypeOfAbility(knockbackAbility);
-		}
-		base.SetupTargetersAndCachedVars();
-	}
+    protected override void SetupTargetersAndCachedVars()
+    {
+        AbilityData abilityData = GetComponent<AbilityData>();
+        DinoTargetedKnockback knockbackAbility = GetAbilityOfType<DinoTargetedKnockback>();
+        if (abilityData != null && knockbackAbility != null)
+        {
+            m_knockbackActionType = abilityData.GetActionTypeOfAbility(knockbackAbility);
+        }
 
-	public int GetCdrOnKnockbackAbility()
-	{
-		return m_abilityMod != null
-			? m_abilityMod.m_cdrOnKnockbackAbilityMod.GetModifiedValue(m_cdrOnKnockbackAbility)
-			: m_cdrOnKnockbackAbility;
-	}
+        base.SetupTargetersAndCachedVars();
+    }
 
-	public int GetEnergyPerUnstoppableEnemyHit()
-	{
-		return m_abilityMod != null
-			? m_abilityMod.m_energyPerUnstoppableEnemyHitMod.GetModifiedValue(m_energyPerUnstoppableEnemyHit)
-			: m_energyPerUnstoppableEnemyHit;
-	}
+    public int GetCdrOnKnockbackAbility()
+    {
+        return m_abilityMod != null
+            ? m_abilityMod.m_cdrOnKnockbackAbilityMod.GetModifiedValue(m_cdrOnKnockbackAbility)
+            : m_cdrOnKnockbackAbility;
+    }
 
-	protected override void AddSpecificTooltipTokens(List<TooltipTokenEntry> tokens, AbilityMod modAsBase)
-	{
-		base.AddSpecificTooltipTokens(tokens, modAsBase);
-		AddTokenInt(tokens, "CdrOnKnockbackAbility", string.Empty, m_cdrOnKnockbackAbility);
-		AddTokenInt(tokens, "EnergyPerUnstoppableEnemyHit", string.Empty, m_energyPerUnstoppableEnemyHit);
-	}
+    public int GetEnergyPerUnstoppableEnemyHit()
+    {
+        return m_abilityMod != null
+            ? m_abilityMod.m_energyPerUnstoppableEnemyHitMod.GetModifiedValue(m_energyPerUnstoppableEnemyHit)
+            : m_energyPerUnstoppableEnemyHit;
+    }
 
-	protected override void GenModImpl_SetModRef(AbilityMod abilityMod)
-	{
-		m_abilityMod = abilityMod as AbilityMod_DinoForceChase;
-	}
+    protected override void AddSpecificTooltipTokens(List<TooltipTokenEntry> tokens, AbilityMod modAsBase)
+    {
+        base.AddSpecificTooltipTokens(tokens, modAsBase);
+        AddTokenInt(tokens, "CdrOnKnockbackAbility", string.Empty, m_cdrOnKnockbackAbility);
+        AddTokenInt(tokens, "EnergyPerUnstoppableEnemyHit", string.Empty, m_energyPerUnstoppableEnemyHit);
+    }
 
-	protected override void GenModImpl_ClearModRef()
-	{
-		m_abilityMod = null;
-	}
+    protected override void GenModImpl_SetModRef(AbilityMod abilityMod)
+    {
+        m_abilityMod = abilityMod as AbilityMod_DinoForceChase;
+    }
+
+    protected override void GenModImpl_ClearModRef()
+    {
+        m_abilityMod = null;
+    }
 }
