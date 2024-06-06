@@ -127,24 +127,7 @@ public class IceborgNovaOnReactEffect : StandardActorEffect
         ActorHitParameters hitParameters = new ActorHitParameters(incomingHitCaster, Target.GetFreePos());
         ActorHitResults actorHitResults = new ActorHitResults(hitParameters);
         actorHitResults.CanBeReactedTo = false;
-        NumericHitResultScratch numericHitResultScratch = new NumericHitResultScratch();
-        ActorHitContext actorContext = new ActorHitContext();
-        ContextVars abilityContext = new ContextVars();
-        GenericAbility_Container.CalcIntFieldValues(
-            incomingHitCaster,
-            Caster,
-            actorContext,
-            abilityContext,
-            m_hitData.m_enemyHitIntFields,
-            numericHitResultScratch);
-        GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
-        GenericAbility_Container.SetEffectFieldsOnHitResults(
-            incomingHitCaster,
-            Caster,
-            actorContext,
-            abilityContext,
-            actorHitResults,
-            m_hitData.m_enemyHitEffectFields);
+        GenericAbility_Container.ApplyActorHitData(Caster, incomingHitCaster, actorHitResults, m_hitData);
         actorHitResults.AddEffect(
             m_syncComp.CreateNovaCoreEffect(
                 Parent,

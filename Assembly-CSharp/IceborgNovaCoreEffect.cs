@@ -82,24 +82,7 @@ public class IceborgNovaCoreEffect : StandardActorEffect
             ActorHitParameters hitParameters = new ActorHitParameters(hitActor, Target.GetFreePos());
             ActorHitResults actorHitResults = new ActorHitResults(hitParameters);
             actorHitResults.TriggeringHit = incomingHit;
-            NumericHitResultScratch numericHitResultScratch = new NumericHitResultScratch();
-            ActorHitContext actorContext = new ActorHitContext();
-            ContextVars abilityContext = new ContextVars();
-            GenericAbility_Container.CalcIntFieldValues(
-                hitActor,
-                Caster,
-                actorContext,
-                abilityContext,
-                m_syncComp.m_delayedAoeOnHitData.m_enemyHitIntFields,
-                numericHitResultScratch);
-            GenericAbility_Container.SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
-            GenericAbility_Container.SetEffectFieldsOnHitResults(
-                hitActor,
-                Caster,
-                actorContext,
-                abilityContext,
-                actorHitResults,
-                m_syncComp.m_delayedAoeOnHitData.m_enemyHitEffectFields);
+            GenericAbility_Container.ApplyActorHitData(Caster, hitActor, actorHitResults, m_syncComp.m_delayedAoeOnHitData);
             actorHitResults.AddTechPointGainOnCaster(m_syncComp.m_delayedAoeEnergyPerEnemyHit + energyPerExplosion);
             energyPerExplosion = 0;
             actorHitResults.CanBeReactedTo = false;

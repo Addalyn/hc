@@ -964,6 +964,43 @@ public class GenericAbility_Container : Ability
 			actorHits.Add(actorHitResults);
 		}
 	}
+	
+	// custom TODO LOW merge with CalcAbilityHits?
+	public static void ApplyActorHitData(
+		ActorData caster,
+		ActorData targetActor,
+		ActorHitResults actorHitResults,
+		OnHitAuthoredData hitData,
+		ActorHitContext actorContext = null,
+		ContextVars abilityContext = null)
+	{
+		NumericHitResultScratch numericHitResultScratch = new NumericHitResultScratch();
+		if (actorContext == null)
+		{
+			actorContext = new ActorHitContext();
+		}
+		if (abilityContext == null)
+		{
+			abilityContext = new ContextVars();
+		}
+		bool isEnemy = caster.GetTeam() != targetActor.GetTeam();
+        
+		CalcIntFieldValues(
+			targetActor,
+			caster,
+			actorContext,
+			abilityContext,
+			isEnemy ? hitData.m_enemyHitIntFields : hitData.m_allyHitIntFields,
+			numericHitResultScratch);
+		SetNumericFieldsOnHitResults(actorHitResults, numericHitResultScratch);
+		SetEffectFieldsOnHitResults(
+			targetActor,
+			caster,
+			actorContext,
+			abilityContext,
+			actorHitResults,
+			isEnemy ? hitData.m_enemyHitEffectFields : hitData.m_allyHitEffectFields);
+	}
 
 	// custom
 	public static void SetNumericFieldsOnHitResults(ActorHitResults hitRes, NumericHitResultScratch calcScratch)
