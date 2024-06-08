@@ -320,7 +320,10 @@ public class SorceressHealingLaser : Ability
 			}
 			if (!flag && hitActorsExcludingSelfInOrder.Count > 1)
 			{
-				actorHitResults.AddMiscHitEvent(new MiscHitEventData_UpdateFreelancerStat(1, 1, caster));
+				actorHitResults.AddMiscHitEvent(new MiscHitEventData_UpdateFreelancerStat(
+					(int)FreelancerStats.DigitalSorceressStats.TimesPrimaryHitTwoOrMoreTargets,
+					1,
+					caster));
 				flag = true;
 			}
 			abilityResults.StoreActorHit(actorHitResults);
