@@ -33,9 +33,9 @@ public class Passive_Dino : Passive
             bool isInReadyStance = IsInReadyStance();
             if (isInReadyStance)
             {
-                m_syncComp.RpcSetDashReadyStanceAnimParams(1, true);
+                m_syncComp.CallRpcSetDashReadyStanceAnimParams(1, true);
             }
-            m_syncComp.RpcResetDashOrShieldTargeter(isInReadyStance);
+            m_syncComp.CallRpcResetDashOrShieldTargeter(isInReadyStance);
         }
     }
 
@@ -50,7 +50,7 @@ public class Passive_Dino : Passive
 
         if (phase == AbilityPriority.Prep_Offense && IsInReadyStance())
         {
-            m_syncComp.RpcSetDashReadyStanceAnimParams(0, false);
+            m_syncComp.CallRpcSetDashReadyStanceAnimParams(0, false);
         }
     }
 
