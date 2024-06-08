@@ -456,32 +456,74 @@ public class UIDecisionTimer : MonoBehaviour
 
 	private void UpdateCheckTimeMessageIndicators()
 	{
-		if (!m_initializedGameFlowData && GameFlowData.Get() != null)
+		if (!m_initializedGameFlowData)
 		{
-			m_initializedGameFlowData = true;
-			if (GameFlowData.Get().PreventAutoLockInOnTimeout())
+			if (GameFlowData.Get() != null)
 			{
-				UIManager.SetGameObjectActive(m_soloInfiniteTimerIndicator, true);
+				m_initializedGameFlowData = true;
+				if (GameFlowData.Get().PreventAutoLockInOnTimeout())
+				{
+					UIManager.SetGameObjectActive(m_soloInfiniteTimerIndicator, true);
+				}
 			}
 		}
-		TimeBank component = GameFlowData.Get().activeOwnedActorData != null
-			? GameFlowData.Get().activeOwnedActorData.GetComponent<TimeBank>()
-			: null;
-		bool doActive = m_currentTimeVal <= 0f
-		               && GameFlowData.Get() != null
-		               && GameFlowData.Get().PreventAutoLockInOnTimeout()
-		               && GameFlowData.Get().IsInDecisionState()
-		               && GameFlowData.Get() != null
-		               && component != null
-		               && (component.TimeToDisplay() > 0f
-		                   || !GameFlowData.Get().WillEnterTimebankMode()
-		                   || component.TimeToDisplay() + GameWideData.Get().m_tbConsumableDuration <= 0f);
+		bool doActive = true;
+		if (m_currentTimeVal > 0f)
+		{
+			doActive = false;
+		}
+		else if (GameFlowData.Get() != null && GameFlowData.Get().PreventAutoLockInOnTimeout())
+		{
+			if (GameFlowData.Get().IsInDecisionState())
+			{
+				if (GameFlowData.Get() != null)
+				{
+					if (GameFlowData.Get().activeOwnedActorData != null)
+					{
+						TimeBank component = GameFlowData.Get().activeOwnedActorData.GetComponent<TimeBank>();
+						if (component != null)
+						{
+							if (component.TimeToDisplay() <= 0f)
+							{
+								if (GameFlowData.Get().WillEnterTimebankMode())
+								{
+									float num = component.TimeToDisplay() + GameWideData.Get().m_tbConsumableDuration;
+									if (num > 0f)
+									{
+										doActive = false;
+									}
+								}
+							}
+						}
+						else
+						{
+							doActive = false;
+						}
+						goto IL_017f;
+					}
+				}
+				doActive = false;
+			}
+			else
+			{
+				doActive = false;
+			}
+		}
+		else
+		{
+			doActive = false;
+		}
+		goto IL_017f;
+		IL_017f:
 		if (m_soloInfiniteTimerIndicator.gameObject.activeSelf)
 		{
 			doActive = false;
-			if (GameFlowData.Get() != null && GameFlowData.Get().IsInResolveState())
+			if (GameFlowData.Get() != null)
 			{
-				UIManager.SetGameObjectActive(m_soloInfiniteTimerIndicator, false);
+				if (GameFlowData.Get().IsInResolveState())
+				{
+					UIManager.SetGameObjectActive(m_soloInfiniteTimerIndicator, false);
+				}
 			}
 		}
 		UIManager.SetGameObjectActive(m_soloOutOfTimerIndicator, doActive);
