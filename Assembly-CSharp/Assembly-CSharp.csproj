@@ -819,7 +819,6 @@
     <Compile Include="DinoLayeredRings.cs" />
     <Compile Include="DinoMarkedAreaAttack.cs" />
     <Compile Include="DinoMarkedAreaEffect.cs" />
-    <Compile Include="DinoMarkedTriggerEffect.cs" />
     <Compile Include="DinoMultiCone.cs" />
     <Compile Include="DinoPowerLevelAttachedSequence.cs" />
     <Compile Include="DinoTargetedKnockback.cs" />

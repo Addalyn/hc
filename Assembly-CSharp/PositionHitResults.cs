@@ -113,6 +113,21 @@ public class PositionHitResults
 		m_sequencesToEnd.Add(item);
 	}
 
+	// custom
+	public void AddSequenceToEnd(GameObject sequencePrefab, SequenceSource sequenceSource, Vector3 targetPos)
+	{
+		if (m_sequencesToEnd == null)
+		{
+			m_sequencesToEnd = new List<ServerClientUtils.SequenceEndData>();
+		}
+		ServerClientUtils.SequenceEndData item = new ServerClientUtils.SequenceEndData(
+			sequencePrefab,
+			ServerClientUtils.SequenceEndData.AssociationType.SequenceSourceId,
+			(int)sequenceSource.RootID,
+			targetPos);
+		m_sequencesToEnd.Add(item);
+	}
+
 	// rogues
 	//public void AddDynamicMissionGeometryDamage(BoardSquare geoSquare, int damage)
 	//{

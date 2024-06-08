@@ -169,6 +169,32 @@ public class DinoMarkedAreaAttack : GenericAbility_Container
 	
 #if SERVER
 	// custom
+	public override List<ServerClientUtils.SequenceStartData> GetAbilityRunSequenceStartDataList(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		List<ServerClientUtils.SequenceStartData> list =  base.GetAbilityRunSequenceStartDataList(targets, caster, additionalData);
+		foreach (var actorAndHitResult in additionalData.m_abilityResults.m_actorToHitResults)
+		{
+			ActorData hitActor = actorAndHitResult.Key;
+			if (hitActor.GetTeam() == caster.GetTeam())
+			{
+				continue;
+			}
+			
+			list.Add(new ServerClientUtils.SequenceStartData(
+				m_firstTurnMarkerSeqPrefab,
+				hitActor.GetCurrentBoardSquare(),
+				hitActor.AsArray(),
+				caster,
+				additionalData.m_sequenceSource));
+		}
+		
+		return list;
+	}
+
+	// custom
 	protected override void ProcessGatheredHits(
 		List<AbilityTarget> targets,
 		ActorData caster,
@@ -187,8 +213,8 @@ public class DinoMarkedAreaAttack : GenericAbility_Container
 			.ToList();
 		if (hitEnemies.Count > 0)
 		{
-			PositionHitResults positionHitResult = new PositionHitResults(new PositionHitParameters(target.FreePos));
-			positionHitResult.AddEffect(
+			ActorHitResults casterHitResult = GetOrAddHitResults(caster, actorHitResults);
+			casterHitResult.AddEffect(
 				new DinoMarkedAreaEffect(
 					AsEffectSource(),
 					Board.Get().GetSquare(target.GridPos),
@@ -200,10 +226,8 @@ public class DinoMarkedAreaAttack : GenericAbility_Container
 					hitEnemies.Count == 1 ? GetExtraDamageForSingleMark() : 0,
 					GetEnergyToAllyOnDamageHit(),
 					m_delayedOnHitData,
-					m_firstTurnMarkerSeqPrefab,
 					m_markerSeqPrefab,
 					m_triggerSeqPrefab));
-			positionHitResults.Add(positionHitResult);
 		}
 	}
 	
