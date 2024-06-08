@@ -18,6 +18,36 @@ public class Passive_Dino : Passive
         m_primaryAbility = Owner.GetAbilityData().GetAbilityOfType(typeof(DinoLayerCones)) as DinoLayerCones;
     }
 
+    public override void OnTurnStart()
+    {
+        base.OnTurnStart();
+        
+        if (m_syncComp != null)
+        {
+            bool isInReadyStance = IsInReadyStance();
+            if (isInReadyStance)
+            {
+                m_syncComp.RpcSetDashReadyStanceAnimParams(1, true);
+            }
+            m_syncComp.RpcResetDashOrShieldTargeter(isInReadyStance);
+        }
+    }
+
+    private bool IsInReadyStance()
+    {
+        return m_syncComp != null && m_syncComp.m_dashOrShieldInReadyStance;
+    }
+
+    public override void OnAbilityPhaseStart(AbilityPriority phase)
+    {
+        base.OnAbilityPhaseStart(phase);
+
+        if (phase == AbilityPriority.Prep_Offense && IsInReadyStance())
+        {
+            m_syncComp.RpcSetDashReadyStanceAnimParams(0, false);
+        }
+    }
+
     public override void OnTurnEnd()
     {
         base.OnTurnEnd();
