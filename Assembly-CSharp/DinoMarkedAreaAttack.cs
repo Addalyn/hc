@@ -206,5 +206,16 @@ public class DinoMarkedAreaAttack : GenericAbility_Container
 			positionHitResults.Add(positionHitResult);
 		}
 	}
+	
+	// custom
+	public override void OnExecutedActorHit_Effect(ActorData caster, ActorData target, ActorHitResults results)
+	{
+		if (results.FinalDamage > 0)
+		{
+			caster.GetFreelancerStats().AddToValueOfStat(
+				FreelancerStats.DinoStats.MarkedAreaAttackDamage,
+				results.FinalDamage);
+		}
+	}
 #endif
 }

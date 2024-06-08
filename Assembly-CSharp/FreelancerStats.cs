@@ -75,10 +75,10 @@ public class FreelancerStats : NetworkBehaviour
 	// removed in rogues
 	public enum DinoStats
 	{
-		MarkedAreaAttackDamage,
-		DashOrShieldEffectiveShieldAndDamageEvaded,
-		KnockbackDamageOnCastAndKnockback,
-		ForceChaseNumChases
+		MarkedAreaAttackDamage, // How much damage you dealt to enemies with [ABILITY_1]
+		DashOrShieldEffectiveShieldAndDamageEvaded, // How much damage you absorb, dodge, and dealt with [ABILITY_2]
+		KnockbackDamageOnCastAndKnockback, // Damage you dealt with [ABILITY_3], plus damage from any traps you knocked the target through
+		ForceChaseNumChases // How many targets are forced to chase you with [ABILITY_4]
 	}
 
 	public enum ExoStats

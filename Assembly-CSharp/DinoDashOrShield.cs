@@ -346,5 +346,32 @@ public class DinoDashOrShield : GenericAbility_Container
 				new MiscHitEventData_AddToCasterCooldown(abilityActionType, GetDelayedCooldown() + 1));
 		}
 	}
+	
+	// custom
+	public override void OnEffectAbsorbedDamage(ActorData effectCaster, int damageAbsorbed)
+	{
+		effectCaster.GetFreelancerStats().AddToValueOfStat(
+			FreelancerStats.DinoStats.DashOrShieldEffectiveShieldAndDamageEvaded,
+			damageAbsorbed);
+	}
+	
+	// custom
+	public override void OnExecutedActorHit_Ability(ActorData caster, ActorData target, ActorHitResults results)
+	{
+		if (results.FinalDamage > 0)
+		{
+			caster.GetFreelancerStats().AddToValueOfStat(
+				FreelancerStats.DinoStats.DashOrShieldEffectiveShieldAndDamageEvaded,
+				results.FinalDamage);
+		}
+	}
+
+	// custom
+	public override void OnDodgedDamage(ActorData caster, int damageDodged)
+	{
+		caster.GetFreelancerStats().AddToValueOfStat(
+			FreelancerStats.DinoStats.DashOrShieldEffectiveShieldAndDamageEvaded,
+			damageDodged);
+	}
 #endif
 }

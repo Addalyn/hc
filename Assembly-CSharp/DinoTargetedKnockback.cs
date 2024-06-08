@@ -190,5 +190,16 @@ public class DinoTargetedKnockback : GenericAbility_Container
 		casterHitResults.AddEffect(CreateShieldEffect(
 			this, caster, GetShieldPerEnemyHit() * enemiesHit, GetShieldDuration()));
 	}
+	
+	// custom
+	public override void OnExecutedActorHit_Ability(ActorData caster, ActorData target, ActorHitResults results)
+	{
+		if (results.FinalDamage > 0)
+		{
+			caster.GetFreelancerStats().AddToValueOfStat(
+				FreelancerStats.DinoStats.KnockbackDamageOnCastAndKnockback,
+				results.FinalDamage);
+		}
+	}
 #endif
 }

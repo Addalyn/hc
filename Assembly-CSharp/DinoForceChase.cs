@@ -82,6 +82,14 @@ public class DinoForceChase : GenericAbility_Container
             {
                 actorHitResult.AddTechPointGainOnCaster(GetEnergyPerUnstoppableEnemyHit());
             }
+            else
+            {
+                actorHitResult.AddMiscHitEvent(
+                    new MiscHitEventData_UpdateFreelancerStat(
+                        (int)FreelancerStats.DinoStats.ForceChaseNumChases,
+                        1,
+                        caster));
+            }
         }
 
         if (GetCdrOnKnockbackAbility() > 0 && m_knockbackActionType != AbilityData.ActionType.INVALID_ACTION)

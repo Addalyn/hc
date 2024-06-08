@@ -16,6 +16,12 @@ public class Passive_Dino : Passive
         base.OnStartup();
         m_syncComp = GetComponent<Dino_SyncComponent>();
         m_primaryAbility = Owner.GetAbilityData().GetAbilityOfType(typeof(DinoLayerCones)) as DinoLayerCones;
+        Owner.OnKnockbackHitExecutedDelegate += OnKnockbackMovementHitExecuted;
+    }
+
+    private void OnDestroy()
+    {
+        Owner.OnKnockbackHitExecutedDelegate -= OnKnockbackMovementHitExecuted;
     }
 
     public override void OnTurnStart()
@@ -70,6 +76,16 @@ public class Passive_Dino : Passive
 
             m_syncComp.Networkm_dashOrShieldInReadyStance =
                 m_syncComp.m_dashOrShieldLastCastTurn == GameFlowData.Get().CurrentTurn;
+        }
+    }
+    
+    private void OnKnockbackMovementHitExecuted(ActorData target, ActorHitResults hitRes)
+    {
+        if (hitRes.HasDamage && ServerActionBuffer.Get().HasStoredAbilityRequestOfType(Owner, typeof(DinoTargetedKnockback)))
+        {
+            Owner.GetFreelancerStats().AddToValueOfStat(
+                FreelancerStats.DinoStats.KnockbackDamageOnCastAndKnockback,
+                hitRes.FinalDamage);
         }
     }
 
