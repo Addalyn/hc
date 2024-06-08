@@ -470,11 +470,11 @@ public class UICharacterScreen : UIScene
 				}
 				else
 				{
-					foreach (GameSubTypeState btn in m_gameSubTypeBtns)
+					for (int i = 0; i < m_gameSubTypeBtns.Count; i++)
 					{
-						if (btn.btn.IsChecked())
+						if (m_gameSubTypeBtns[i].btn.IsChecked())
 						{
-							newMask = (ushort)(btn.SubTypeBit | newMask);
+							newMask = (ushort)(m_gameSubTypeBtns[i].SubTypeBit | newMask);
 						}
 					}
 				}
@@ -502,9 +502,13 @@ public class UICharacterScreen : UIScene
 			{
 				using (Dictionary<ushort, GameSubType>.Enumerator enumerator2 = gameTypeSubTypes2.GetEnumerator())
 				{
-					if (enumerator2.MoveNext())
+					if (!enumerator2.MoveNext())
 					{
-						newMask = enumerator2.Current.Key;
+					}
+					else
+					{
+						KeyValuePair<ushort, GameSubType> keyValuePair2 = enumerator2.Current;
+						newMask = keyValuePair2.Key;
 					}
 				}
 			}
@@ -513,15 +517,17 @@ public class UICharacterScreen : UIScene
 		ushort num = 0;
 		if (exclusiveModBitsOfGameTypeToDisplay != 0)
 		{
-			foreach (GameSubTypeState btn in m_gameSubTypeBtns)
+			for (int j = 0; j < m_gameSubTypeBtns.Count; j++)
 			{
-				if (btn.btn.IsChecked() && (exclusiveModBitsOfGameTypeToDisplay | btn.SubTypeBit) != 0)
+				if (m_gameSubTypeBtns[j].btn.IsChecked())
 				{
-					num = btn.SubTypeBit;
-					break;
+					if ((exclusiveModBitsOfGameTypeToDisplay | m_gameSubTypeBtns[j].SubTypeBit) != 0)
+					{
+						num = m_gameSubTypeBtns[j].SubTypeBit;
+						break;
+					}
 				}
 			}
-
 			if (num != 0)
 			{
 				newMask = num;
@@ -529,81 +535,86 @@ public class UICharacterScreen : UIScene
 		}
 		if (num == 0)
 		{
-			foreach (GameSubTypeState btn in m_gameSubTypeBtns)
+			for (int k = 0; k < m_gameSubTypeBtns.Count; k++)
 			{
-				if (btn.btn.IsChecked())
+				if (m_gameSubTypeBtns[k].btn.IsChecked())
 				{
-					newMask = (ushort)(btn.SubTypeBit | newMask);
+					newMask = (ushort)(m_gameSubTypeBtns[k].SubTypeBit | newMask);
 				}
 			}
 		}
 		ushort num2 = 0;
-		foreach (GameSubTypeState btn in m_gameSubTypeBtns)
+		for (int l = 0; l < m_gameSubTypeBtns.Count; l++)
 		{
-			num2 = (ushort)(btn.SubTypeBit | num2);
+			num2 = (ushort)(m_gameSubTypeBtns[l].SubTypeBit | num2);
 		}
-		if (num2 != 0 && (newMask & num2) == 0)
+		if (num2 != 0)
 		{
-			m_gameSubTypeBtns[0].btn.SetOn(true);
-			newMask = m_gameSubTypeBtns[0].SubTypeBit;
+			if ((newMask & num2) == 0)
+			{
+				m_gameSubTypeBtns[0].btn.SetOn(true);
+				newMask = m_gameSubTypeBtns[0].SubTypeBit;
+			}
 		}
 		Parameters.SelectedSubTypeMask = newMask;
 		UpdateSubTypeMaskChecks(newMask);
-		if (sendMaskUpdate || !SentInitialSubTypes)
+		if (!sendMaskUpdate)
 		{
-			SentInitialSubTypes = true;
-			if (ClientGameManager.Get().GroupInfo.InAGroup)
+			if (SentInitialSubTypes)
 			{
-				if (ClientGameManager.Get().GroupInfo.IsLeader)
-				{
-					ClientGameManager.Get().SetGameTypeSubMasks(Parameters.GameTypeToDisplay, newMask,
-						delegate(SetGameSubTypeResponse r)
-						{
-							if (!r.Success)
-							{
-								string text = $"Failed to select game modes: {(r.LocalizedFailure == null ? r.ErrorMessage : r.LocalizedFailure.ToString())}";
-								Log.Warning(text);
-								UIDialogPopupManager.OpenOneButtonDialog(
-									StringUtil.TR("Error", "Global"),
-									text,
-									StringUtil.TR("Ok", "Global"));
-							}
-							else
-							{
-								ClientGameManager.Get().SetSoloSubGameMask(Parameters.GameTypeToDisplay, newMask);
-								UpdateSubTypeMaskChecks(newMask);
-							}
-						});
-				}
+				goto IL_4EE;
 			}
-			else
+		}
+		SentInitialSubTypes = true;
+		if (ClientGameManager.Get().GroupInfo.InAGroup)
+		{
+			if (ClientGameManager.Get().GroupInfo.IsLeader)
 			{
-				HydrogenConfig.Get().SaveGameTypeSubMaskPreference(
-					Parameters.GameTypeToDisplay,
-					newMask,
-					ClientGameManager.Get().GameTypeAvailabilies);
-				ClientGameManager.Get().SetGameTypeSubMasks(
-					Parameters.GameTypeToDisplay,
-					newMask,
-					delegate(SetGameSubTypeResponse r)
+				ClientGameManager.Get().SetGameTypeSubMasks(Parameters.GameTypeToDisplay, newMask, delegate(SetGameSubTypeResponse r)
+				{
+					if (!r.Success)
 					{
-						if (!r.Success)
+						string format = "Failed to select game modes: {0}";
+						object arg;
+						if (r.LocalizedFailure == null)
 						{
-							string text = $"Failed to select game modes: {(r.LocalizedFailure != null ? r.LocalizedFailure.ToString() : r.ErrorMessage)}";
-							Log.Warning(text);
-							UIDialogPopupManager.OpenOneButtonDialog(
-								StringUtil.TR("Error", "Global"),
-								text,
-								StringUtil.TR("Ok", "Global"));
+							arg = r.ErrorMessage;
 						}
 						else
 						{
-							ClientGameManager.Get().SetSoloSubGameMask(Parameters.GameTypeToDisplay, newMask);
-							UpdateSubTypeMaskChecks(newMask);
+							arg = r.LocalizedFailure.ToString();
 						}
-					});
+						string text = string.Format(format, arg);
+						Log.Warning(text);
+						UIDialogPopupManager.OpenOneButtonDialog(StringUtil.TR("Error", "Global"), text, StringUtil.TR("Ok", "Global"));
+					}
+					else
+					{
+						ClientGameManager.Get().SetSoloSubGameMask(Parameters.GameTypeToDisplay, newMask);
+						UpdateSubTypeMaskChecks(newMask);
+					}
+				});
 			}
 		}
+		else
+		{
+			HydrogenConfig.Get().SaveGameTypeSubMaskPreference(Parameters.GameTypeToDisplay, newMask, ClientGameManager.Get().GameTypeAvailabilies);
+			ClientGameManager.Get().SetGameTypeSubMasks(Parameters.GameTypeToDisplay, newMask, delegate(SetGameSubTypeResponse r)
+			{
+				if (!r.Success)
+				{
+					string text = string.Format("Failed to select game modes: {0}", (r.LocalizedFailure != null) ? r.LocalizedFailure.ToString() : r.ErrorMessage);
+					Log.Warning(text);
+					UIDialogPopupManager.OpenOneButtonDialog(StringUtil.TR("Error", "Global"), text, StringUtil.TR("Ok", "Global"));
+				}
+				else
+				{
+					ClientGameManager.Get().SetSoloSubGameMask(Parameters.GameTypeToDisplay, newMask);
+					UpdateSubTypeMaskChecks(newMask);
+				}
+			});
+		}
+		IL_4EE:
 		UpdateWillFillVisibility();
 		DoRefreshFunctions((ushort)RefreshFunctionType.RefreshPartyList);
 	}

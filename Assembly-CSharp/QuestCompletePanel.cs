@@ -7,11 +7,17 @@ using UnityEngine;
 public class QuestCompletePanel : UIScene
 {
 	public QuestItem[] m_questItems;
+
 	public TextMeshProUGUI m_contractCompletedLabel;
+
 	private static QuestCompletePanel s_instance;
+
 	private const float c_completionDisplaySeconds = 10f;
+
 	private List<QuestCompleteData> m_recentlyCompletedQuests;
+
 	private List<QuestCompleteNotification> m_savedNotificationsForGameOver = new List<QuestCompleteNotification>();
+
 	private bool m_initialized;
 
 	public static QuestCompletePanel Get()
@@ -36,32 +42,62 @@ public class QuestCompletePanel : UIScene
 
 	private void Start()
 	{
-		if (!SteamManager.Initialized
-		    || !ClientGameManager.Get().IsPlayerAccountDataAvailable()
-		    || GameManager.Get() == null
-		    || !GameManager.Get().GameplayOverrides.EnableSteamAchievements)
+		if (!SteamManager.Initialized)
 		{
 			return;
 		}
-
-		foreach (KeyValuePair<int, QuestMetaData> current in ClientGameManager.Get().GetPlayerAccountData().QuestComponent.QuestMetaDatas)
+		while (true)
 		{
-			if (current.Value.CompletedCount > 0)
+			if (!ClientGameManager.Get().IsPlayerAccountDataAvailable())
 			{
-				QuestTemplate questTemplate = QuestWideData.Get().GetQuestTemplate(current.Key);
-				if (questTemplate.AchievmentType != AchievementType.None)
-				{
-					SteamUserStats.SetAchievement("AR_QUEST_ID_" + current.Key);
-				}
+				return;
 			}
-		}
-		foreach (QuestProgress value in ClientGameManager.Get().GetPlayerAccountData().QuestComponent.Progress.Values)
-		{
-			QuestItem.GetQuestProgress(value.Id, out int currentProgress, out int _);
-			if (currentProgress > 0
-			    && QuestWideData.Get().GetQuestTemplate(value.Id).AchievmentType != AchievementType.None)
+			while (true)
 			{
-				SteamUserStats.SetStat("AR_QUEST_ID_" + value.Id, currentProgress);
+				if (!(GameManager.Get() != null))
+				{
+					return;
+				}
+				while (true)
+				{
+					if (GameManager.Get().GameplayOverrides.EnableSteamAchievements)
+					{
+						using (Dictionary<int, QuestMetaData>.Enumerator enumerator = ClientGameManager.Get().GetPlayerAccountData().QuestComponent.QuestMetaDatas.GetEnumerator())
+						{
+							while (enumerator.MoveNext())
+							{
+								KeyValuePair<int, QuestMetaData> current = enumerator.Current;
+								if (current.Value.CompletedCount > 0)
+								{
+									QuestTemplate questTemplate = QuestWideData.Get().GetQuestTemplate(current.Key);
+									if (questTemplate.AchievmentType != 0)
+									{
+										SteamUserStats.SetAchievement("AR_QUEST_ID_" + current.Key);
+									}
+								}
+							}
+						}
+						foreach (QuestProgress value in ClientGameManager.Get().GetPlayerAccountData().QuestComponent.Progress.Values)
+						{
+							QuestItem.GetQuestProgress(value.Id, out int currentProgress, out int _);
+							if (currentProgress <= 0)
+							{
+							}
+							else
+							{
+								QuestTemplate questTemplate2 = QuestWideData.Get().GetQuestTemplate(value.Id);
+								if (questTemplate2.AchievmentType == AchievementType.None)
+								{
+								}
+								else
+								{
+									SteamUserStats.SetStat("AR_QUEST_ID_" + value.Id, currentProgress);
+								}
+							}
+						}
+					}
+					return;
+				}
 			}
 		}
 	}
@@ -78,13 +114,31 @@ public class QuestCompletePanel : UIScene
 
 	public void RemoveQuestCompleteNotification(int questId)
 	{
-		foreach (QuestCompleteData current in m_recentlyCompletedQuests)
+		using (List<QuestCompleteData>.Enumerator enumerator = m_recentlyCompletedQuests.GetEnumerator())
 		{
-			if (current.questId == questId)
+			while (true)
 			{
-				m_recentlyCompletedQuests.Remove(current);
-				break;
+				if (!enumerator.MoveNext())
+				{
+					while (true)
+					{
+						switch (5)
+						{
+						case 0:
+							break;
+						default:
+							goto end_IL_000e;
+						}
+					}
+				}
+				QuestCompleteData current = enumerator.Current;
+				if (current.questId == questId)
+				{
+					m_recentlyCompletedQuests.Remove(current);
+					break;
+				}
 			}
+			end_IL_000e:;
 		}
 		Setup(true);
 	}
@@ -98,10 +152,23 @@ public class QuestCompletePanel : UIScene
 	{
 		for (int i = 0; i < m_savedNotificationsForGameOver.Count; i++)
 		{
-			if (i <= index && m_savedNotificationsForGameOver[i].questId > 0)
+			if (i <= index)
 			{
-				DisplayNewQuestComplete(m_savedNotificationsForGameOver[i]);
-				m_savedNotificationsForGameOver[i].questId = -1;
+				if (m_savedNotificationsForGameOver[i].questId > 0)
+				{
+					DisplayNewQuestComplete(m_savedNotificationsForGameOver[i]);
+					m_savedNotificationsForGameOver[i].questId = -1;
+				}
+			}
+		}
+		while (true)
+		{
+			switch (7)
+			{
+			default:
+				return;
+			case 0:
+				break;
 			}
 		}
 	}
@@ -109,87 +176,156 @@ public class QuestCompletePanel : UIScene
 	private void DisplayNewQuestComplete(QuestCompleteNotification message)
 	{
 		QuestTemplate questTemplate = QuestWideData.Get().GetQuestTemplate(message.questId);
-		if (questTemplate != null && questTemplate.HideCompletion) // TODO CLIENT questTemplate == null || questTemplate.HideCompletion ?
+		if (questTemplate != null)
+		{
+			if (questTemplate.HideCompletion)
+			{
+				while (true)
+				{
+					switch (2)
+					{
+					default:
+						return;
+					case 0:
+						break;
+					}
+				}
+			}
+		}
+		QuestCompleteData questCompleteData = new QuestCompleteData();
+		questCompleteData.questId = message.questId;
+		questCompleteData.rejectedCount = message.rejectedCount;
+		questCompleteData.fadeTime = Time.time + 10f;
+		m_recentlyCompletedQuests.Add(questCompleteData);
+		if (questTemplate.AchievmentType != 0)
+		{
+			if (SteamManager.Initialized && GameManager.Get() != null)
+			{
+				if (GameManager.Get().GameplayOverrides.EnableSteamAchievements)
+				{
+					SteamUserStats.SetAchievement("AR_QUEST_ID_" + questTemplate.Index);
+				}
+			}
+		}
+		Setup();
+		if (!(UIPlayerNavPanel.Get() != null))
 		{
 			return;
 		}
-
-		m_recentlyCompletedQuests.Add(new QuestCompleteData
-		{
-			questId = message.questId,
-			rejectedCount = message.rejectedCount,
-			fadeTime = Time.time + 10f
-		});
-		if (questTemplate.AchievmentType != AchievementType.None
-		    && SteamManager.Initialized
-		    && GameManager.Get() != null
-		    && GameManager.Get().GameplayOverrides.EnableSteamAchievements)
-		{
-			SteamUserStats.SetAchievement("AR_QUEST_ID_" + questTemplate.Index);
-		}
-		Setup();
-		if (UIPlayerNavPanel.Get() != null)
+		while (true)
 		{
 			UIPlayerNavPanel.Get().NotifyQuestCompleted(m_recentlyCompletedQuests[0]);
+			return;
 		}
 	}
 
 	private void HandleQuestCompleteNotification(QuestCompleteNotification message)
 	{
-		if (UIGameOverScreen.Get() != null && UIGameOverScreen.Get().IsVisible)
+		if (UIGameOverScreen.Get() != null)
 		{
-			m_savedNotificationsForGameOver.Add(message);
+			if (UIGameOverScreen.Get().IsVisible)
+			{
+				while (true)
+				{
+					switch (3)
+					{
+					case 0:
+						break;
+					default:
+						m_savedNotificationsForGameOver.Add(message);
+						return;
+					}
+				}
+			}
 		}
-		else
-		{
-			DisplayNewQuestComplete(message);
-		}
+		DisplayNewQuestComplete(message);
 	}
 
 	private void HandleQuestProgressChanged(QuestProgress[] questProgresses)
 	{
-		if (!SteamManager.Initialized
-		    || GameManager.Get() == null
-		    || !GameManager.Get().GameplayOverrides.EnableSteamAchievements)
+		if (!SteamManager.Initialized || GameManager.Get() == null)
 		{
 			return;
 		}
-
-		foreach (QuestProgress questProgress in questProgresses)
+		while (true)
 		{
-			QuestTemplate questTemplate = QuestWideData.Get().GetQuestTemplate(questProgress.Id);
-			if (questTemplate.AchievmentType != AchievementType.None)
+			if (!GameManager.Get().GameplayOverrides.EnableSteamAchievements)
 			{
-				QuestItem.GetQuestProgress(questTemplate.Index, out int currentProgress, out int _);
-				SteamUserStats.SetStat("AR_QUEST_ID_" + questTemplate.Index, currentProgress);
+				while (true)
+				{
+					switch (5)
+					{
+					default:
+						return;
+					case 0:
+						break;
+					}
+				}
+			}
+			for (int i = 0; i < questProgresses.Length; i++)
+			{
+				QuestTemplate questTemplate = QuestWideData.Get().GetQuestTemplate(questProgresses[i].Id);
+				if (questTemplate.AchievmentType != 0)
+				{
+					QuestItem.GetQuestProgress(questTemplate.Index, out int currentProgress, out int _);
+					SteamUserStats.SetStat("AR_QUEST_ID_" + questTemplate.Index, currentProgress);
+				}
+			}
+			while (true)
+			{
+				switch (2)
+				{
+				default:
+					return;
+				case 0:
+					break;
+				}
 			}
 		}
 	}
 
 	public void AddSpecialQuestNotification(int questId)
 	{
-		if (UIGameOverScreen.Get() != null && UIGameOverScreen.Get().IsVisible)
+		if (UIGameOverScreen.Get() != null)
 		{
-			m_savedNotificationsForGameOver.Add(new QuestCompleteNotification
+			if (UIGameOverScreen.Get().IsVisible)
 			{
-				questId = questId,
-				rejectedCount = 0
-			});
-			return;
+				while (true)
+				{
+					switch (6)
+					{
+					case 0:
+						break;
+					default:
+						m_savedNotificationsForGameOver.Add(new QuestCompleteNotification
+						{
+							questId = questId,
+							rejectedCount = 0
+						});
+						return;
+					}
+				}
+			}
 		}
-		
 		QuestTemplate questTemplate = QuestWideData.Get().GetQuestTemplate(questId);
 		if (questTemplate != null && questTemplate.HideCompletion)
 		{
-			return;
+			while (true)
+			{
+				switch (7)
+				{
+				default:
+					return;
+				case 0:
+					break;
+				}
+			}
 		}
-		
-		m_recentlyCompletedQuests.Add(new QuestCompleteData
-		{
-			questId = questId,
-			rejectedCount = 0,
-			fadeTime = Time.time + 10f
-		});
+		QuestCompleteData questCompleteData = new QuestCompleteData();
+		questCompleteData.questId = questId;
+		questCompleteData.rejectedCount = 0;
+		questCompleteData.fadeTime = Time.time + 10f;
+		m_recentlyCompletedQuests.Add(questCompleteData);
 		Setup();
 	}
 
@@ -205,11 +341,7 @@ public class QuestCompletePanel : UIScene
 				questItem.SetState(QuestItemState.Finished);
 				if (removedQuestCompleteNotification)
 				{
-					UIAnimationEventManager.Get().PlayAnimation(
-						questItem.m_animatorController,
-						"contractItemDefaultIDLE",
-						null,
-						string.Empty);
+					UIAnimationEventManager.Get().PlayAnimation(questItem.m_animatorController, "contractItemDefaultIDLE", null, string.Empty);
 				}
 				questItem.SetQuestId(questCompleteData.questId, questCompleteData.rejectedCount, true, removedQuestCompleteNotification);
 				if (questItem.m_expandArrow != null)
@@ -224,69 +356,95 @@ public class QuestCompletePanel : UIScene
 		}
 		if (m_recentlyCompletedQuests.Count > 0)
 		{
-			if (m_contractCompletedLabel != null)
+			while (true)
 			{
-				UIManager.SetGameObjectActive(m_contractCompletedLabel, true);
+				switch (3)
+				{
+				case 0:
+					break;
+				default:
+					if (m_contractCompletedLabel != null)
+					{
+						UIManager.SetGameObjectActive(m_contractCompletedLabel, true);
+					}
+					return;
+				}
 			}
 		}
-		else if (m_contractCompletedLabel != null)
+		if (!(m_contractCompletedLabel != null))
+		{
+			return;
+		}
+		while (true)
 		{
 			UIManager.SetGameObjectActive(m_contractCompletedLabel, false);
+			return;
 		}
 	}
 
 	private void Update()
 	{
-		bool updated = false;
+		bool flag = false;
 		if (!m_initialized)
 		{
 			m_initialized = true;
-			updated = true;
+			flag = true;
 		}
-		bool isGameOverScreenVisible = false;
+		bool flag2 = false;
 		if (UIGameOverScreen.Get() != null)
 		{
-			isGameOverScreenVisible = UIGameOverScreen.Get().IsVisible;
+			flag2 = UIGameOverScreen.Get().IsVisible;
 		}
 		else
 		{
-			if (SteamManager.Initialized
-			    && GameManager.Get() != null
-			    && GameManager.Get().GameplayOverrides.EnableSteamAchievements)
+			if (SteamManager.Initialized)
 			{
-				foreach (QuestCompleteNotification notify in m_savedNotificationsForGameOver)
+				if (GameManager.Get() != null)
 				{
-					int questId = notify.questId;
-					if (questId < 0)
+					if (GameManager.Get().GameplayOverrides.EnableSteamAchievements)
 					{
-						continue;
-					}
-					QuestTemplate questTemplate = QuestWideData.Get().GetQuestTemplate(questId);
-					if (questTemplate.AchievmentType != AchievementType.None)
-					{
-						SteamUserStats.SetAchievement("AR_QUEST_ID_" + questId);
+						for (int i = 0; i < m_savedNotificationsForGameOver.Count; i++)
+						{
+							int questId = m_savedNotificationsForGameOver[i].questId;
+							if (questId < 0)
+							{
+								continue;
+							}
+							QuestTemplate questTemplate = QuestWideData.Get().GetQuestTemplate(questId);
+							if (questTemplate.AchievmentType != 0)
+							{
+								SteamUserStats.SetAchievement("AR_QUEST_ID_" + questId);
+							}
+						}
 					}
 				}
 			}
 			m_savedNotificationsForGameOver.Clear();
 		}
-		if (m_recentlyCompletedQuests.Count > 0 && !isGameOverScreenVisible)
+		if (m_recentlyCompletedQuests.Count > 0)
 		{
-			while (m_recentlyCompletedQuests.Count > 0)
+			if (!flag2)
 			{
-				if (m_recentlyCompletedQuests[0].fadeTime < Time.time)
+				while (m_recentlyCompletedQuests.Count > 0)
 				{
-					m_recentlyCompletedQuests.RemoveAt(0);
-					updated = true;
-					continue;
+					if (m_recentlyCompletedQuests[0].fadeTime < Time.time)
+					{
+						m_recentlyCompletedQuests.RemoveAt(0);
+						flag = true;
+						continue;
+					}
+					break;
 				}
-				break;
 			}
 		}
-
-		if (updated)
+		if (!flag)
+		{
+			return;
+		}
+		while (true)
 		{
 			Setup();
+			return;
 		}
 	}
 }
