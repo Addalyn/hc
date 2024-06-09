@@ -167,16 +167,6 @@ public class DinoTargetedKnockback : GenericAbility_Container
 				targetSquare.ToVector3(),
 				0));
 			
-			actorHitResult.AddEffect(new DinoTargetedKnockbackEffect(
-				AsEffectSource(),
-				hitActor.GetCurrentBoardSquare(),
-				hitActor,
-				caster,
-				DoHitsAroundKnockbackDest(),
-				GetHitsAroundKnockbackDestShape(),
-				GetKnockbackDestOnHitData(),
-				m_onKnockbackDestHitSeqPrefab));
-			
 			if (actorHitResult.BaseDamage > 0
 			    && m_layerConeAbility != null
 			    && GetExtraDamageIfFullPowerLayerCone() > 0

@@ -133,10 +133,15 @@ public class MovementResults
 	public EffectResults SetupGameplayData(Effect reactingEffect, ActorHitResults reactionHitResults)
 	{
 		m_effectResults = new EffectResults(reactingEffect, null, true);
-		reactionHitResults.CanBeReactedTo = false;
-		reactionHitResults.ForMovementStage = m_forMovementStage;
+		// rogues
+		// reactionHitResults.CanBeReactedTo = false;
+		// reactionHitResults.ForMovementStage = m_forMovementStage;
 		if (reactionHitResults != null)
 		{
+			// custom
+			reactionHitResults.CanBeReactedTo = false;
+			reactionHitResults.ForMovementStage = m_forMovementStage;
+			// end custom
 			m_effectResults.StoreActorHit(reactionHitResults);
 		}
 		m_effectResults.GatheredResults = true;
@@ -149,10 +154,15 @@ public class MovementResults
 	public BarrierResults SetupGameplayData(Barrier reactingBarrier, ActorHitResults reactionHitResults)
 	{
 		m_barrierResults = new BarrierResults(reactingBarrier);
-		reactionHitResults.CanBeReactedTo = false;
-		reactionHitResults.ForMovementStage = m_forMovementStage;
+		// rogues
+		// reactionHitResults.CanBeReactedTo = false;
+		// reactionHitResults.ForMovementStage = m_forMovementStage;
 		if (reactionHitResults != null)
 		{
+			// custom
+			reactionHitResults.CanBeReactedTo = false;
+			reactionHitResults.ForMovementStage = m_forMovementStage;
+			// end custom
 			m_barrierResults.StoreActorHit(reactionHitResults);
 		}
 		m_barrierResults.GatheredResults = true;

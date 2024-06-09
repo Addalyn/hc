@@ -1,83 +1,94 @@
 // ROGUES
 // SERVER
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 #if SERVER
 // custom
-public class DinoTargetedKnockbackEffect : StandardActorEffect
+public class DinoTargetedKnockbackPassiveEffect : Effect
 {
+    private readonly Passive_Dino m_passive;
     private readonly bool m_doHitsAroundKnockbackDest;
     private readonly AbilityAreaShape m_shape;
     private readonly OnHitAuthoredData m_hitData;
-    private readonly GameObject m_sequencePrefab;
-    
-    public DinoTargetedKnockbackEffect(
+    private readonly GameObject m_onKnockbackDestHitSeqPrefab;
+
+    public DinoTargetedKnockbackPassiveEffect(
         EffectSource parent,
         BoardSquare targetSquare,
-        ActorData target,
         ActorData caster,
+        Passive_Dino passive,
         bool doHitsAroundKnockbackDest,
         AbilityAreaShape shape,
         OnHitAuthoredData hitData,
-        GameObject sequencePrefab)
-        : base(parent, targetSquare, target, caster, new StandardActorEffectData())
+        GameObject onKnockbackDestHitSeqPrefab)
+        : base(parent, targetSquare, null, caster)
     {
+        m_passive = passive;
         m_doHitsAroundKnockbackDest = doHitsAroundKnockbackDest;
         m_shape = shape;
         m_hitData = hitData;
-        m_sequencePrefab = sequencePrefab;
-        m_time.duration = 1;
+        m_onKnockbackDestHitSeqPrefab = onKnockbackDestHitSeqPrefab;
+        m_time.duration = 0;
     }
 
-    public override void GatherMovementResults(MovementCollection movement, ref List<MovementResults> movementResultsList)
+    public override void GatherMovementResults(
+        MovementCollection movement,
+        ref List<MovementResults> movementResultsList)
     {
         base.GatherMovementResults(movement, ref movementResultsList);
 
-        MovementInstance movementInstance = movement.m_movementInstances.FirstOrDefault(mi => mi.m_mover == Target);
         if (movement.m_movementStage != MovementStage.Knockback
-            || movementInstance == null
-            || movementInstance.m_path == null)
+            || m_passive == null
+            || m_passive.GetActorsPendingKnockback().IsNullOrEmpty())
         {
             return;
         }
 
-        BoardSquarePathInfo pathEndpoint = movementInstance.m_path.GetPathEndpoint();
-        BoardSquare targetSquare = pathEndpoint.square;
-        ActorData mover = movementInstance.m_mover;
-        ServerAbilityUtils.TriggeringPathInfo triggeringPathInfo =
-            new ServerAbilityUtils.TriggeringPathInfo(mover, pathEndpoint);
-        
-        
-        MovementResults movementResults = new MovementResults(movement.m_movementStage);
-        movementResults.SetupTriggerData(triggeringPathInfo);
-        movementResults.SetupGameplayData(this, null);
-        movementResults.SetupSequenceData(m_sequencePrefab, targetSquare, SequenceSource);
-        movementResultsList.Add(movementResults);
-
-        if (m_doHitsAroundKnockbackDest)
+        foreach (MovementInstance movementInstance in movement.m_movementInstances)
         {
-            List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(
-                m_shape,
-                targetSquare.ToVector3(),
-                targetSquare,
-                true,
-                Caster,
-                Caster.GetOtherTeams(),
-                null);
-            
-            foreach (ActorData hitActor in actorsInShape)
+            if (movementInstance == null
+                || movementInstance.m_path == null
+                || !m_passive.GetActorsPendingKnockback().Contains(movementInstance.m_mover))
             {
-                if (hitActor == mover)
+                continue;
+            }
+
+            BoardSquarePathInfo pathEndpoint = movementInstance.m_path.GetPathEndpoint();
+            BoardSquare targetSquare = pathEndpoint.square;
+            ActorData mover = movementInstance.m_mover;
+            ServerAbilityUtils.TriggeringPathInfo triggeringPathInfo =
+                new ServerAbilityUtils.TriggeringPathInfo(mover, pathEndpoint);
+
+            MovementResults movementResults = new MovementResults(movement.m_movementStage);
+            movementResults.SetupTriggerData(triggeringPathInfo);
+            movementResults.SetupGameplayData(this, null);
+            movementResults.SetupSequenceData(m_onKnockbackDestHitSeqPrefab, targetSquare, SequenceSource);
+            movementResultsList.Add(movementResults);
+
+            if (m_doHitsAroundKnockbackDest)
+            {
+                List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(
+                    m_shape,
+                    targetSquare.ToVector3(),
+                    targetSquare,
+                    true,
+                    Caster,
+                    Caster.GetOtherTeams(),
+                    null);
+
+                foreach (ActorData hitActor in actorsInShape)
                 {
-                    continue;
+                    if (hitActor == mover)
+                    {
+                        continue;
+                    }
+
+                    ActorHitParameters hitParams = new ActorHitParameters(mover, targetSquare.ToVector3());
+                    ActorHitResults actorHitResults = new ActorHitResults(hitParams);
+                    GenericAbility_Container.ApplyActorHitData(Caster, mover, actorHitResults, m_hitData);
+                    movementResults.GetEffectResults().StoreActorHit(actorHitResults);
                 }
-            
-                ActorHitParameters hitParams = new ActorHitParameters(mover, targetSquare.ToVector3());
-                ActorHitResults actorHitResults = new ActorHitResults(hitParams);
-                GenericAbility_Container.ApplyActorHitData(Caster, mover, actorHitResults, m_hitData);
-                movementResults.GetEffectResults().StoreActorHit(actorHitResults);
             }
         }
     }
