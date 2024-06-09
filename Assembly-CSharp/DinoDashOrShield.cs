@@ -36,6 +36,12 @@ public class DinoDashOrShield : GenericAbility_Container
 	private AbilityMod_DinoDashOrShield m_abilityMod;
 	private OnHitAuthoredData m_cachedDashOnHitData;
 	private StandardEffectInfo m_cachedShieldEffect;
+	
+#if SERVER
+	// custom
+	private Passive_Dino m_passive;
+	private DinoLayerCones m_primaryAbility;
+#endif
 
 	public override string GetOnHitDataDesc()
 	{
@@ -59,6 +65,16 @@ public class DinoDashOrShield : GenericAbility_Container
 
 	protected override void SetupTargetersAndCachedVars()
 	{
+#if SERVER
+		// custom
+		m_passive = GetPassiveOfType(typeof(Passive_Dino)) as Passive_Dino;
+		AbilityData abilityData = GetComponent<AbilityData>();
+		if (abilityData != null)
+		{
+			m_primaryAbility = abilityData.GetAbilityOfType<DinoLayerCones>();
+		}
+#endif
+		
 		m_syncComp = GetComponent<Dino_SyncComponent>();
 		SetCachedFields();
 		base.SetupTargetersAndCachedVars();
@@ -343,7 +359,22 @@ public class DinoDashOrShield : GenericAbility_Container
 			casterHitResults.AddEffect(CreateShieldEffect(
 				this, caster, GetShieldPerEnemyHit() * enemiesHit, GetShieldDuration()));
 			casterHitResults.AddMiscHitEvent(
-				new MiscHitEventData_AddToCasterCooldown(abilityActionType, GetDelayedCooldown() + 1));
+				new MiscHitEventData_OverrideCooldown(abilityActionType, GetDelayedCooldown()));
+		}
+
+		// TODO DINO check
+		if (m_passive != null
+		    && m_primaryAbility != null
+		    && !ServerActionBuffer.Get().HasStoredAbilityRequestOfType(caster, typeof(DinoLayerCones)))
+		{
+			casterHitResults.AddMiscHitEvent(
+				new MiscHitEventData_UpdatePassive(
+					m_passive, 
+					new List<MiscHitEventPassiveUpdateParams> 
+					{
+						new Passive_Dino.SetPowerLevelParam(m_primaryAbility.GetLayerCount())
+					}));
+			Log.Info($"DINODINO set primary power level {m_primaryAbility.GetLayerCount()} for it wasn't used");
 		}
 	}
 	

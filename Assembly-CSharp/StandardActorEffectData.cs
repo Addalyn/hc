@@ -38,6 +38,15 @@ public class StandardActorEffectData
 	public GameObject[] m_sequencePrefabs;
 	public GameObject m_tickSequencePrefab;
 
+#if SERVER
+	public static StandardActorEffectData MakeDefault()
+	{
+		StandardActorEffectData data = new StandardActorEffectData();
+		data.InitWithDefaultValues();
+		return data;
+	}
+#endif
+	
 	public void InitWithDefaultValues()
 	{
 		SetValues(
