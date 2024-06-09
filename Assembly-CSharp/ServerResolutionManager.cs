@@ -739,72 +739,75 @@ public class ServerResolutionManager : NetworkBehaviour
 		return list;
 	}
 
-	public void SendActionsToClients_FCFS(List<AbilityRequest> requests, List<ActorAnimation> animEntries, AbilityPriority phase)
-	{
-		m_currentAbilityPhase = phase;
-		ResetPlayersStillResolving();
-		m_currentResolutionActions = BuildResolutionActionsFromRequests(requests, phase);
-		m_currentCastActions = new List<CastAction>();
-		m_animEntries = animEntries;
-		CurrentActionsDebugStr = BuildDebugStringForActionList(m_currentResolutionActions);
-		if (phase == AbilityPriority.Combat_Knockback)
-		{
-			InitKnockbackActors();
-		}
-		m_resolutionState = ServerResolutionManagerState.WaitingForClients_AbilityPhase;
-		//SendPhaseResolutionActionsToClients();
-	}
+	// rogues
+	// public void SendActionsToClients_FCFS(List<AbilityRequest> requests, List<ActorAnimation> animEntries, AbilityPriority phase)
+	// {
+	// 	m_currentAbilityPhase = phase;
+	// 	ResetPlayersStillResolving();
+	// 	m_currentResolutionActions = BuildResolutionActionsFromRequests(requests, phase);
+	// 	m_currentCastActions = new List<CastAction>();
+	// 	m_animEntries = animEntries;
+	// 	CurrentActionsDebugStr = BuildDebugStringForActionList(m_currentResolutionActions);
+	// 	if (phase == AbilityPriority.Combat_Knockback)
+	// 	{
+	// 		InitKnockbackActors();
+	// 	}
+	// 	m_resolutionState = ServerResolutionManagerState.WaitingForClients_AbilityPhase;
+	// 	//SendPhaseResolutionActionsToClients();
+	// }
 
-	public void SendEffectActionsToClients_FCFS(List<EffectResults> requests, List<ActorAnimation> animEntries, AbilityPriority phase)
-	{
-		m_currentAbilityPhase = phase;
-		ResetPlayersStillResolving();
-		m_currentResolutionActions = new List<ResolutionAction>();
-		foreach (EffectResults effectResults in requests)
-		{
-			// rogues
-			//EffectSystem.Effect effect;
-			//if ((effect = (effectResults.Effect as EffectSystem.Effect)) != null)
-			//{
-			//	foreach (ResolutionAction resolutionAction in ResolutionAction.ConstructFromEffect(effect))
-			//	{
-			//		effect.pendingEffectResults.Remove(resolutionAction.EffectResults);
-			//		effect.executingEffectResults.Add(resolutionAction.EffectResults);
-			//		m_currentResolutionActions.Add(resolutionAction);
-			//	}
-			//	continue;
-			//}
-			m_currentResolutionActions.AddRange(ResolutionAction.ConstructFromEffect(effectResults.Effect));
-		}
-		m_currentCastActions = new List<CastAction>();
-		m_animEntries = animEntries;
-		CurrentActionsDebugStr = BuildDebugStringForActionList(m_currentResolutionActions);
-		if (phase == AbilityPriority.Combat_Knockback)
-		{
-			InitKnockbackActors();
-		}
-		m_resolutionState = ServerResolutionManagerState.WaitingForClients_AbilityPhase;
-		//SendPhaseResolutionActionsToClients();
-	}
+	// rogues?
+	// public void SendEffectActionsToClients_FCFS(List<EffectResults> requests, List<ActorAnimation> animEntries, AbilityPriority phase)
+	// {
+	// 	m_currentAbilityPhase = phase;
+	// 	ResetPlayersStillResolving();
+	// 	m_currentResolutionActions = new List<ResolutionAction>();
+	// 	foreach (EffectResults effectResults in requests)
+	// 	{
+	// 		// rogues
+	// 		//EffectSystem.Effect effect;
+	// 		//if ((effect = (effectResults.Effect as EffectSystem.Effect)) != null)
+	// 		//{
+	// 		//	foreach (ResolutionAction resolutionAction in ResolutionAction.ConstructFromEffect(effect))
+	// 		//	{
+	// 		//		effect.pendingEffectResults.Remove(resolutionAction.EffectResults);
+	// 		//		effect.executingEffectResults.Add(resolutionAction.EffectResults);
+	// 		//		m_currentResolutionActions.Add(resolutionAction);
+	// 		//	}
+	// 		//	continue;
+	// 		//}
+	// 		m_currentResolutionActions.AddRange(ResolutionAction.ConstructFromEffect(effectResults.Effect));
+	// 	}
+	// 	m_currentCastActions = new List<CastAction>();
+	// 	m_animEntries = animEntries;
+	// 	CurrentActionsDebugStr = BuildDebugStringForActionList(m_currentResolutionActions);
+	// 	if (phase == AbilityPriority.Combat_Knockback)
+	// 	{
+	// 		InitKnockbackActors();
+	// 	}
+	// 	m_resolutionState = ServerResolutionManagerState.WaitingForClients_AbilityPhase;
+	// 	//SendPhaseResolutionActionsToClients();
+	// }
 
-	public List<ResolutionAction> BuildResolutionActionsFromRequests(List<AbilityRequest> requests, AbilityPriority phase)
-	{
-		List<ResolutionAction> list = new List<ResolutionAction>();
-		foreach (AbilityRequest request in requests)
-		{
-			ResolutionAction item = ResolutionAction.ConstructFromAbilityRequest(request);
-			list.Add(item);
-		}
-		if (phase == AbilityPriority.Evasion)
-		{
-			BuildResolutionActionsForMovementStage(MovementStage.Evasion, ref list);
-		}
-		else if (phase == AbilityPriority.Combat_Knockback)
-		{
-			BuildResolutionActionsForMovementStage(MovementStage.Knockback, ref list);
-		}
-		return list;
-	}
+	// rogues?
+	// public List<ResolutionAction> BuildResolutionActionsFromRequests(List<AbilityRequest> requests, AbilityPriority phase)
+	// {
+	// 	List<ResolutionAction> list = new List<ResolutionAction>();
+	// 	foreach (AbilityRequest request in requests)
+	// 	{
+	// 		ResolutionAction item = ResolutionAction.ConstructFromAbilityRequest(request);
+	// 		list.Add(item);
+	// 	}
+	// 	if (phase == AbilityPriority.Evasion)
+	// 	{
+	// 		BuildResolutionActionsForMovementStage(MovementStage.Evasion, ref list);
+	// 	}
+	// 	else if (phase == AbilityPriority.Combat_Knockback)
+	// 	{
+	// 		BuildResolutionActionsForMovementStage(MovementStage.Knockback, ref list);
+	// 	}
+	// 	return list;
+	// }
 
 	public void SendPhaseResolutionActionsToClients_FCFS()
 	{
