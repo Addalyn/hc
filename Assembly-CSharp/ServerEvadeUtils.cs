@@ -13,7 +13,7 @@ public static class ServerEvadeUtils
 		{
 			Vector3 start = endPoints[i - 1];
 			Vector3 end = endPoints[i];
-			BoardSquare lastValidBoardSquareInLine = KnockbackUtils.GetLastValidBoardSquareInLine(start, end, true, false, float.MaxValue);
+			BoardSquare lastValidBoardSquareInLine = KnockbackUtils.GetLastValidBoardSquareInLine(start, end, true);
 			if (lastValidBoardSquareInLine != null && lastValidBoardSquareInLine.IsValidForGameplay())
 			{
 				break;
@@ -22,7 +22,12 @@ public static class ServerEvadeUtils
 		}
 	}
 
-	public static void GetLastSegmentInfo(Vector3 startPos, List<Vector3> endPoints, out Vector3 lastSegStartPos, out Vector3 lastSegDir, out float lastSegLength)
+	public static void GetLastSegmentInfo(
+		Vector3 startPos,
+		List<Vector3> endPoints,
+		out Vector3 lastSegStartPos,
+		out Vector3 lastSegDir,
+		out float lastSegLength)
 	{
 		Vector3 vector = endPoints[endPoints.Count - 1];
 		if (endPoints.Count == 1)
@@ -69,33 +74,45 @@ public static class ServerEvadeUtils
 		return result;
 	}
 
-	public static ChargeSegment[] ProcessChargeDodgeForStopOnTargetHit(BoardSquare destination, List<AbilityTarget> targets, ActorData caster, ChargeInfo charge, List<EvadeInfo> evades)
+	public static ChargeSegment[] ProcessChargeDodgeForStopOnTargetHit(
+		BoardSquare destination,
+		List<AbilityTarget> targets,
+		ActorData caster,
+		ChargeInfo charge,
+		List<EvadeInfo> evades)
 	{
-		ChargeSegment[] array = charge.m_chargeSegments;
-		if (charge.m_chargeSegments[charge.m_chargeSegments.Length - 1].m_end != BoardSquarePathInfo.ChargeEndType.Miss && (charge.IsValidEvadeDestination(destination, evades) || charge.m_evadeDest == destination))
+		if (charge.m_chargeSegments[charge.m_chargeSegments.Length - 1].m_end == BoardSquarePathInfo.ChargeEndType.Miss
+		    || (!charge.IsValidEvadeDestination(destination, evades) && charge.m_evadeDest != destination))
 		{
-			List<BoardSquare> list = new List<BoardSquare>();
-			foreach (EvadeInfo evadeInfo in evades)
+			return charge.m_chargeSegments;
+		}
+		
+		ChargeSegment[] result = charge.m_chargeSegments;
+		List<BoardSquare> invalidEvadeDestinations = new List<BoardSquare>();
+		foreach (EvadeInfo evadeInfo in evades)
+		{
+			if (evadeInfo.GetMover() != null && evadeInfo.GetMover().GetPassiveData() != null)
 			{
-				if (evadeInfo.GetMover() != null && evadeInfo.GetMover().GetPassiveData() != null)
-				{
-					evadeInfo.GetMover().GetPassiveData().AddInvalidEvadeDestinations(evades, list);
-				}
-			}
-			if (!list.Contains(destination))
-			{
-				array = new ChargeSegment[charge.m_chargeSegments.Length - 1];
-				for (int i = 0; i < array.Length; i++)
-				{
-					array[i] = charge.m_chargeSegments[i];
-				}
-				array[array.Length - 1].m_end = BoardSquarePathInfo.ChargeEndType.Miss;
+				evadeInfo.GetMover().GetPassiveData().AddInvalidEvadeDestinations(evades, invalidEvadeDestinations);
 			}
 		}
-		return array;
+		if (!invalidEvadeDestinations.Contains(destination))
+		{
+			result = new ChargeSegment[charge.m_chargeSegments.Length - 1];
+			for (int i = 0; i < result.Length; i++)
+			{
+				result[i] = charge.m_chargeSegments[i]; // we aren't copying here, why the charade
+			}
+			result[result.Length - 1].m_end = BoardSquarePathInfo.ChargeEndType.Miss;
+		}
+		return result;
 	}
 
-	public static ChargeSegment[] GetChargeSegmentForStopOnTargetHit(ActorData caster, List<Vector3> endPoints, BoardSquare dest, float dashRecoverTime)
+	public static ChargeSegment[] GetChargeSegmentForStopOnTargetHit(
+		ActorData caster,
+		List<Vector3> endPoints,
+		BoardSquare dest,
+		float dashRecoverTime)
 	{
 		ChargeSegment[] array;
 		if (dest == null)
@@ -259,11 +276,9 @@ public static class ServerEvadeUtils
 
 		public virtual ActorData.MovementType GetMovementType()
 		{
-			if (m_request != null && m_request.m_ability != null)
-			{
-				return m_request.m_ability.GetMovementType();
-			}
-			return ActorData.MovementType.Flight;
+			return m_request != null && m_request.m_ability != null
+				? m_request.m_ability.GetMovementType()
+				: ActorData.MovementType.Flight;
 		}
 
 		public virtual bool IsStealthEvade()
@@ -273,64 +288,56 @@ public static class ServerEvadeUtils
 
 		protected bool IsValidEvadeDestinationForTeleport(BoardSquare square, List<EvadeInfo> allEvades)
 		{
-			bool result;
-			if (square == null)
+			if (square == null || !square.IsValidForGameplay())
 			{
-				result = false;
+				return false;
 			}
-			else if (!square.IsValidForGameplay())
+			
+			bool isDestinationUnoccupied;
+			if (square.occupant == null)
 			{
-				result = false;
+				isDestinationUnoccupied = true;
 			}
 			else
 			{
-				bool flag;
-				if (square.occupant != null)
+				isDestinationUnoccupied = false;
+				ActorData occupantActor = square.occupant.GetComponent<ActorData>();
+				foreach (EvadeInfo evadeInfo in allEvades)
 				{
-					flag = false;
-					ActorData component = square.occupant.GetComponent<ActorData>();
-					foreach (EvadeInfo evadeInfo in allEvades)
+					if (evadeInfo.GetMover() == null || occupantActor == evadeInfo.GetMover())
 					{
-						if (evadeInfo.GetMover() == null || component == evadeInfo.GetMover())
-						{
-							flag = true;
-							break;
-						}
+						isDestinationUnoccupied = true;
+						break;
 					}
-				}
-				else
-                {
-					flag = true;
-				}
-				if (flag)
-				{
-					bool flag2 = true;
-					foreach (EvadeInfo evadeInfo2 in allEvades)
-					{
-						if (evadeInfo2.m_evadeDest == square)
-						{
-							if (GetMover().GetTeam() == evadeInfo2.GetMover().GetTeam())
-							{
-								flag2 = false;
-								break;
-							}
-							float evadePathDistance = GetEvadePathDistance(square);
-							float evadePathDistance2 = evadeInfo2.GetEvadePathDistance(square);
-							if (!ServerClashUtils.AreMoveCostsEqual(evadePathDistance, evadePathDistance2, false))
-							{
-								flag2 = false;
-								break;
-							}
-						}
-					}
-					result = flag2;
-				}
-				else
-				{
-					result = false;
 				}
 			}
-			return result;
+
+			if (!isDestinationUnoccupied)
+			{
+				return false;
+			}
+
+			foreach (EvadeInfo evadeInfo in allEvades)
+			{
+				if (evadeInfo.m_evadeDest != square)
+				{
+					continue;
+				}
+				
+				if (GetMover().GetTeam() == evadeInfo.GetMover().GetTeam())
+				{
+					return false;
+				}
+
+				float myDist = GetEvadePathDistance(square);
+				float otherDist = evadeInfo.GetEvadePathDistance(square);
+				if (!ServerClashUtils.AreMoveCostsEqual(myDist, otherDist))
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		public int GetNumSquaresInPath()
@@ -571,72 +578,69 @@ public static class ServerEvadeUtils
 
 		public override bool IsValidEvadeDestination(BoardSquare square, List<EvadeInfo> allEvades)
 		{
-			bool result;
-			if (square == null)
+			if (square == null || !square.IsValidForGameplay())
 			{
-				result = false;
+				return false;
 			}
-			else if (!square.IsValidForGameplay())
+			
+			bool isDestinationUnoccupied;
+			if (square.occupant == null)
 			{
-				result = false;
+				isDestinationUnoccupied = true;
 			}
 			else
 			{
-				bool flag;
-				if (square.occupant != null)
+				ActorData occupantActor = square.occupant.GetComponent<ActorData>();
+				if (occupantActor == m_request.m_caster)
 				{
-					ActorData component = square.occupant.GetComponent<ActorData>();
-					if (component == m_request.m_caster)
-					{
-						flag = true;
-					}
-					else
-                    {
-						flag = false;
-						foreach (EvadeInfo evadeInfo in allEvades)
-						{
-							if (evadeInfo.GetMover() == null || component == evadeInfo.GetMover())
-							{
-								flag = true;
-								break;
-							}
-						}
-					}
-				}
-				else
-                {
-					flag = true;
-				}
-				bool flag2 = KnockbackUtils.BuildStraightLineChargePath(m_request.m_caster, square, GetValidChargeTestSourceSquare(), CanChargeThroughInvalidSquaresForDestination()) != null;
-				if (flag && flag2)
-				{
-					bool flag3 = true;
-					foreach (EvadeInfo evadeInfo2 in allEvades)
-					{
-						if (evadeInfo2.m_evadeDest == square)
-						{
-							if (GetMover().GetTeam() == evadeInfo2.GetMover().GetTeam())
-							{
-								flag3 = false;
-								break;
-							}
-							float evadePathDistance = GetEvadePathDistance(square);
-							float evadePathDistance2 = evadeInfo2.GetEvadePathDistance(square);
-							if (!ServerClashUtils.AreMoveCostsEqual(evadePathDistance, evadePathDistance2, false))
-							{
-								flag3 = false;
-								break;
-							}
-						}
-					}
-					result = flag3;
+					isDestinationUnoccupied = true;
 				}
 				else
 				{
-					result = false;
+					isDestinationUnoccupied = false;
+					foreach (EvadeInfo evadeInfo in allEvades)
+					{
+						if (evadeInfo.GetMover() == null || occupantActor == evadeInfo.GetMover())
+						{
+							isDestinationUnoccupied = true;
+							break;
+						}
+					}
 				}
 			}
-			return result;
+
+			bool canBuildPath = KnockbackUtils.BuildStraightLineChargePath(
+				             m_request.m_caster,
+				             square,
+				             GetValidChargeTestSourceSquare(),
+				             CanChargeThroughInvalidSquaresForDestination()) != null;
+
+			if (!isDestinationUnoccupied || !canBuildPath)
+			{
+				return false;
+			}
+
+			foreach (EvadeInfo evadeInfo in allEvades)
+			{
+				if (evadeInfo.m_evadeDest != square)
+				{
+					continue;
+				}
+				
+				if (GetMover().GetTeam() == evadeInfo.GetMover().GetTeam())
+				{
+					return false;
+				}
+
+				float myDist = GetEvadePathDistance(square);
+				float otherDist = evadeInfo.GetEvadePathDistance(square);
+				if (!ServerClashUtils.AreMoveCostsEqual(myDist, otherDist))
+				{
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		public override void StorePath()
