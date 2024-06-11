@@ -224,12 +224,32 @@ public class DinoMarkedAreaAttack : GenericAbility_Container
 					GetShape(),
 					DelayedHitIgnoreLos(),
 					hitEnemies.Count == 1 ? GetExtraDamageForSingleMark() : 0,
-					GetEnergyToAllyOnDamageHit(),
 					m_delayedOnHitData,
 					m_markerSeqPrefab,
 					m_triggerSeqPrefab));
 		}
-	}
+		
+        if (GetEnergyToAllyOnDamageHit() > 0)
+        {
+            foreach (ActorHitResults actorHitResult in actorHitResults)
+            {
+                ActorData hitActor = actorHitResult.m_hitParameters.Target;
+
+                if (hitActor.GetTeam() == caster.GetTeam())
+                {
+                    continue;
+                }
+
+                actorHitResult.AddEffect(
+                    new DinoMarkedAreaReactEffect(
+                        AsEffectSource(),
+                        hitActor.GetCurrentBoardSquare(),
+                        hitActor,
+                        caster,
+                        GetEnergyToAllyOnDamageHit()));
+            }
+        }
+    }
 	
 	// custom
 	public override void OnExecutedActorHit_Effect(ActorData caster, ActorData target, ActorHitResults results)

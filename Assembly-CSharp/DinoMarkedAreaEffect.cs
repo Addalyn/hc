@@ -14,7 +14,6 @@ public class DinoMarkedAreaEffect : Effect
     private readonly AbilityAreaShape m_shape;
     private readonly bool m_delayedHitIgnoreLos;
     private readonly int m_extraDamage;
-    private readonly int m_energyToAllyOnDamageHit;
     private readonly OnHitAuthoredData m_delayedOnHitData;
     private readonly GameObject m_markerSeqPrefab;
     private readonly GameObject m_triggerSeqPrefab;
@@ -30,7 +29,6 @@ public class DinoMarkedAreaEffect : Effect
         AbilityAreaShape shape,
         bool delayedHitIgnoreLos,
         int extraDamage,
-        int energyToAllyOnDamageHit,
         OnHitAuthoredData delayedOnHitData,
         GameObject markerSeqPrefab,
         GameObject triggerSeqPrefab)
@@ -41,7 +39,6 @@ public class DinoMarkedAreaEffect : Effect
         m_shape = shape;
         m_delayedHitIgnoreLos = delayedHitIgnoreLos;
         m_extraDamage = extraDamage;
-        m_energyToAllyOnDamageHit = energyToAllyOnDamageHit;
         m_delayedOnHitData = delayedOnHitData;
         m_markerSeqPrefab = markerSeqPrefab;
         m_triggerSeqPrefab = triggerSeqPrefab;
@@ -145,18 +142,15 @@ public class DinoMarkedAreaEffect : Effect
                     continue;
                 }
 
-                // TODO DINO check energy gain on hit
-                // TODO DINO test ignoreCover
-                ActorHitResults actorHitResults =
-                    new ActorHitResults(
-                        new ActorHitParameters(
-                            actorData,
-                            targetSquare
-                                .ToVector3())); // we ignore cover, so it doesn't really matter which one we pick
+                BoardSquare squareOverride = m_targetSquares
+                    .FirstOrDefault(s => s == actorData.GetCurrentBoardSquare());
+
+                Vector3 origin = squareOverride?.ToVector3() ?? targetSquare.ToVector3(); // we ignore cover, so it doesn't really matter which one we pick
+                ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(actorData, origin));
                 ActorHitContext actorHitContext = new ActorHitContext();
                 actorHitContext.m_contextVars.SetValue(
                     DinoMarkedAreaAttack.s_cvarInCenter.GetKey(),
-                    actorData.GetCurrentBoardSquare() == targetSquare ? 1 : 0); // TODO DINO check damage not in center
+                    squareOverride != null ? 1 : 0);
                 GenericAbility_Container.ApplyActorHitData(
                     Caster,
                     actorData,
@@ -172,40 +166,6 @@ public class DinoMarkedAreaEffect : Effect
             posHitResult.AddSequenceToEnd(m_markerSeqPrefab, SequenceSource, targetSquare.ToVector3());
             effectResults.StorePositionHit(posHitResult);
         }
-    }
-
-    public override void GatherResultsInResponseToActorHit(
-        ActorHitResults incomingHit,
-        ref List<AbilityResults_Reaction> reactions,
-        bool isReal)
-    {
-        if (!incomingHit.HasDamage || m_time.age > 0)
-        {
-            return;
-        }
-
-        ActorHitParameters hitParameters = new ActorHitParameters(
-            incomingHit.m_hitParameters.Caster,
-            Target.GetFreePos());
-        ActorHitResults actorHitResults = new ActorHitResults(hitParameters);
-        actorHitResults.TriggeringHit = incomingHit;
-        actorHitResults.CanBeReactedTo = false;
-        actorHitResults.AddTechPointGain(m_energyToAllyOnDamageHit);
-
-        AbilityResults_Reaction abilityResults_Reaction = new AbilityResults_Reaction();
-        abilityResults_Reaction.SetupGameplayData(
-            this,
-            new List<ActorHitResults> { actorHitResults },
-            incomingHit.m_reactionDepth,
-            isReal);
-        // TODO DINO sequences?
-        abilityResults_Reaction.SetupSequenceData(
-            SequenceLookup.Get().GetSimpleHitSequencePrefab(),
-            Target.GetCurrentBoardSquare(),
-            SequenceSource);
-        abilityResults_Reaction.SetSequenceCaster(Target);
-        abilityResults_Reaction.SetExtraFlag(ClientReactionResults.ExtraFlags.ClientExecuteOnFirstDamagingHit);
-        reactions.Add(abilityResults_Reaction);
     }
 
     public override List<Vector3> CalcPointsOfInterestForCamera()
