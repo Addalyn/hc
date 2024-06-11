@@ -713,7 +713,8 @@ public class NPCBrain_Adaptive : NPCBrain
 		    || ability.Targeter is AbilityUtil_Targeter_Shape
 		    || ability.Targeter is AbilityUtil_Targeter_BazookaGirlDelayedMissile
 		    || ability.Targeter is AbilityUtil_Targeter_MultipleShapes
-		    || ability.Targeter is AbilityUtil_Targeter_Grid) // custom
+		    || ability.Targeter is AbilityUtil_Targeter_Grid // custom
+		    || ability.Targeter is AbilityUtil_Targeter_AoE_Smooth) // custom
 		{
 			float range = ability.m_targetData[0].m_range;
 			float minRange = ability.m_targetData[0].m_minRange;
@@ -1530,6 +1531,40 @@ public class NPCBrain_Adaptive : NPCBrain
 
 					break;
 				}
+				case DinoMarkedAreaEffect dinoEffect:
+				{
+					// TODO BOTS DINO side damage is lower
+					// foreach (ActorData target in dinoEffect.GetTargets())
+					// {
+					// 	if (target.CurrentBoardSquare == curSquare)
+					// 	{
+					// 		currentPosDamage = dinoEffect.GetDelayedHitCenterDamage();
+					// 	}
+					// 	if (target.CurrentBoardSquare == destSquare)
+					// 	{
+					// 		projectedPosDamage = dinoEffect.GetDelayedHitCenterDamage();
+					// 	}
+					// }
+					foreach (ActorData target in dinoEffect.GetTargets())
+					{
+						List<BoardSquare> squaresInShape = AreaEffectUtils.GetSquaresInShape(
+							dinoEffect.m_shape,
+							target.GetFreePos(),
+							target.CurrentBoardSquare,
+							true,
+							dinoEffect.Caster);
+						if (squaresInShape.Contains(curSquare))
+						{
+							currentPosDamage = Math.Max(currentPosDamage, dinoEffect.GetDelayedCenterHitDamage());
+						}
+						if (squaresInShape.Contains(destSquare))
+						{
+							projectedPosDamage = Math.Max(currentPosDamage, dinoEffect.GetDelayedCenterHitDamage());
+						}
+					}
+
+					break;
+				}
 				// end custom
 				default:
 				{
@@ -1633,6 +1668,8 @@ public class NPCBrain_Adaptive : NPCBrain
 			case AbilityUtil_Targeter_ThiefFanLaser targeterThiefFanLaser:
 				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterThiefFanLaser.m_rangeInSquares, includeEnemies, includeFriendlies, includeSelf);
 				break;
+			case AbilityUtil_Targeter_LayerCones targeterLayerCones: // custom
+			case AbilityUtil_Targeter_MultipleShapes targeterMultipleShapes:
 			case AbilityUtil_Targeter_BounceLaser targeterBounceLaser:
 				// custom
 				potentialTargets = GeneratePotentialAbilityTargetLocationsCircle(360);
@@ -2346,12 +2383,17 @@ public class NPCBrain_Adaptive : NPCBrain
 			}
 			case AbilityUtil_Targeter_Laser targeterLaser:
 			{
-				if (ability.Targeters.Count != 3 || ability.GetTargetData().Length != 2)
+				if (ability is NekoFlipDash && (ability.Targeters.Count != 3 || ability.GetTargetData().Length != 2))
+				{
+					goto default;
+				}
+				if (ability is DinoTargetedKnockback && (ability.Targeters.Count != 2 || ability.GetTargetData().Length != 2))
 				{
 					goto default;
 				}
 
-				if (!(ability.Targeters[1] is AbilityUtil_Targeter_NekoCharge)) 
+				if (!(ability.Targeters[1] is AbilityUtil_Targeter_NekoCharge)
+				    && !(ability.Targeters[1] is AbilityUtil_Targeter_RampartGrab)) 
 				{
 					goto default;
 				}
@@ -2361,9 +2403,19 @@ public class NPCBrain_Adaptive : NPCBrain
 				potentialFirstTargets = potentialFirstTargets
 					.Where(t => ability.CustomTargetValidation(actorData, t, 0, null))
 					.ToList();
-				
+
+				if (potentialFirstTargets.Count == 0)
+				{
+					break;
+				}
+
+				bool canValidateSecondTargetSeparately = ability is NekoFlipDash;
 				float range = ability.m_targetData[1].m_range;
 				float minRange = ability.m_targetData[1].m_minRange;
+				if (ability is DinoTargetedKnockback dinoAbility)
+				{
+					range = (dinoAbility.GetTargetSelectComp() as TargetSelect_LaserTargetedPull)?.GetSquareRangeFromCaster() ?? range;
+				}
 				Vector3 boundsSize = new Vector3(range * Board.Get().squareSize * 2f, 2f, range * Board.Get().squareSize * 2f);
 				Vector3 boundsPosition = actorData.transform.position;
 				boundsPosition.y = 0f;
@@ -2384,7 +2436,7 @@ public class NPCBrain_Adaptive : NPCBrain
 					}
 
 					AbilityTarget secondTarget = AbilityTarget.CreateAbilityTargetFromBoardSquare(boardSquare, actorData.GetFreePos());
-					if (ability.CustomTargetValidation(actorData, secondTarget, 1, null))
+					if (!canValidateSecondTargetSeparately || ability.CustomTargetValidation(actorData, secondTarget, 1, null))
 					{
 						potentialSecondTargets.Add(secondTarget);
 					}
@@ -2579,6 +2631,7 @@ public class NPCBrain_Adaptive : NPCBrain
 		ScoreStolenPowerups(tempAbilityResults, caster, potentialChoice);
 		ScoreWorldEffects(tempAbilityResults, caster, potentialChoice);
 		ScoreBarriers(tempAbilityResults, caster, potentialChoice); // custom
+		ScoreKnockbacks(tempAbilityResults, caster, potentialChoice); // custom
 		
 		ScoreTargetNum(potentialChoice);
 
@@ -2643,7 +2696,6 @@ public class NPCBrain_Adaptive : NPCBrain
 
 			if (damage == 0)
 			{
-				// custom
 				if (!reportedUnsupportedTypes.Contains(tempAbilityResults.Ability.GetType()))
 				{
 					reportedUnsupportedTypes.Add(tempAbilityResults.Ability.GetType());
@@ -2675,6 +2727,23 @@ public class NPCBrain_Adaptive : NPCBrain
 			potentialChoice.score += damageScore + dashScore;
 			potentialChoice.reasoning += $"Added {damageScore} score for projected damage.\n";
 			potentialChoice.reasoning += $"Added {dashScore} score for projected dashes.\n";
+		}
+	}
+	
+	// custom
+	private void ScoreKnockbacks(AbilityResults tempAbilityResults, ActorData caster, PotentialChoice potentialChoice)
+	{
+		foreach (KeyValuePair<ActorData, ActorHitResults> actorToHitResult in tempAbilityResults.m_actorToHitResults)
+		{
+			if (actorToHitResult.Value == null || !actorToHitResult.Value.HasKnockback)
+			{
+				continue;
+			}
+			
+			// TODO BOTS add barriers knocked back over
+
+			potentialChoice.score += 10;
+			potentialChoice.reasoning += "Added 10 score for knockback effect.\n";
 		}
 	}
 
@@ -3073,6 +3142,14 @@ public class NPCBrain_Adaptive : NPCBrain
 								potentialChoice.reasoning += "Adding 2 score for a slow effect.\n";
 								break;
 							}
+							// custom
+							case StatusType.Rooted:
+							{
+								potentialChoice.score += 10f * effectData.m_duration;
+								potentialChoice.reasoning += "Adding 10 score for a rooted effect.\n";
+								break;
+							}
+							// end custom
 							case StatusType.Weakened:
 							{
 								potentialChoice.score += 13f * effectData.m_duration;
@@ -3123,6 +3200,33 @@ public class NPCBrain_Adaptive : NPCBrain
 		Effect effect,
 		PotentialChoice potentialChoice)
 	{
+		if (effect is DinoMarkedAreaEffect dinoMarkedAreaEffect) // TODO BOTS it's in actor hit results but it's not an actor effect so it has no target
+		{
+			if (!(ability is DinoMarkedAreaAttack dinoAbility))
+			{
+				return false;
+			}
+
+			foreach (ActorData hitActor in dinoMarkedAreaEffect.GetTargets())
+			{
+				if (GetEnemyPlayerAliveAndVisibleMultiplier(hitActor) <= 0f)
+				{
+					continue;
+				}
+								
+				potentialChoice.score += dinoMarkedAreaEffect.GetDelayedCenterHitDamage();
+				potentialChoice.reasoning += $"Added {dinoMarkedAreaEffect.GetDelayedCenterHitDamage()} score for projected damage.\n";
+				if (IsLikelyToDash(hitActor, true))
+				{
+					int dashBonus = 16;
+					potentialChoice.score += dashBonus;
+					potentialChoice.reasoning += $"Added {dashBonus} score for potential dash.\n";
+				}
+			}
+
+			return true;
+		}
+		
 		ActorData target = effect.Target;
 		if (target == null)
 		{

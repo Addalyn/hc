@@ -11,7 +11,7 @@ public class DinoMarkedAreaEffect : Effect
 {
     private readonly List<ActorData> m_targets;
     private readonly int m_delayTurns;
-    private readonly AbilityAreaShape m_shape;
+    internal readonly AbilityAreaShape m_shape;
     private readonly bool m_delayedHitIgnoreLos;
     private readonly int m_extraDamage;
     private readonly OnHitAuthoredData m_delayedOnHitData;
@@ -46,6 +46,11 @@ public class DinoMarkedAreaEffect : Effect
         HitPhase = AbilityPriority.Combat_Damage;
         m_time.duration = m_delayTurns + 1;
         UpdateTargetSquares();
+    }
+
+    public List<ActorData> GetTargets()
+    {
+        return m_targets;
     }
 
     public override bool AddActorAnimEntryIfHasHits(AbilityPriority phaseIndex)
@@ -184,6 +189,18 @@ public class DinoMarkedAreaEffect : Effect
             Caster.GetOtherTeams(),
             null);
         return actorsInShape;
+    }
+
+    public int GetDelayedCenterHitDamage()
+    {
+        foreach (OnHitIntField field in m_delayedOnHitData.m_enemyHitIntFields)
+        {
+            if (field.m_hitType == OnHitIntField.HitType.Damage && field.m_baseValue > 0)
+            {
+                return field.m_baseValue;
+            }
+        }
+        return 0;
     }
 }
 #endif
