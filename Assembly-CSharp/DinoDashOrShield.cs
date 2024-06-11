@@ -373,7 +373,6 @@ public class DinoDashOrShield : GenericAbility_Container
 					{
 						new Passive_Dino.SetPowerLevelParam(m_primaryAbility.GetLayerCount())
 					}));
-			Log.Info($"DINODINO set primary power level {m_primaryAbility.GetLayerCount()} for it wasn't used");
 		}
 	}
 	
