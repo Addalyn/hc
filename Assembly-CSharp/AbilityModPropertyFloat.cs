@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System;
 
 [Serializable]
@@ -34,4 +36,22 @@ public class AbilityModPropertyFloat
 		value = other.value;
 		operation = other.operation;
 	}
+
+#if SERVER
+	// custom
+	public override string ToString()
+	{
+		switch (operation)
+		{
+			case ModOp.Add:
+				return $"+{value}";
+			case ModOp.Multiply:
+				return $"*{value}";
+			case ModOp.Override:
+				return $"*{value}";
+			default:
+				return "Ignore";
+		}
+	}
+#endif
 }
