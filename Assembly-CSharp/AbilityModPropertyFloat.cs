@@ -12,51 +12,21 @@ public class AbilityModPropertyFloat
 	}
 
 	public float value;
-
 	public ModOp operation;
 
 	public float GetModifiedValue(float input)
 	{
-		if (operation == ModOp.Add)
+		switch (operation)
 		{
-			while (true)
-			{
-				switch (3)
-				{
-				case 0:
-					break;
-				default:
-					return input + value;
-				}
-			}
+			case ModOp.Add:
+				return input + value;
+			case ModOp.Override:
+				return value;
+			case ModOp.Multiply:
+				return input * value;
+			default:
+				return input;
 		}
-		if (operation == ModOp.Override)
-		{
-			while (true)
-			{
-				switch (4)
-				{
-				case 0:
-					break;
-				default:
-					return value;
-				}
-			}
-		}
-		if (operation == ModOp.Multiply)
-		{
-			while (true)
-			{
-				switch (3)
-				{
-				case 0:
-					break;
-				default:
-					return input * value;
-				}
-			}
-		}
-		return input;
 	}
 
 	public void CopyValuesFrom(AbilityModPropertyFloat other)
