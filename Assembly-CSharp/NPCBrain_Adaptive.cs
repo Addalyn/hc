@@ -1272,6 +1272,12 @@ public class NPCBrain_Adaptive : NPCBrain
 		{
 			square = Board.Get().GetSquare(choice.targetList[choice.targetList.Count - 1].GridPos);
 		}
+		if (square == null || !square.IsValidForGameplay())
+		{
+			Log.Info($"Square considered for bot dash is invalid ({square?.GetGridPos()}). Resetting to {actorData.CurrentBoardSquare.GetGridPos()}");
+			square = actorData.CurrentBoardSquare;
+		}
+		// TODO BOTS Claymore? Dino?
 		// end custom
 		choice.destinationSquare = square;
 	}
