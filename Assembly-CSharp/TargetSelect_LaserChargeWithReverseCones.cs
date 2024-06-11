@@ -198,13 +198,22 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
     }
 
 #if SERVER
+    // custom
+    public override bool GetChargeThroughInvalidSquares()
+    {
+        return true;
+    }
+    
     // rogues
     public override ServerEvadeUtils.ChargeSegment[] GetChargePath(
         List<AbilityTarget> targets,
         ActorData caster,
         ServerAbilityUtils.AbilityRunData additionalData)
     {
-        Vector3 chargeEndPos = GetChargeEndPos(targets, caster, out _);
+        // custom
+        BoardSquare chargeEndSquare = GetChargeEndSquare(targets, caster);
+        // rogues
+        // Vector3 chargeEndPos = GetChargeEndPos(targets, caster, out _);
         return new[]
         {
             new ServerEvadeUtils.ChargeSegment
@@ -216,9 +225,39 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
             new ServerEvadeUtils.ChargeSegment
             {
                 m_cycle = BoardSquarePathInfo.ChargeCycleType.Movement,
-                m_pos = Board.Get().GetSquareFromVec3(chargeEndPos)
+                // custom
+                m_pos = chargeEndSquare
+                // rogues
+                // m_pos = Board.Get().GetSquareFromVec3(chargeEndPos)
             }
         };
+    }
+    
+    // custom
+    private BoardSquare GetChargeEndSquare(List<AbilityTarget> targets, ActorData caster)
+    {
+        Vector3 destPos = GetChargeEndPos(targets, caster, out ActorData directHitActor);
+        BoardSquare destSquare = ClaymoreCharge.GetChargeDestinationSquare(
+            caster.GetLoSCheckPos(caster.GetSquareAtPhaseStart()),
+            destPos,
+            directHitActor,
+            null,
+            caster,
+            false);
+        BoardSquarePathInfo boardSquarePathInfo = KnockbackUtils.BuildStraightLineChargePath(
+            caster,
+            destSquare,
+            caster.GetSquareAtPhaseStart(),
+            true);
+        if (destSquare != null
+            && destSquare.OccupantActor != null
+            && destSquare.OccupantActor != caster
+            && !ServerActionBuffer.Get().ActorIsEvading(destSquare.OccupantActor))
+        {
+            destSquare = AbilityUtil_Targeter_ClaymoreCharge.GetChargeDestination(caster, destSquare, boardSquarePathInfo);
+        }
+
+        return destSquare;
     }
 
     // rogues
@@ -232,6 +271,21 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
             false,
             caster);
         float magnitude = (laserEndPoint - loSCheckPos).magnitude;
+        // custom
+        magnitude = ClaymoreCharge.GetMaxPotentialChargeDistance(
+            loSCheckPos,
+            laserEndPoint,
+            targets[0].AimDirection,
+            magnitude,
+            caster,
+            out BoardSquare pathEndSquare);
+        BoardSquarePathInfo path = KnockbackUtils.BuildStraightLineChargePath(
+            caster,
+            pathEndSquare,
+            caster.GetSquareAtPhaseStart(),
+            true);
+        List<ActorData> actorsOnPath = ClaymoreCharge.GetActorsOnPath(path, caster.GetOtherTeams(), caster);
+        // end custom
         List<ActorData> actorsInLaser = AreaEffectUtils.GetActorsInLaser(
             loSCheckPos,
             targets[0].AimDirection,
@@ -239,14 +293,26 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
             GetLaserWidth(),
             caster,
             caster.GetOtherTeams(),
-            true,
+            true, // false in targeter, but doesn't really matter as we offset laser range
             1,
             true,
             true,
             out laserEndPoint,
             null);
+        // custom
+        actorsInLaser.AddRange(actorsOnPath);
+        TargeterUtils.SortActorsByDistanceToPos(ref actorsInLaser, loSCheckPos);
+        // end custom
         ServerAbilityUtils.RemoveEvadersFromHitTargets(ref actorsInLaser);
         directHitActor = actorsInLaser.IsNullOrEmpty() ? null : actorsInLaser[0];
+        // custom
+        if (directHitActor != null)
+        {
+            Vector3 lhs = directHitActor.GetFreePos() - loSCheckPos;
+            lhs.y = 0f;
+            laserEndPoint = loSCheckPos + Vector3.Dot(lhs, targets[0].AimDirection) * targets[0].AimDirection;
+        }
+        // end custom
         Vector3 vector = laserEndPoint - loSCheckPos;
         vector.y = 0f;
         float magnitude2 = vector.magnitude;

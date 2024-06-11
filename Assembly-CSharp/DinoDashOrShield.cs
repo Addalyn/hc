@@ -362,7 +362,6 @@ public class DinoDashOrShield : GenericAbility_Container
 				new MiscHitEventData_OverrideCooldown(abilityActionType, GetDelayedCooldown()));
 		}
 
-		// TODO DINO check
 		if (m_passive != null
 		    && m_primaryAbility != null
 		    && !ServerActionBuffer.Get().HasStoredAbilityRequestOfType(caster, typeof(DinoLayerCones)))

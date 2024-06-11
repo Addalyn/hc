@@ -250,7 +250,12 @@ public class AbilityUtil_Targeter_ClaymoreCharge : AbilityUtil_Targeter
 		Vector3 idealTestVector = caster.GetFreePos() - b;
 		idealTestVector.y = 0f;
 		idealTestVector.Normalize();
+		// TODO DASH
+#if SERVER
+		BoardSquare currentBoardSquare = caster.GetSquareAtPhaseStart(); // custom
+#else
 		BoardSquare currentBoardSquare = caster.GetCurrentBoardSquare();
+#endif
 		boardSquare = GetBestDestinationInLayers(
 			desiredDest,
 			currentBoardSquare,
@@ -299,7 +304,12 @@ public class AbilityUtil_Targeter_ClaymoreCharge : AbilityUtil_Targeter
 					continue;
 				}
 				if (square.OccupantActor != null
+				    // TODO DASH
+#if SERVER
+				    && !ServerActionBuffer.Get().ActorIsEvading(square.OccupantActor) // custom
+#else
 				    && square.OccupantActor.IsActorVisibleToClient()
+#endif
 				    && square.OccupantActor != caster)
 				{
 					continue;
