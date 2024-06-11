@@ -9,8 +9,8 @@ using UnityEngine;
 public class DinoLayerCones : GenericAbility_Container
 {
 	[Separator("Powering Up Params")]
-	public int m_powerupPauseTurnsAfterCast = 1; // TODO DINO unused
-	public int m_initialPowerupStartDelay = 1; // TODO DINO unused
+	public int m_powerupPauseTurnsAfterCast = 1; // TODO DINO unused (hardcoded)
+	public int m_initialPowerupStartDelay = 1; // TODO DINO unused (hardcoded)
 	[Header("-- Power level if no inner hits")]
 	public int m_powerLevelAdjustIfNoInnerHits;
 
