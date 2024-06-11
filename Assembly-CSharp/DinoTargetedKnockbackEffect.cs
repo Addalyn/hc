@@ -44,6 +44,7 @@ public class DinoTargetedKnockbackPassiveEffect : Effect
         {
             return;
         }
+        // TODO DINO ServerKnockbackManager.GetKnockbackSourceActorsOnTarget()? No ability info though
 
         foreach (MovementInstance movementInstance in movement.m_movementInstances)
         {
@@ -84,9 +85,9 @@ public class DinoTargetedKnockbackPassiveEffect : Effect
                         continue;
                     }
 
-                    ActorHitParameters hitParams = new ActorHitParameters(mover, targetSquare.ToVector3());
+                    ActorHitParameters hitParams = new ActorHitParameters(hitActor, targetSquare.ToVector3());
                     ActorHitResults actorHitResults = new ActorHitResults(hitParams);
-                    GenericAbility_Container.ApplyActorHitData(Caster, mover, actorHitResults, m_hitData);
+                    GenericAbility_Container.ApplyActorHitData(Caster, hitActor, actorHitResults, m_hitData);
                     movementResults.GetEffectResults().StoreActorHit(actorHitResults);
                 }
             }
