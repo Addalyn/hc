@@ -22,14 +22,14 @@ public class FireborgSuperheat : GenericAbility_Container
         AddTokenInt(tokens, "IgniteExtraDamageIfSuperheated", string.Empty, m_igniteExtraDamageIfSuperheated);
     }
 
-    public int GetSuperheatDuration()
+    public int GetSuperheatDuration() // TODO FIREBORG does not affect sequence-holding effect, does not increase cooldown
     {
         return m_abilityMod != null
             ? m_abilityMod.m_superheatDurationMod.GetModifiedValue(m_superheatDuration)
             : m_superheatDuration;
     }
 
-    public int GetIgniteExtraDamageIfSuperheated()
+    public int GetIgniteExtraDamageIfSuperheated() // TODO FIREBORG unused, always 0
     {
         return m_abilityMod != null
             ? m_abilityMod.m_igniteExtraDamageIfSuperheatedMod.GetModifiedValue(m_igniteExtraDamageIfSuperheated)
@@ -45,4 +45,13 @@ public class FireborgSuperheat : GenericAbility_Container
     {
         m_abilityMod = null;
     }
+    
+#if SERVER
+    public override void Run(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
+    {
+        base.Run(targets, caster, additionalData);
+
+        m_syncComp.Networkm_superheatLastCastTurn = GameFlowData.Get().CurrentTurn;
+    }
+#endif
 }
