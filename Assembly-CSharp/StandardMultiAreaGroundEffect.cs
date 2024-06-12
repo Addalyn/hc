@@ -363,6 +363,7 @@ public class StandardMultiAreaGroundEffect : Effect
 					}
 					flag = true;
 				}
+				ProcessActorHit(actorHitResults); // custom
 				effectResults.StoreActorHit(actorHitResults);
 				AddActorHitThisTurn(actorData, isReal);
 			}
@@ -375,6 +376,11 @@ public class StandardMultiAreaGroundEffect : Effect
 				groundAreaInfo2.AddActorHit(actor);
 			}
 		}
+	}
+
+	// custom
+	protected virtual void ProcessActorHit(ActorHitResults actorHitResults)
+	{
 	}
 
 	public override bool AddActorAnimEntryIfHasHits(AbilityPriority phaseIndex)
@@ -529,6 +535,8 @@ public class StandardMultiAreaGroundEffect : Effect
 				}
 			}
 		}
+		
+		ProcessActorHit(actorHitResults); // custom
 
 		MovementResults movementResults = new MovementResults(movementStage);
 		movementResults.SetupTriggerData(triggeringPath);

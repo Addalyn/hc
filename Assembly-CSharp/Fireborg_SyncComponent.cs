@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using AbilityContextNamespace;
 using UnityEngine;
@@ -247,6 +248,69 @@ public class Fireborg_SyncComponent : NetworkBehaviour
         }
 
         return null;
+    }
+    
+    // custom
+    public FireborgGroundFireEffect MakeGroundFireEffect(
+        EffectSource parent,
+        ActorData caster,
+        List<BoardSquare> affectedSquares)
+    {
+        return new FireborgGroundFireEffect(
+            parent,
+            affectedSquares
+                .Select(s => new StandardMultiAreaGroundEffect.GroundAreaInfo(s, s.ToVector3(), AbilityAreaShape.SingleSquare))
+                .ToList(),
+            caster,
+            new GroundEffectField
+            {
+                duration = 1,
+                shape = AbilityAreaShape.SingleSquare,
+                damageAmount = InSuperheatMode()
+                    ? m_groundFireDamageSuperheated
+                    : m_groundFireDamageNormal,
+                effectOnEnemies = m_groundFireEffect,
+                effectOnAllies = new StandardEffectInfo
+                {
+                    m_applyEffect = false,
+                    m_effectData = new StandardActorEffectData()
+                },
+                perSquareSequences = true,
+                persistentSequencePrefab = InSuperheatMode() && m_superheatedGroundFireSquareSeqPrefab != null
+                    ? m_superheatedGroundFireSquareSeqPrefab
+                    : m_groundFirePerSquareSeqPrefab,
+                enemyHitSequencePrefab = m_groundFireOnHitSeqPrefab
+            },
+            InSuperheatMode() && m_groundFireAddsIgniteIfSuperheated);
+    }
+    
+    // custom
+    public PositionHitResults MakeGroundFireEffectResults(
+        Ability ability,
+        ActorData caster,
+        List<BoardSquare> affectedSquares,
+        Vector3 posForHit)
+    {
+        FireborgGroundFireEffect effect = MakeGroundFireEffect(ability.AsEffectSource(), caster, affectedSquares);
+        
+        PositionHitResults posHitResults = new PositionHitResults(new PositionHitParameters(posForHit));
+        bool isReal = !ServerActionBuffer.Get().GatheringFakeResults;
+        EffectResults effectResults = new EffectResults(effect, caster, isReal);
+        effect.GatherEffectResults(ref effectResults, isReal);
+        SequenceSource sequenceSource = new SequenceSource(null, null);
+        foreach (ActorHitResults hitResults in effectResults.m_actorToHitResults.Values)
+        {
+            ActorData hitActor = hitResults.m_hitParameters.Target;
+            MovementResults movementResults = new MovementResults(MovementStage.INVALID);
+            movementResults.SetupTriggerData(caster, null);
+            movementResults.SetupGameplayDataForAbility(ability, caster);
+            movementResults.SetupSequenceData(null, hitActor.GetCurrentBoardSquare(), sequenceSource);
+            movementResults.AddActorHitResultsForReaction(hitResults);
+            posHitResults.AddReactionOnPositionHit(movementResults);
+        }
+        
+        posHitResults.AddEffect(effect);
+        return posHitResults;
     }
 #endif
 }
