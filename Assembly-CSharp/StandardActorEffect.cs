@@ -848,5 +848,17 @@ public class StandardActorEffect : Effect
 	{
 		return m_data.GetInEditorDescription("", true, false, null);
 	}
+	
+	// custom
+	protected void EndAllEffectSequences(ActorHitResults actorHitResults)
+	{
+		if (m_data.m_sequencePrefabs != null && m_data.m_sequencePrefabs.Length != 0)
+		{
+			foreach (GameObject sequencePrefab in m_data.m_sequencePrefabs)
+			{
+				actorHitResults.AddEffectSequenceToEnd(sequencePrefab, m_guid);
+			}
+		}
+	}
 }
 #endif

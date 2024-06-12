@@ -930,6 +930,7 @@
     <Compile Include="FireborgDamageAura.cs" />
     <Compile Include="FireborgDash.cs" />
     <Compile Include="FireborgDualCones.cs" />
+    <Compile Include="FireborgIgnitedEffect.cs" />
     <Compile Include="FireborgReactLasers.cs" />
     <Compile Include="FireborgSuperheat.cs" />
     <Compile Include="Fireborg_SyncComponent.cs" />

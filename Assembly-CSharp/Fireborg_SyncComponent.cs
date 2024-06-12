@@ -32,6 +32,13 @@ public class Fireborg_SyncComponent : NetworkBehaviour
     public static ContextNameKeyPair s_cvarSuperheated = new ContextNameKeyPair("Superheated");
     private HashSet<ActorData> m_ignitedActorsThisTurn = new HashSet<ActorData>();
     private static int kListm_actorsInGroundFireOnTurnStart = 1427115255;
+    
+#if SERVER
+    // custom
+    internal HashSet<ActorData> m_actorsIgnitedThisTurn = new HashSet<ActorData>();
+    // custom
+    internal HashSet<ActorData> m_actorsIgnitedThisTurn_Fake = new HashSet<ActorData>();
+#endif
 
     public int Networkm_superheatLastCastTurn
     {
@@ -217,4 +224,29 @@ public class Fireborg_SyncComponent : NetworkBehaviour
             SyncListUInt.ReadReference(reader, m_actorsInGroundFireOnTurnStart);
         }
     }
+    
+#if SERVER
+    // custom
+    public FireborgIgnitedEffect MakeIgnitedEffect(EffectSource parent, ActorData caster, ActorData target)
+    {
+        HashSet<ActorData> set = ServerActionBuffer.Get().GatheringFakeResults
+            ? m_actorsIgnitedThisTurn_Fake 
+            : m_actorsIgnitedThisTurn;
+        
+        if (set.Add(target))
+        {
+            return new FireborgIgnitedEffect(
+                parent,
+                target.GetCurrentBoardSquare(),
+                target,
+                caster,
+                m_ignitedEffectData,
+                m_ignitedTriggerDamage,
+                m_ignitedTriggerEffect,
+                m_ignitedTriggerEnergyOnCaster);
+        }
+
+        return null;
+    }
+#endif
 }

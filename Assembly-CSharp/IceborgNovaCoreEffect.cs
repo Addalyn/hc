@@ -46,7 +46,8 @@ public class IceborgNovaCoreEffect : StandardActorEffect
 
     public override bool ShouldForceReactToHit(ActorHitResults incomingHit)
     {
-        return m_syncComp.m_delayedAoeCanReactToIndirectHits;
+        return m_syncComp.m_delayedAoeCanReactToIndirectHits
+               || incomingHit.m_hitParameters.Effect is FireborgIgnitedEffect;
     }
 
     public override void GatherResultsInResponseToActorHit(
@@ -86,12 +87,9 @@ public class IceborgNovaCoreEffect : StandardActorEffect
             actorHitResults.AddTechPointGainOnCaster(m_syncComp.m_delayedAoeEnergyPerEnemyHit + energyPerExplosion);
             energyPerExplosion = 0;
             actorHitResults.CanBeReactedTo = false;
-            if (hitActor == Target && m_data.m_sequencePrefabs != null && m_data.m_sequencePrefabs.Length != 0)
+            if (hitActor == Target)
             {
-                foreach (GameObject sequencePrefab in m_data.m_sequencePrefabs)
-                {
-                    actorHitResults.AddEffectSequenceToEnd(sequencePrefab, m_guid);
-                }
+                EndAllEffectSequences(actorHitResults);
             }
             actorHitResultList.Add(actorHitResults);
         }
