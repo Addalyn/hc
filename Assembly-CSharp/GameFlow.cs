@@ -1885,6 +1885,7 @@ public class GameFlow : NetworkBehaviour
 		}
 		//Team nextActingTeam_FCFS = this.GetNextActingTeam_FCFS();  // rogues
 		ServerEffectManager.Get().OnTurnEnd();  // (nextActingTeam_FCFS) in rogues
+		ServerActionBuffer.Get().OnTurnEnd(); // custom
 		BarrierManager.Get().OnTurnEnd();  // (nextActingTeam_FCFS) in rogues
 
 		foreach (ActorData actorData in actors)

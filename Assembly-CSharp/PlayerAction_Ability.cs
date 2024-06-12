@@ -143,7 +143,6 @@ public class PlayerAction_Ability : PlayerAction
 	//custom
 	public List<ActorAnimation> PrepareResults()
 	{
-		ServerActionBuffer.Get().GatheringFakeResults = false;
 		if (m_requests == null)
 		{
 			return new List<ActorAnimation>();
@@ -271,8 +270,6 @@ public class PlayerAction_Ability : PlayerAction
 		{
 			ServerActionBuffer.Get().TryRunAbilityRequest(request);
 		}
-		
-		ServerActionBuffer.Get().GatheringFakeResults = true;
 	}
 
 	// public override void OnExecutionComplete(bool isLastAction)

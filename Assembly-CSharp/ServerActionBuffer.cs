@@ -442,6 +442,7 @@ public class ServerActionBuffer : NetworkBehaviour
 	// custom
 	public void OnAbilityPhaseStart()
 	{
+		GatheringFakeResults = false;
 		OnPhaseStartForRequestedAbilities(AbilityPhase);
 	}
 
@@ -520,6 +521,12 @@ public class ServerActionBuffer : NetworkBehaviour
 		ClearMovementRequests();
 		// rogues
 		//m_storedAbilityRequestsForNextTurn.RemoveAll((AbilityRequest r) => r.m_caster.GetTeam() == actingTeam);
+	}
+	
+	// custom
+	public void OnTurnEnd()
+	{
+		GatheringFakeResults = true;
 	}
 
 	public void ClearNormalMovementResults()
