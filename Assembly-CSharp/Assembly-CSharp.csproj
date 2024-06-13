@@ -928,6 +928,7 @@
     <Compile Include="FileLog.cs" />
     <Compile Include="FileSystemUtils.cs" />
     <Compile Include="FireborgDamageAura.cs" />
+    <Compile Include="FireborgDamageAuraEffect.cs" />
     <Compile Include="FireborgDash.cs" />
     <Compile Include="FireborgDualCones.cs" />
     <Compile Include="FireborgGroundFireEffect.cs" />

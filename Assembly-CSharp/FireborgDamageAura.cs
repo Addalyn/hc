@@ -1,4 +1,7 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
+using System.Linq;
 using AbilityContextNamespace;
 using UnityEngine;
 
@@ -18,9 +21,9 @@ public class FireborgDamageAura : GenericAbility_Container
     public GameObject m_auraPersistentSeqPrefab;
     public GameObject m_auraOnTriggerSeqPrefab;
     [Header("-- Superheated versions")]
-    public GameObject m_superheatedCastSeqPrefab;
-    public GameObject m_superheatedPersistentSeqPrefab;
-    public GameObject m_superheatedOnTriggerSeqPrefab;
+    public GameObject m_superheatedCastSeqPrefab; // TODO FIREBORG unused, null
+    public GameObject m_superheatedPersistentSeqPrefab; // null
+    public GameObject m_superheatedOnTriggerSeqPrefab; // null
 
     private Fireborg_SyncComponent m_syncComp;
     private AbilityMod_FireborgDamageAura m_abilityMod;
@@ -185,4 +188,81 @@ public class FireborgDamageAura : GenericAbility_Container
     {
         m_abilityMod = null;
     }
+
+#if SERVER
+    // custom
+    private AbilityAreaShape GetShape()
+    {
+        return (GetTargetSelectComp() as TargetSelect_Shape)?.m_shape ?? AbilityAreaShape.Five_x_Five_NoCorners;
+    }
+
+    // custom
+    protected override void PreProcessForCalcAbilityHits(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        Dictionary<ActorData, ActorHitContext> actorHitContextMap,
+        ContextVars abilityContext)
+    {
+        base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
+
+        m_syncComp.SetSuperheatedContextVar(abilityContext);
+    }
+
+    // custom
+    protected override void ProcessGatheredHits(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        AbilityResults abilityResults,
+        List<ActorHitResults> actorHitResults,
+        List<PositionHitResults> positionHitResults,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        base.ProcessGatheredHits(
+            targets,
+            caster,
+            abilityResults,
+            actorHitResults,
+            positionHitResults,
+            nonActorTargetInfo);
+
+        BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
+        bool isSuperheated = m_syncComp.InSuperheatMode();
+
+        ActorHitResults actorHitResult = actorHitResults
+            .FirstOrDefault(ahr => ahr.m_hitParameters.Target.GetCurrentBoardSquare() == targetSquare);
+
+        List<ActorHitResults> actualActorHitResults = new List<ActorHitResults>();
+        if (actorHitResult != null)
+        {
+            ActorData hitActor = actorHitResult.m_hitParameters.Target;
+            ActorHitResults hitResults = new ActorHitResults(actorHitResult.m_hitParameters);
+            FireborgDamageAuraEffect effect = new FireborgDamageAuraEffect(
+                AsEffectSource(),
+                hitActor.GetCurrentBoardSquare(),
+                hitActor,
+                caster,
+                GetShape(),
+                GetOnHitAuthoredData(),
+                ExcludeTargetedActor(),
+                isSuperheated ? IgniteIfSuperheated() : IgniteIfNormal(),
+                isSuperheated && m_superheatedPersistentSeqPrefab != null
+                    ? m_superheatedPersistentSeqPrefab
+                    : m_auraPersistentSeqPrefab,
+                isSuperheated && m_superheatedOnTriggerSeqPrefab != null
+                    ? m_superheatedOnTriggerSeqPrefab
+                    : m_auraOnTriggerSeqPrefab);
+            effect.SetDurationBeforeStart(isSuperheated ? GetAuraDurationIfSuperheated() : GetAuraDuration());
+            hitResults.AddEffect(effect);
+            if (hitActor.GetTeam() == caster.GetTeam())
+            {
+                hitResults.AddStandardEffectInfo(GetOnCastTargetAllyEffect());
+            }
+
+            actualActorHitResults.Add(hitResults);
+        }
+
+        actorHitResults.Clear();
+        actorHitResults.AddRange(actualActorHitResults);
+    }
+#endif
 }
