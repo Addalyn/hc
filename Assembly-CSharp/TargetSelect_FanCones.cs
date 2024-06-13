@@ -375,7 +375,7 @@ public class TargetSelect_FanCones : GenericAbility_TargetSelectBase
         List<Vector3> coneDirections = GetConeDirections(targets[0], targets[0].FreePos, caster);
         List<Vector3> coneOrigins = GetConeOrigins(targets[0], targets[0].FreePos, caster);
         coneStartPosList = coneOrigins;
-        ConeTargetingInfo coneInfo = m_coneInfo;
+        ConeTargetingInfo coneInfo = GetConeInfo(); // m_coneInfo in rogues
         for (int i = 0; i < coneDirections.Count; i++)
         {
             Vector3 coneDirection = coneDirections[i];
@@ -481,12 +481,56 @@ public class TargetSelect_FanCones : GenericAbility_TargetSelectBase
         Vector3 coneStartPos,
         Vector3 coneEndPos)
     {
+        ConeTargetingInfo coneInfo = GetConeInfo(); // m_coneInfo in rogues
         return new BlasterStretchConeSequence.ExtraParams
         {
-            lengthInSquares = m_coneInfo.m_radiusInSquares,
-            angleInDegrees = m_coneInfo.m_widthAngleDeg,
+            lengthInSquares = coneInfo.m_radiusInSquares,
+            angleInDegrees = coneInfo.m_widthAngleDeg,
             forwardAngle = VectorUtils.HorizontalAngle_Deg(coneEndPos - coneStartPos)
         }.ToArray();
+    }
+    
+    // custom
+    public Dictionary<BoardSquare, int> GetHitSquareToHitCount(List<AbilityTarget> targets, ActorData caster, out Vector3 posForHit) 
+    {
+        Dictionary<BoardSquare, int> result = new Dictionary<BoardSquare, int>();
+        List<Vector3> coneDirections = GetConeDirections(targets[0], targets[0].FreePos, caster);
+        List<Vector3> coneOrigins = GetConeOrigins(targets[0], targets[0].FreePos, caster);
+        posForHit = coneOrigins[0];
+        ConeTargetingInfo coneInfo = GetConeInfo();
+        for (int i = 0; i < coneDirections.Count; i++)
+        {
+            List<BoardSquare> squaresInCone = GameWideData.Get().UseActorRadiusForCone()
+                ? AreaEffectUtils.GetSquaresInConeByActorRadius(
+                    coneOrigins[i],
+                    VectorUtils.HorizontalAngle_Deg(coneDirections[i]),
+                    coneInfo.m_widthAngleDeg,
+                    coneInfo.m_radiusInSquares,
+                    coneInfo.m_backwardsOffset,
+                    coneInfo.m_penetrateLos,
+                    caster)
+                : AreaEffectUtils.GetSquaresInCone(
+                    coneOrigins[i],
+                    VectorUtils.HorizontalAngle_Deg(coneDirections[i]),
+                    coneInfo.m_widthAngleDeg,
+                    coneInfo.m_radiusInSquares,
+                    coneInfo.m_backwardsOffset,
+                    coneInfo.m_penetrateLos,
+                    caster);
+            foreach (BoardSquare hitSquare in squaresInCone)
+            {
+                if (result.ContainsKey(hitSquare))
+                {
+                    result[hitSquare]++;
+                }
+                else
+                {
+                    result[hitSquare] = 1;
+                }
+            }
+        }
+
+        return result;
     }
 #endif
 }

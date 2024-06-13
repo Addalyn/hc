@@ -1,7 +1,13 @@
 using System.Collections.Generic;
+using System.Linq;
 using AbilityContextNamespace;
 using UnityEngine;
 
+// Unleash twin flamethrowers, torching enemies for [NormalDamage_Base](28) direct damage.
+// Spaces hit by both templates are set on fire until end of turn,
+// dealing [^5^] indirect damage to enemies that touch them.
+//
+// Gain [RewardOnDamage_PerTarget](6) energy per enemy hit. Ground fire hits do not grant energy.
 public class FireborgDualCones : GenericAbility_Container
 {
     [Separator("Extra Damage for overlap state")]
@@ -17,7 +23,7 @@ public class FireborgDualCones : GenericAbility_Container
     public bool m_groundFireOnAllIfSuperheated = true;
     public bool m_groundFireOnOverlapIfSuperheated = true;
     [Separator("Superheat Sequence")]
-    public GameObject m_superheatCastSeqPrefab;
+    public GameObject m_superheatCastSeqPrefab; // TODO FIREBORG unused, null
 
     private Fireborg_SyncComponent m_syncComp;
     private AbilityMod_FireborgDualCones m_abilityMod;
@@ -196,4 +202,84 @@ public class FireborgDualCones : GenericAbility_Container
     {
         m_abilityMod = null;
     }
+    
+#if SERVER
+    // custom
+    protected override void PreProcessForCalcAbilityHits(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        Dictionary<ActorData, ActorHitContext> actorHitContextMap,
+        ContextVars abilityContext)
+    {
+        base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
+        
+        m_syncComp.SetSuperheatedContextVar(abilityContext);
+    }
+
+    // custom
+    protected override void ProcessGatheredHits(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        AbilityResults abilityResults,
+        List<ActorHitResults> actorHitResults,
+        List<PositionHitResults> positionHitResults,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+
+        Dictionary<ActorData,ActorHitContext> actorHitContextMap = GetTargetSelectComp().GetActorHitContextMap();
+
+        foreach (ActorHitResults actorHitResult in actorHitResults)
+        {
+            ActorData hitActor = actorHitResult.m_hitParameters.Target;
+
+            if (hitActor.GetTeam() == caster.GetTeam())
+            {
+                continue;
+            }
+
+            actorHitContextMap[hitActor].m_contextVars.TryGetInt(ContextKeys.s_HitCount.GetKey(), out int hitCount);
+
+            if (actorHitResult.HasDamage)
+            {
+                actorHitResult.AddBaseDamage(hitCount > 1
+                    ? GetExtraDamageIfOverlap()
+                    : GetExtraDamageNonOverlap());
+
+                if (hitCount > 1 && IgniteTargetIfOverlapHit()
+                    || m_syncComp.InSuperheatMode() && IgniteTargetIfSuperheated())
+                {
+                    FireborgIgnitedEffect fireborgIgnitedEffect = m_syncComp.MakeIgnitedEffect(AsEffectSource(), caster, hitActor);
+                    if (fireborgIgnitedEffect != null)
+                    {
+                        actorHitResult.AddEffect(fireborgIgnitedEffect);
+                    }
+                }
+            }
+        }
+
+        if (ShouldAddGroundFire())
+        {
+            int threshold = ShouldAddGroundFireToAllSquares() ? 1 : 2;
+            TargetSelect_FanCones targetSelect = GetTargetSelectComp() as TargetSelect_FanCones;
+            if (targetSelect != null)
+            {
+                List<BoardSquare> groundFireSquares = targetSelect
+                    .GetHitSquareToHitCount(targets, caster, out Vector3 posForHit) // TODO FIREBORG overlaps do not match client
+                    .Where(kv => kv.Value >= threshold)
+                    .Select(kv => kv.Key)
+                    .ToList();
+
+                if (groundFireSquares.Count > 0)
+                {
+                    positionHitResults.Add(m_syncComp.MakeGroundFireEffectResults(
+                        this,
+                        caster,
+                        groundFireSquares,
+                        posForHit));
+                }
+            }
+        }
+    }
+#endif
 }
