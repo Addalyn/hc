@@ -221,7 +221,13 @@ public abstract class GenericAbility_TargetSelectBase : MonoBehaviour
 	// added in rogues
 	public virtual Vector3 GetChargeBestSquareTestVector(ServerEvadeUtils.ChargeSegment[] chargeSegments)
 	{
-		return Vector3.zero;
+		// custom
+		Vector3 result = chargeSegments[0].m_pos.ToVector3() - chargeSegments[1].m_pos.ToVector3();
+		result.y = 0f;
+		result.Normalize();
+		return result;
+		// rogues
+		// return Vector3.zero;
 	}
 
 	// added in rogues

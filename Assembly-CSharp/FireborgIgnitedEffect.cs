@@ -26,6 +26,11 @@ public class FireborgIgnitedEffect : StandardActorEffect
 
     public override void GatherEffectResults(ref EffectResults effectResults, bool isReal)
     {
+        if (m_time.age < 1)
+        {
+            return;
+        }
+        
         ActorHitResults actorHitResults = BuildMainTargetHitResults()
                                           ?? new ActorHitResults(new ActorHitParameters(Target, Target.GetFreePos()));
         actorHitResults.AddBaseDamage(m_ignitedTriggerDamage);

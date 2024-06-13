@@ -14,10 +14,10 @@ public class FireborgDash : GenericAbility_Container
     public int m_shieldPerEnemyHit;
     public int m_shieldDuration = 1;
     [Separator("Cooldown Reduction")]
-    public int m_cdrPerTurnIfLowHealth;
-    public int m_lowHealthThresh;
+    public int m_cdrPerTurnIfLowHealth; // TODO FIREBORG unused, 0
+    public int m_lowHealthThresh; // TODO FIREBORG unused, 0
     [Separator("Sequence")]
-    public GameObject m_superheatedCastSeqPrefab;
+    public GameObject m_superheatedCastSeqPrefab; // TODO FIREBORG unused, null
 
     private Fireborg_SyncComponent m_syncComp;
     private AbilityMod_FireborgDash m_abilityMod;
@@ -159,4 +159,91 @@ public class FireborgDash : GenericAbility_Container
     {
         m_abilityMod = null;
     }
+    
+#if SERVER
+    // custom
+    protected override void PreProcessForCalcAbilityHits(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        Dictionary<ActorData, ActorHitContext> actorHitContextMap,
+        ContextVars abilityContext)
+    {
+        base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
+        
+        m_syncComp.SetSuperheatedContextVar(abilityContext);
+    }
+
+    // custom
+    protected override void ProcessGatheredHits(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        AbilityResults abilityResults,
+        List<ActorHitResults> actorHitResults,
+        List<PositionHitResults> positionHitResults,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+
+        bool isSuperheated = m_syncComp.InSuperheatMode();
+        bool isIgniting = isSuperheated ? IgniteIfSuperheated() : IgniteIfNormal();
+
+        int enemiesHit = 0;
+        foreach (ActorHitResults actorHitResult in actorHitResults)
+        {
+            ActorData hitActor = actorHitResult.m_hitParameters.Target;
+        
+            if (hitActor.GetTeam() == caster.GetTeam())
+            {
+                continue;
+            }
+        
+            if (actorHitResult.HasDamage && isIgniting)
+            {
+                FireborgIgnitedEffect fireborgIgnitedEffect = m_syncComp.MakeIgnitedEffect(AsEffectSource(), caster, hitActor);
+                if (fireborgIgnitedEffect != null)
+                {
+                    actorHitResult.AddEffect(fireborgIgnitedEffect);
+                }
+            }
+
+            enemiesHit++;
+        }
+
+        if (GetShieldPerEnemyHit() > 0 && enemiesHit > 0)
+        {
+            GetOrAddHitResults(caster, actorHitResults)
+                .AddEffect(CreateShieldEffect(this, caster, GetShieldPerEnemyHit() * enemiesHit, GetShieldDuration()));
+        }
+
+        if (AddGroundFire())
+        {
+            TargetSelect_ChargeAoE targetSelect = GetTargetSelectComp() as TargetSelect_ChargeAoE;
+            if (targetSelect != null)
+            {
+                Vector3 center = targetSelect.GetNonActorSpecificContext().GetValueVec3(ContextKeys.s_ChargeEndPos.GetKey());
+                BoardSquare centerSquare = Board.Get().GetSquareFromVec3(center);
+                float radiusAroundEnd = targetSelect.GetRadiusAroundEnd();
+                List<BoardSquare> groundFireSquares = AreaEffectUtils.GetSquaresInRadius(
+                    centerSquare,
+                    radiusAroundEnd + 0.5f,
+                    false,
+                    caster);
+
+                if (groundFireSquares.Count > 0)
+                {
+                    positionHitResults.Add(m_syncComp.MakeGroundFireEffectResults( // TODO FIREBORG make sure it doesn't hit evaders
+                        this,
+                        caster,
+                        groundFireSquares,
+                        Board.Get().GetSquare(targets[0].GridPos).ToVector3(),
+                        isSuperheated ? GetGroundFireDurationIfSuperheated() : GetGroundFireDuration(),
+                        ServerAbilityUtils.CurrentlyGatheringRealResults(),
+                        out FireborgGroundFireEffect effect));
+                    GetOrAddHitResults(caster, actorHitResults).AddEffect(effect);
+                }
+            } 
+        }
+
+    }
+#endif
 }
