@@ -11,14 +11,13 @@ public class FireborgIgnitedEffect : StandardActorEffect
 
     public FireborgIgnitedEffect(
         EffectSource parent,
-        BoardSquare targetSquare,
         ActorData target,
         ActorData caster,
         StandardActorEffectData data,
         int ignitedTriggerDamage,
         StandardEffectInfo ignitedTriggerEffect,
         int ignitedTriggerEnergyOnCaster)
-        : base(parent, targetSquare, target, caster, data)
+        : base(parent, null, target, caster, data)
     {
         m_ignitedTriggerDamage = ignitedTriggerDamage;
         m_ignitedTriggerEffect = ignitedTriggerEffect;

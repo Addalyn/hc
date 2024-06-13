@@ -238,7 +238,6 @@ public class Fireborg_SyncComponent : NetworkBehaviour
         {
             return new FireborgIgnitedEffect(
                 parent,
-                target.GetCurrentBoardSquare(),
                 target,
                 caster,
                 m_ignitedEffectData,
