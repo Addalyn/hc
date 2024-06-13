@@ -61,6 +61,28 @@ public class StandardMultiAreaGroundEffect : Effect
 	}
 
 	// custom
+	public HashSet<ActorData> GetActorsInShape()
+	{
+		var result = new HashSet<ActorData>();
+		bool includeEnemies = m_fieldInfo.IncludeEnemies();
+		bool includeAllies = m_fieldInfo.IncludeAllies();
+		foreach (GroundAreaInfo groundAreaInfo in m_areaInfoList)
+		{
+			List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(
+				m_fieldInfo.shape,
+				groundAreaInfo.m_shapeFreePos,
+				groundAreaInfo.m_targetSquare,
+				m_fieldInfo.penetrateLos,
+				Caster,
+				TargeterUtils.GetRelevantTeams(Caster, includeAllies, includeEnemies),
+				null);
+			result.UnionWith(actorsInShape);
+		}
+		
+		return result;
+	}
+
+	// custom
 	public HashSet<BoardSquare> GetSquaresInShape()
 	{
 		var result = new HashSet<BoardSquare>();
@@ -363,7 +385,7 @@ public class StandardMultiAreaGroundEffect : Effect
 					}
 					flag = true;
 				}
-				ProcessActorHit(actorHitResults); // custom
+				ProcessActorHit(actorHitResults, isReal); // custom
 				effectResults.StoreActorHit(actorHitResults);
 				AddActorHitThisTurn(actorData, isReal);
 			}
@@ -379,7 +401,7 @@ public class StandardMultiAreaGroundEffect : Effect
 	}
 
 	// custom
-	protected virtual void ProcessActorHit(ActorHitResults actorHitResults)
+	protected virtual void ProcessActorHit(ActorHitResults actorHitResults, bool isReal)
 	{
 	}
 
@@ -536,7 +558,7 @@ public class StandardMultiAreaGroundEffect : Effect
 			}
 		}
 		
-		ProcessActorHit(actorHitResults); // custom
+		ProcessActorHit(actorHitResults, true); // custom
 
 		MovementResults movementResults = new MovementResults(movementStage);
 		movementResults.SetupTriggerData(triggeringPath);
@@ -579,12 +601,12 @@ public class StandardMultiAreaGroundEffect : Effect
 		}
 	}
 
-	private HashSet<ActorData> GetActorsHitThisTurn(bool isReal)
+	protected HashSet<ActorData> GetActorsHitThisTurn(bool isReal) // private in rogues
 	{
 		return isReal ? m_actorsHitThisTurn : m_actorsHitThisTurn_fake;
 	}
 
-	private void AddActorHitThisTurn(ActorData actor, bool isReal)
+	protected void AddActorHitThisTurn(ActorData actor, bool isReal) // private in rogues
 	{
 		if (isReal)
 		{

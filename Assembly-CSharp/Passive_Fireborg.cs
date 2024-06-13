@@ -18,8 +18,11 @@ public class Passive_Fireborg : Passive
     {
         base.OnTurnStart();
         
+        m_syncComp.m_actorsInGroundFireOnTurnStart.Clear();
         m_syncComp.m_actorsIgnitedThisTurn.Clear();
         m_syncComp.m_actorsIgnitedThisTurn_Fake.Clear();
+        m_syncComp.m_actorsHitByGroundFireThisTurn.Clear();
+        m_syncComp.m_actorsHitByGroundFireThisTurn_Fake.Clear();
     }
 #endif
 }

@@ -1,5 +1,9 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 
+#if SERVER
+// custom
 public class FireborgGroundFireEffect : StandardMultiAreaGroundEffect
 {
     private readonly bool m_groundFireAddsIgnite;
@@ -17,7 +21,21 @@ public class FireborgGroundFireEffect : StandardMultiAreaGroundEffect
         m_syncComp = parent.Ability.GetComponent<Fireborg_SyncComponent>();
     }
 
-    protected override void ProcessActorHit(ActorHitResults actorHitResults)
+    public override void OnTurnStart()
+    {
+        base.OnTurnStart();
+        
+        foreach (ActorData actorData in GetActorsInShape())
+        {
+            uint actorIndex = (uint)actorData.ActorIndex;
+            if (!m_syncComp.m_actorsInGroundFireOnTurnStart.Contains(actorIndex))
+            {
+                m_syncComp.m_actorsInGroundFireOnTurnStart.Add(actorIndex);
+            }
+        }
+    }
+
+    protected override void ProcessActorHit(ActorHitResults actorHitResults, bool isReal)
     {
         ActorData hitActor = actorHitResults.m_hitParameters.Target;
         actorHitResults.SetIgnoreTechpointInteractionForHit(true);
@@ -29,5 +47,15 @@ public class FireborgGroundFireEffect : StandardMultiAreaGroundEffect
                 actorHitResults.AddEffect(fireborgIgnitedEffect);
             }
         }
+        
+        foreach (Effect effect in ServerEffectManager.Get().GetWorldEffectsByCaster(Caster, typeof(FireborgGroundFireEffect)))
+        {
+            if (effect is FireborgGroundFireEffect fireborgGroundFireEffect)
+            {
+                fireborgGroundFireEffect.AddActorHitThisTurn(hitActor, isReal);
+            }
+        }
+        m_syncComp.GetActorsHitByGroundFireThisTurn(isReal).Add(hitActor);
     }
 }
+#endif

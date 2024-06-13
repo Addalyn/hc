@@ -39,6 +39,10 @@ public class Fireborg_SyncComponent : NetworkBehaviour
     internal HashSet<ActorData> m_actorsIgnitedThisTurn = new HashSet<ActorData>();
     // custom
     internal HashSet<ActorData> m_actorsIgnitedThisTurn_Fake = new HashSet<ActorData>();
+    // custom
+    internal HashSet<ActorData> m_actorsHitByGroundFireThisTurn = new HashSet<ActorData>();
+    // custom
+    internal HashSet<ActorData> m_actorsHitByGroundFireThisTurn_Fake = new HashSet<ActorData>();
 #endif
 
     public int Networkm_superheatLastCastTurn
@@ -288,12 +292,16 @@ public class Fireborg_SyncComponent : NetworkBehaviour
         Ability ability,
         ActorData caster,
         List<BoardSquare> affectedSquares,
-        Vector3 posForHit)
+        Vector3 posForHit,
+        int duration, // TODO FIREBORG
+        bool isReal,
+        out FireborgGroundFireEffect effect)
     {
-        FireborgGroundFireEffect effect = MakeGroundFireEffect(ability.AsEffectSource(), caster, affectedSquares);
+        affectedSquares = affectedSquares.Where(s => s.IsValidForGameplay()).ToList();
+        effect = MakeGroundFireEffect(ability.AsEffectSource(), caster, affectedSquares);
+        effect.AddToActorsHitThisTurn(GetActorsHitByGroundFireThisTurn(isReal).ToList());
         
         PositionHitResults posHitResults = new PositionHitResults(new PositionHitParameters(posForHit));
-        bool isReal = !ServerActionBuffer.Get().GatheringFakeResults;
         EffectResults effectResults = new EffectResults(effect, caster, isReal);
         effect.GatherEffectResults(ref effectResults, isReal);
         SequenceSource sequenceSource = new SequenceSource(null, null);
@@ -308,8 +316,13 @@ public class Fireborg_SyncComponent : NetworkBehaviour
             posHitResults.AddReactionOnPositionHit(movementResults);
         }
         
-        posHitResults.AddEffect(effect);
         return posHitResults;
+    }
+    
+    // custom
+    public HashSet<ActorData> GetActorsHitByGroundFireThisTurn(bool isReal)
+    {
+        return isReal ? m_actorsHitByGroundFireThisTurn : m_actorsHitByGroundFireThisTurn_Fake;
     }
 #endif
 }

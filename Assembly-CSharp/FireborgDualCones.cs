@@ -265,18 +265,24 @@ public class FireborgDualCones : GenericAbility_Container
             if (targetSelect != null)
             {
                 List<BoardSquare> groundFireSquares = targetSelect
-                    .GetHitSquareToHitCount(targets, caster, out Vector3 posForHit) // TODO FIREBORG overlaps do not match client
+                    .GetHitSquareToHitCount(targets, caster, out Vector3 posForHit)
                     .Where(kv => kv.Value >= threshold)
                     .Select(kv => kv.Key)
                     .ToList();
 
                 if (groundFireSquares.Count > 0)
                 {
-                    positionHitResults.Add(m_syncComp.MakeGroundFireEffectResults(
+                    PositionHitResults posHitResults = m_syncComp.MakeGroundFireEffectResults(
                         this,
                         caster,
                         groundFireSquares,
-                        posForHit));
+                        posForHit,
+                        1,
+                        ServerAbilityUtils.CurrentlyGatheringRealResults(),
+                        out FireborgGroundFireEffect effect);
+                    posHitResults.AddEffect(effect);
+                    positionHitResults.Add(posHitResults);
+        
                 }
             }
         }
