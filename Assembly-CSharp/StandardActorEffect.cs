@@ -94,7 +94,10 @@ public class StandardActorEffect : Effect
 	{
 		if (!m_started)
 		{
-			m_absorbToAddOnTurnStart = nextTurnAbsorb;
+			// custom
+			m_data.m_nextTurnAbsorbAmount = nextTurnAbsorb;
+			// rogues - will be overriden OnStart in AddMods
+			// m_absorbToAddOnTurnStart = nextTurnAbsorb;
 		}
 	}
 

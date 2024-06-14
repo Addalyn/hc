@@ -796,27 +796,27 @@ public class GenericAbility_Container : Ability
 	{
 		StandardActorEffectData standardActorEffectData = new StandardActorEffectData();
 		standardActorEffectData.InitWithDefaultValues();
-		bool beginsAfterBlastPhase = ability.GetRunPriority() >= AbilityPriority.Combat_Damage;
+		// bool beginsAfterBlastPhase = ability.GetRunPriority() >= AbilityPriority.Combat_Damage;
 		int duration = Mathf.Max(1, shieldDuration);
-		if (beginsAfterBlastPhase)
-		{
-			duration++;
-		}
+		// if (beginsAfterBlastPhase)
+		// {
+		// 	duration++;
+		// }
 		standardActorEffectData.m_duration = duration;
-		if (!beginsAfterBlastPhase)
-		{
+		// if (!beginsAfterBlastPhase)
+		// {
 			standardActorEffectData.m_absorbAmount = totalShielding;
-		}
+		// }
 		StandardActorEffect standardActorEffect = new StandardActorEffect(
 			ability.AsEffectSource(),
 			caster.GetCurrentBoardSquare(),
 			caster,
 			caster,
 			standardActorEffectData);
-		if (beginsAfterBlastPhase)
-		{
-			standardActorEffect.SetNextTurnAbsorbOverride(totalShielding);
-		}
+		// if (beginsAfterBlastPhase)
+		// {
+		// 	standardActorEffect.SetNextTurnAbsorbOverride(totalShielding);
+		// }
 		return standardActorEffect;
 	}
 
