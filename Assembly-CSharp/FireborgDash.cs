@@ -237,6 +237,7 @@ public class FireborgDash : GenericAbility_Container
                         groundFireSquares,
                         Board.Get().GetSquare(targets[0].GridPos).ToVector3(),
                         isSuperheated ? GetGroundFireDurationIfSuperheated() : GetGroundFireDuration(),
+                        false,
                         ServerAbilityUtils.CurrentlyGatheringRealResults(),
                         out FireborgGroundFireEffect effect));
                     GetOrAddHitResults(caster, actorHitResults).AddEffect(effect);

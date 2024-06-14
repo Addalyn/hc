@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System;
 using System.Collections.Generic;
 using AbilityContextNamespace;
@@ -36,12 +38,12 @@ public class FireborgReactLasers : GenericAbility_Container
     [Header("-- shield applied on next turn if depleted this turn")]
     public int m_earlyDepleteShieldOnNextTurn;
     [Separator("Sequences")]
-    public GameObject m_persistentSeqPrefab;
+    public GameObject m_persistentSeqPrefab; // null
     public GameObject m_onTriggerSeqPrefab;
     public GameObject m_reactionAnimTriggerSeqPrefab;
     [Header("-- Superheated Sequences")]
-    public GameObject m_superheatedCastSeqPrefab;
-    public GameObject m_superheatedOnTriggerSeqPrefab;
+    public GameObject m_superheatedCastSeqPrefab; // TODO FIREBORG unused, null
+    public GameObject m_superheatedOnTriggerSeqPrefab; // TODO FIREBORG unused, null
     public float m_onTriggerProjectileSeqStartDelay;
     [Separator("Animation")]
     public int m_mainLaserAnimationIndex = 4;
@@ -114,6 +116,7 @@ public class FireborgReactLasers : GenericAbility_Container
             : m_lowHealthThresh;
     }
 
+    // TODO FIREBORG
     public int GetShieldPerHitReceivedForNextTurn()
     {
         return m_abilityMod != null
@@ -121,6 +124,7 @@ public class FireborgReactLasers : GenericAbility_Container
             : m_shieldPerHitReceivedForNextTurn;
     }
 
+    // TODO FIREBORG
     public int GetEarlyDepleteShieldOnNextTurn()
     {
         return m_abilityMod != null
@@ -276,4 +280,91 @@ public class FireborgReactLasers : GenericAbility_Container
             }
         }
     }
+
+#if SERVER
+    // custom
+    public bool IsCasterLowHealth(ActorData caster)
+    {
+        return GetLowHealthThresh() > 0
+               && caster.HitPoints < GetLowHealthThresh();
+    }
+
+    // custom
+    private float GetLaserWidth()
+    {
+        return (GetTargetSelectComp() as TargetSelect_Laser)?.GetLaserWidth() ?? 1.25f;
+    }
+
+    // custom
+    private float GetLaserRange()
+    {
+        return (GetTargetSelectComp() as TargetSelect_Laser)?.GetLaserRange() ?? 7.5f;
+    }
+
+    // custom
+    private bool GetIgnoreLos()
+    {
+        return (GetTargetSelectComp() as TargetSelect_Laser)?.IgnoreLos() ?? false;
+    }
+
+    // custom
+    protected override void PreProcessForCalcAbilityHits(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        Dictionary<ActorData, ActorHitContext> actorHitContextMap,
+        ContextVars abilityContext)
+    {
+        base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
+
+        m_syncComp.SetSuperheatedContextVar(abilityContext);
+    }
+
+    // custom
+    protected override void ProcessGatheredHits(
+        List<AbilityTarget> targets,
+        ActorData caster,
+        AbilityResults abilityResults,
+        List<ActorHitResults> actorHitResults,
+        List<PositionHitResults> positionHitResults,
+        List<NonActorTargetInfo> nonActorTargetInfo)
+    {
+        base.ProcessGatheredHits(
+            targets,
+            caster,
+            abilityResults,
+            actorHitResults,
+            positionHitResults,
+            nonActorTargetInfo);
+
+        ActorHitResults casterHitResults = GetOrAddHitResults(caster, actorHitResults);
+        casterHitResults.AddEffect(
+            new FireborgReactLasersEffect(
+                AsEffectSource(),
+                caster.GetCurrentBoardSquare(),
+                caster,
+                caster,
+                targets[0].AimDirection,
+                GetLaserRange(),
+                GetLaserWidth(),
+                GetIgnoreLos(),
+                GetOnHitAuthoredData(),
+                GetOnHitDataForSecondLaser(),
+                m_ignitedApplySetting,
+                m_groundFireApplySetting,
+                m_mainLaserAnimationIndex,
+                m_persistentSeqPrefab,
+                m_onTriggerSeqPrefab,
+                m_reactionAnimTriggerSeqPrefab,
+                m_onTriggerProjectileSeqStartDelay,
+                m_syncComp));
+
+        if (IsCasterLowHealth(caster))
+        {
+            casterHitResults.AddEffect(CreateShieldEffect(this, caster, GetExtraShieldIfLowHealth(), 1));
+        }
+
+        actorHitResults.Clear();
+        actorHitResults.Add(casterHitResults);
+    }
+#endif
 }

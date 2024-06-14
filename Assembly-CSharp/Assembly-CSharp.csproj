@@ -934,6 +934,7 @@
     <Compile Include="FireborgGroundFireEffect.cs" />
     <Compile Include="FireborgIgnitedEffect.cs" />
     <Compile Include="FireborgReactLasers.cs" />
+    <Compile Include="FireborgReactLasersEffect.cs" />
     <Compile Include="FireborgSuperheat.cs" />
     <Compile Include="Fireborg_SyncComponent.cs" />
     <Compile Include="FirstTurnMovement.cs" />

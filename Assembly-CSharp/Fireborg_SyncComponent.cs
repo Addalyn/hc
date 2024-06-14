@@ -294,6 +294,7 @@ public class Fireborg_SyncComponent : NetworkBehaviour
         List<BoardSquare> affectedSquares,
         Vector3 posForHit,
         int duration, // TODO FIREBORG
+        bool applyIgnited, // TODO FIREBORG
         bool isReal,
         out FireborgGroundFireEffect effect)
     {

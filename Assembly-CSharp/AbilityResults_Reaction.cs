@@ -7,14 +7,15 @@ using UnityEngine;
 #if SERVER
 public class AbilityResults_Reaction
 {
-	private List<GameObject> m_sequencePrefabs;
-	private BoardSquare m_targetSquare;
-	private ActorData m_caster;
-	private ActorData m_sequenceCaster;
-	private SequenceSource m_sequenceSource;
-	private Sequence.IExtraSequenceParams[] m_extraParams;
-	private EffectResults m_results;
-	private byte m_extraFlags;
+	// all private in rogues
+	protected List<GameObject> m_sequencePrefabs;
+	protected BoardSquare m_targetSquare;
+	protected ActorData m_caster;
+	protected ActorData m_sequenceCaster;
+	protected SequenceSource m_sequenceSource;
+	protected Sequence.IExtraSequenceParams[] m_extraParams;
+	protected EffectResults m_results;
+	protected byte m_extraFlags;
 
 	public AbilityResults_Reaction(
         Effect reactingEffect,
@@ -156,6 +157,46 @@ public class AbilityResults_Reaction
 	public string GetDebugDescription()
 	{
 		return "Reaction from Effect " + m_results.Effect.GetDebugIdentifier();
+	}
+}
+
+// custom
+// TODO looks a bit too complicated
+public class AbilityResults_Reaction_PositionHitSequence : AbilityResults_Reaction
+{
+	private Vector3 m_targetPos;
+	
+	public void SetupSequenceData(
+		GameObject sequencePrefab,
+		Vector3 sequenceTargetPos,
+		SequenceSource parentSequenceSource,
+		Sequence.IExtraSequenceParams[] extraParams = null)
+	{
+		SetupSequenceData(sequencePrefab, null, parentSequenceSource, extraParams);
+		m_targetPos = sequenceTargetPos;
+	}
+	
+	public override List<ServerClientUtils.SequenceStartData> GetReactionSeqDataList()
+	{
+		List<ServerClientUtils.SequenceStartData> list = new List<ServerClientUtils.SequenceStartData>();
+		ActorData[] targetActorArray = m_results.HitActorsArray();
+		ActorData actorData = m_sequenceCaster;
+		if (actorData == null)
+		{
+			actorData = m_caster;
+		}
+		foreach (GameObject prefab in m_sequencePrefabs)
+		{
+			list.Add(
+				new ServerClientUtils.SequenceStartData(
+					prefab,
+					m_targetPos,
+					targetActorArray,
+					actorData,
+					m_sequenceSource,
+					m_extraParams));
+		}
+		return list;
 	}
 }
 #endif
