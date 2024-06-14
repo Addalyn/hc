@@ -852,7 +852,7 @@ public class GameFlow : NetworkBehaviour
 		List<Effect> executingEffects = new List<Effect>();
 		foreach (KeyValuePair<ActorData, List<Effect>> actorAndEffects in ServerEffectManager.Get().GetAllActorEffects())
 		{
-			if (!actorAndEffects.Key.IsDead()) // TODO EFFECTS Should effects persist through lancer's death?
+			if (!actorAndEffects.Key.IsDead())
 			{
 				foreach (Effect effect in actorAndEffects.Value)
 				{
