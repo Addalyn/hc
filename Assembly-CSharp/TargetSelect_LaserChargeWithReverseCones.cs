@@ -401,7 +401,7 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
             out _,
             out _,
             out ActorData actorData,
-            out _,
+            out Vector3 chargeEndPos,
             nonActorTargetInfo);
         if (actorData != null)
         {
@@ -411,7 +411,7 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
 
         foreach (ActorData hitActor in hitActorsAndHitCount.Keys)
         {
-            AddHitActor(hitActor, caster.GetLoSCheckPos(caster.GetSquareAtPhaseStart()));
+            AddHitActor(hitActor, chargeEndPos); // caster.GetLoSCheckPos(caster.GetSquareAtPhaseStart()) in rogues
             SetActorContext(hitActor, s_cvarDirectChargeHit.GetKey(), 0);
             SetActorContext(hitActor, ContextKeys.s_HitCount.GetKey(), hitActorsAndHitCount[hitActor]);
         }
