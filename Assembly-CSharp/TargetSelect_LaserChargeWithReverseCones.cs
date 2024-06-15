@@ -297,7 +297,7 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
             1,
             true,
             true,
-            out laserEndPoint,
+            out _,  // custom, out laserEndPoint in rogues
             null);
         // custom
         actorsInLaser.AddRange(actorsOnPath);
