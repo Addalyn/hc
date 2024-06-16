@@ -4,399 +4,230 @@ using UnityEngine.UI;
 
 public class UIDebugMenu : MonoBehaviour
 {
-	public GridLayoutGroup m_debugMenuGrid;
+    public GridLayoutGroup m_debugMenuGrid;
+    public UIDebugItem m_debugItemPrefab;
+    public RectTransform m_container;
 
-	public UIDebugItem m_debugItemPrefab;
+    private string m_currentPath = string.Empty;
+    private bool m_inFrontEnd;
+    private ScrollRect m_scrollRect;
+    private static UIDebugMenu s_instance;
 
-	public RectTransform m_container;
+    public static UIDebugMenu Get()
+    {
+        return s_instance;
+    }
 
-	private string m_currentPath = string.Empty;
+    public void Awake()
+    {
+        s_instance = this;
+        m_scrollRect = GetComponentInChildren<ScrollRect>(true);
+        if (HydrogenConfig.Get().DevMode)
+        {
+            Init();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
-	private bool m_inFrontEnd;
+    public void Init()
+    {
+        CreateDebugItems();
+    }
 
-	private ScrollRect m_scrollRect;
+    public void ResetIfNeeded()
+    {
+        if (m_inFrontEnd != (GameFlowData.Get() == null))
+        {
+            CreateDebugItems();
+        }
+    }
 
-	private static UIDebugMenu s_instance;
+    private void Update()
+    {
+        UpdateHotKeys();
+    }
 
-	public static UIDebugMenu Get()
-	{
-		return s_instance;
-	}
+    private void CreateDebugItem(DebugCommand listener)
+    {
+        UIDebugItem uIDebugItem = Instantiate(m_debugItemPrefab);
+        uIDebugItem.Setup(listener, m_scrollRect);
+        uIDebugItem.transform.SetParent(m_debugMenuGrid.transform);
+        uIDebugItem.transform.localPosition = Vector3.zero;
+        uIDebugItem.transform.localScale = new Vector3(1f, 1f, 1f);
+    }
 
-	public void Awake()
-	{
-		s_instance = this;
-		m_scrollRect = GetComponentInChildren<ScrollRect>(true);
-		if (HydrogenConfig.Get().DevMode)
-		{
-			while (true)
-			{
-				switch (5)
-				{
-				case 0:
-					break;
-				default:
-					Init();
-					return;
-				}
-			}
-		}
-		Object.Destroy(base.gameObject);
-	}
+    private List<string> GetCategoriesToAdd(bool inFrontEnd)
+    {
+        List<string> list = new List<string>();
+        if (DebugCommands.Get() == null)
+        {
+            return list;
+        }
 
-	public void Init()
-	{
-		CreateDebugItems();
-	}
+        foreach (DebugCommand cmd in DebugCommands.Get().m_debugCommands)
+        {
+            if (inFrontEnd && !cmd.AvailableInFrontEnd())
+            {
+                continue;
+            }
 
-	public void ResetIfNeeded()
-	{
-		if (m_inFrontEnd != (GameFlowData.Get() == null))
-		{
-			CreateDebugItems();
-		}
-	}
+            string path = cmd.GetPath();
+            if (path == string.Empty)
+            {
+                continue;
+            }
 
-	private void Update()
-	{
-		UpdateHotKeys();
-	}
+            if (!path.StartsWith(m_currentPath) && m_currentPath != string.Empty)
+            {
+                continue;
+            }
 
-	private void CreateDebugItem(DebugCommand listener)
-	{
-		UIDebugItem uIDebugItem = Object.Instantiate(m_debugItemPrefab);
-		uIDebugItem.Setup(listener, m_scrollRect);
-		uIDebugItem.transform.SetParent(m_debugMenuGrid.transform);
-		uIDebugItem.transform.localPosition = Vector3.zero;
-		uIDebugItem.transform.localScale = new Vector3(1f, 1f, 1f);
-	}
+            path = path.Remove(0, m_currentPath.Length);
+            string[] parts = path.Split('/');
+            if (parts[0] != string.Empty && !list.Contains(parts[0]))
+            {
+                list.Add(parts[0]);
+            }
+        }
 
-	private List<string> GetCategoriesToAdd(bool inFrontEnd)
-	{
-		List<string> list = new List<string>();
-		if (DebugCommands.Get() != null)
-		{
-			while (true)
-			{
-				switch (1)
-				{
-				case 0:
-					break;
-				default:
-				{
-					using (List<DebugCommand>.Enumerator enumerator = DebugCommands.Get().m_debugCommands.GetEnumerator())
-					{
-						while (enumerator.MoveNext())
-						{
-							DebugCommand current = enumerator.Current;
-							if (inFrontEnd && !current.AvailableInFrontEnd())
-							{
-							}
-							else
-							{
-								string path = current.GetPath();
-								if (path != string.Empty)
-								{
-									if (!path.StartsWith(m_currentPath))
-									{
-										if (!(m_currentPath == string.Empty))
-										{
-											continue;
-										}
-									}
-									path = path.Remove(0, m_currentPath.Length);
-									string[] array = path.Split('/');
-									if (array[0] != string.Empty)
-									{
-										if (!list.Contains(array[0]))
-										{
-											list.Add(array[0]);
-										}
-									}
-								}
-							}
-						}
-						while (true)
-						{
-							switch (3)
-							{
-							case 0:
-								break;
-							default:
-								return list;
-							}
-						}
-					}
-				}
-				}
-			}
-		}
-		return list;
-	}
+        return list;
+    }
 
-	private bool _001D(string _001D)
-	{
-		bool result = false;
-		if (_001D == m_currentPath.TrimEnd('/'))
-		{
-			result = true;
-		}
-		return result;
-	}
+    private bool DebugItemAtCurrentLevel(string path)
+    {
+        return path == m_currentPath.TrimEnd('/');
+    }
 
-	private void ClearDebugItems()
-	{
-		List<Transform> list = new List<Transform>();
-		for (int i = 0; i < m_debugMenuGrid.transform.childCount; i++)
-		{
-			list.Add(m_debugMenuGrid.transform.GetChild(i));
-		}
-		while (true)
-		{
-			using (List<Transform>.Enumerator enumerator = list.GetEnumerator())
-			{
-				while (enumerator.MoveNext())
-				{
-					Transform current = enumerator.Current;
-					Object.DestroyImmediate(current.gameObject);
-				}
-				while (true)
-				{
-					switch (5)
-					{
-					default:
-						return;
-					case 0:
-						break;
-					}
-				}
-			}
-		}
-	}
+    private void ClearDebugItems()
+    {
+        List<Transform> elements = new List<Transform>();
+        for (int i = 0; i < m_debugMenuGrid.transform.childCount; i++)
+        {
+            elements.Add(m_debugMenuGrid.transform.GetChild(i));
+        }
 
-	private void CreateDebugItems()
-	{
-		ClearDebugItems();
-		if (m_currentPath != string.Empty)
-		{
-			DebugCommand_Back debugCommand_Back = new DebugCommand_Back();
-			debugCommand_Back.m_debugMenu = this;
-			CreateDebugItem(debugCommand_Back);
-		}
-		m_inFrontEnd = (GameFlowData.Get() == null);
-		if (DebugCommands.Get() != null)
-		{
-			using (List<DebugCommand>.Enumerator enumerator = DebugCommands.Get().m_debugCommands.GetEnumerator())
-			{
-				while (enumerator.MoveNext())
-				{
-					DebugCommand current = enumerator.Current;
-					if (m_inFrontEnd)
-					{
-						if (!current.AvailableInFrontEnd())
-						{
-							continue;
-						}
-					}
-					if (_001D(current.GetPath()))
-					{
-						if (current.GetPath().Length > 0)
-						{
-							CreateDebugItem(current);
-						}
-					}
-				}
-			}
-		}
-		List<string> categoriesToAdd = GetCategoriesToAdd(m_inFrontEnd);
-		using (List<string>.Enumerator enumerator2 = categoriesToAdd.GetEnumerator())
-		{
-			while (enumerator2.MoveNext())
-			{
-				string current2 = enumerator2.Current;
-				DebugCommand_Category debugCommand_Category = new DebugCommand_Category();
-				debugCommand_Category.m_category = current2;
-				debugCommand_Category.m_debugMenu = this;
-				CreateDebugItem(debugCommand_Category);
-			}
-		}
-		GridLayoutGroup debugMenuGrid = m_debugMenuGrid;
-		float width = m_debugMenuGrid.GetComponent<RectTransform>().rect.width;
-		Vector2 cellSize = m_debugMenuGrid.cellSize;
-		debugMenuGrid.cellSize = new Vector2(width, cellSize.y);
-		Vector2 cellSize2 = m_debugMenuGrid.cellSize;
-		float y = cellSize2.y;
-		Vector2 spacing = m_debugMenuGrid.spacing;
-		float num = y + spacing.y;
-		Vector2 cellSize3 = m_debugMenuGrid.cellSize;
-		float x = cellSize3.x;
-		Vector2 spacing2 = m_debugMenuGrid.spacing;
-		float num2 = x + spacing2.x;
-		float num3 = Mathf.Ceil((float)m_debugMenuGrid.transform.childCount / Mathf.Floor(m_debugMenuGrid.GetComponent<RectTransform>().rect.width / num2));
-		RectTransform component = m_debugMenuGrid.GetComponent<RectTransform>();
-		Vector2 sizeDelta = m_debugMenuGrid.GetComponent<RectTransform>().sizeDelta;
-		component.sizeDelta = new Vector2(sizeDelta.x, num * num3);
-	}
+        foreach (Transform elem in elements)
+        {
+            DestroyImmediate(elem.gameObject);
+        }
+    }
 
-	public void OnEnable()
-	{
-		ResetIfNeeded();
-	}
+    private void CreateDebugItems()
+    {
+        ClearDebugItems();
+        if (m_currentPath != string.Empty)
+        {
+            CreateDebugItem(new DebugCommand_Back { m_debugMenu = this });
+        }
 
-	public void AddToPath(string category)
-	{
-		m_currentPath = m_currentPath + category + "/";
-		CreateDebugItems();
-		ResetScroll();
-	}
+        m_inFrontEnd = GameFlowData.Get() == null;
+        if (DebugCommands.Get() != null)
+        {
+            foreach (DebugCommand cmd in DebugCommands.Get().m_debugCommands)
+            {
+                if ((!m_inFrontEnd || cmd.AvailableInFrontEnd())
+                    && DebugItemAtCurrentLevel(cmd.GetPath())
+                    && cmd.GetPath().Length > 0)
+                {
+                    CreateDebugItem(cmd);
+                }
+            }
+        }
 
-	public void UpdateHotKeys()
-	{
-		if (!(UISounds.GetUISounds() != null))
-		{
-			return;
-		}
-		while (true)
-		{
-			if (!UIUtils.InputFieldHasFocus() && AccountPreferences.DoesApplicationHaveFocus() && DebugCommands.Get() != null)
-			{
-				while (true)
-				{
-					bool flag = GameFlowData.Get() == null;
-					using (List<DebugCommand>.Enumerator enumerator = DebugCommands.Get().m_debugCommands.GetEnumerator())
-					{
-						while (enumerator.MoveNext())
-						{
-							DebugCommand current = enumerator.Current;
-							if (flag)
-							{
-								if (!current.AvailableInFrontEnd())
-								{
-									continue;
-								}
-							}
-							if (current._001D() != 0)
-							{
-								if (Input.GetKeyDown(current._001D()))
-								{
-									if (HasRequiredModifierKeys(current))
-									{
-										UISounds.GetUISounds().Play("ui_btn_menu_click");
-										current.OnIncreaseClick();
-									}
-								}
-							}
-							if (current.CheckGameControllerTrigger())
-							{
-								UISounds.GetUISounds().Play("ui_btn_menu_click");
-								current.OnIncreaseClick();
-							}
-						}
-						while (true)
-						{
-							switch (1)
-							{
-							default:
-								return;
-							case 0:
-								break;
-							}
-						}
-					}
-				}
-			}
-			return;
-		}
-	}
+        List<string> categoriesToAdd = GetCategoriesToAdd(m_inFrontEnd);
+        foreach (string category in categoriesToAdd)
+        {
+            CreateDebugItem(
+                new DebugCommand_Category
+                {
+                    m_category = category,
+                    m_debugMenu = this
+                });
+        }
 
-	private bool HasRequiredModifierKeys(DebugCommand listener)
-	{
-		if (listener != null)
-		{
-			while (true)
-			{
-				bool flag;
-				int num2;
-				int result;
-				bool flag2;
-				int num3;
-				bool flag3;
-				switch (6)
-				{
-				case 0:
-					break;
-				default:
-					{
-						int num;
-						if (listener._000E() && !Input.GetKey(KeyCode.LeftControl))
-						{
-							num = (Input.GetKey(KeyCode.RightControl) ? 1 : 0);
-						}
-						else
-						{
-							num = 1;
-						}
-						flag = ((byte)num != 0);
-						if (listener._0012())
-						{
-							if (!Input.GetKey(KeyCode.LeftAlt))
-							{
-								num2 = (Input.GetKey(KeyCode.RightAlt) ? 1 : 0);
-								goto IL_0086;
-							}
-						}
-						num2 = 1;
-						goto IL_0086;
-					}
-					IL_00df:
-					return (byte)result != 0;
-					IL_0086:
-					flag2 = ((byte)num2 != 0);
-					if (listener._0015())
-					{
-						if (!Input.GetKey(KeyCode.LeftShift))
-						{
-							num3 = (Input.GetKey(KeyCode.RightShift) ? 1 : 0);
-							goto IL_00c0;
-						}
-					}
-					num3 = 1;
-					goto IL_00c0;
-					IL_00c0:
-					flag3 = ((byte)num3 != 0);
-					if (flag)
-					{
-						if (flag2)
-						{
-							result = (flag3 ? 1 : 0);
-							goto IL_00df;
-						}
-					}
-					result = 0;
-					goto IL_00df;
-				}
-			}
-		}
-		return false;
-	}
+        float width = m_debugMenuGrid.GetComponent<RectTransform>().rect.width;
+        m_debugMenuGrid.cellSize = new Vector2(width, m_debugMenuGrid.cellSize.y);
+        float cellSizeY = m_debugMenuGrid.cellSize.y + m_debugMenuGrid.spacing.y;
+        float cellSizeX = m_debugMenuGrid.cellSize.x + m_debugMenuGrid.spacing.x;
+        float rowNum = Mathf.Ceil(
+            m_debugMenuGrid.transform.childCount
+            / Mathf.Floor(m_debugMenuGrid.GetComponent<RectTransform>().rect.width / cellSizeX));
+        RectTransform component = m_debugMenuGrid.GetComponent<RectTransform>();
+        Vector2 sizeDelta = m_debugMenuGrid.GetComponent<RectTransform>().sizeDelta;
+        component.sizeDelta = new Vector2(sizeDelta.x, cellSizeY * rowNum);
+    }
 
-	public void UpPathLevel()
-	{
-		int num = m_currentPath.TrimEnd('/').LastIndexOf('/');
-		if (num > 0)
-		{
-			m_currentPath = m_currentPath.Substring(0, num + 1);
-		}
-		else
-		{
-			m_currentPath = string.Empty;
-		}
-		CreateDebugItems();
-		ResetScroll();
-	}
+    public void OnEnable()
+    {
+        ResetIfNeeded();
+    }
 
-	public void ResetScroll()
-	{
-		(m_debugMenuGrid.transform as RectTransform).anchoredPosition = Vector2.zero;
-	}
+    public void AddToPath(string category)
+    {
+        m_currentPath = m_currentPath + category + "/";
+        CreateDebugItems();
+        ResetScroll();
+    }
+
+    public void UpdateHotKeys()
+    {
+        if (UISounds.GetUISounds() == null
+            || UIUtils.InputFieldHasFocus()
+            || !AccountPreferences.DoesApplicationHaveFocus()
+            || DebugCommands.Get() == null)
+        {
+            return;
+        }
+
+        bool isInFrontend = GameFlowData.Get() == null;
+        foreach (DebugCommand cmd in DebugCommands.Get().m_debugCommands)
+        {
+            if (isInFrontend && !cmd.AvailableInFrontEnd())
+            {
+                continue;
+            }
+
+            if (cmd._001D() != 0 && Input.GetKeyDown(cmd._001D()) && HasRequiredModifierKeys(cmd))
+            {
+                UISounds.GetUISounds().Play("ui_btn_menu_click");
+                cmd.OnIncreaseClick();
+            }
+
+            if (cmd.CheckGameControllerTrigger())
+            {
+                UISounds.GetUISounds().Play("ui_btn_menu_click");
+                cmd.OnIncreaseClick();
+            }
+        }
+    }
+
+    private bool HasRequiredModifierKeys(DebugCommand listener)
+    {
+        if (listener == null)
+        {
+            return false;
+        }
+
+        return (!listener._000E() || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+               && (!listener._0012() || Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
+               && (!listener._0015() || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+    }
+
+    public void UpPathLevel()
+    {
+        int index = m_currentPath.TrimEnd('/').LastIndexOf('/');
+        m_currentPath = index > 0
+            ? m_currentPath.Substring(0, index + 1)
+            : string.Empty;
+        CreateDebugItems();
+        ResetScroll();
+    }
+
+    public void ResetScroll()
+    {
+        (m_debugMenuGrid.transform as RectTransform).anchoredPosition = Vector2.zero;
+    }
 }
