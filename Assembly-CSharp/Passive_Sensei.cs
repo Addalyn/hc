@@ -239,7 +239,7 @@ public class Passive_Sensei : Passive
 	{
 		if (actionType == m_dashActionType && cooldownChangeDesired < 0 && m_syncComp.m_syncTurnsForSecondYingYangDash > 0)
 		{
-			DashCooldownAdjust = cooldownChangeDesired;
+			DashCooldownAdjust = cooldownChangeDesired; // TODO SENSEI Multiple reductions do not stack
 		}
 	}
 

@@ -33,7 +33,7 @@ public class CardModifyCooldownEffect : Effect
         foreach (AbilityData.ActionType actionType in m_actionsToModify)
         {
             actorHitResults.AddMiscHitEvent(
-                new MiscHitEventData_AddToCasterCooldown(actionType, m_cooldownChangeAmount));
+                new MiscHitEventData_AddToCasterCooldown(actionType, m_cooldownChangeAmount, true));
             actorHitResults.AddMiscHitEvent(
                 new MiscHitEventData_ProgressCasterStockRefreshTime(actionType, -1 * m_cooldownChangeAmount));
         }

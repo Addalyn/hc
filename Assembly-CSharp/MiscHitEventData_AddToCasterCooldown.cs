@@ -11,11 +11,15 @@ public class MiscHitEventData_AddToCasterCooldown : MiscHitEventData
 	public int m_addAmount;
 	public bool m_ignoreCooldownMax;
 
-	public MiscHitEventData_AddToCasterCooldown(AbilityData.ActionType actionType, int addAmount)
+	public MiscHitEventData_AddToCasterCooldown(
+		AbilityData.ActionType actionType,
+		int addAmount,
+		bool ignoreCooldownMax = false)
 		: base(MiscHitEventType.AddToCasterAbilityCooldown)
 	{
 		m_actionType = actionType;
 		m_addAmount = addAmount;
+		m_ignoreCooldownMax = ignoreCooldownMax;
 	}
 
 	public override void ExecuteMiscHitEvent(ActorHitResults actorHitResult)

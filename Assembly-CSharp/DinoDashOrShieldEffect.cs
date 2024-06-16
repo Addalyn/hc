@@ -14,6 +14,7 @@ public class DinoDashOrShieldEffect : StandardActorEffect
     private readonly AbilityData.ActionType m_abilityActionType;
     private readonly int m_abilityCooldown;
     private readonly GameObject m_onTriggerSequencePrefab;
+    private readonly Passive_Dino m_passive;
 
     public DinoDashOrShieldEffect(
         EffectSource parent,
@@ -25,7 +26,8 @@ public class DinoDashOrShieldEffect : StandardActorEffect
         ActorModelData.ActionAnimationType noDashShieldAnimIndex,
         AbilityData.ActionType abilityActionType,
         int abilityCooldown,
-        GameObject onTriggerSequencePrefab)
+        GameObject onTriggerSequencePrefab,
+        Passive_Dino passive)
         : base(parent, targetSquare, target, caster, StandardActorEffectData.MakeDefault())
     {
         m_delayedShieldInfo = delayedShieldInfo;
@@ -34,6 +36,7 @@ public class DinoDashOrShieldEffect : StandardActorEffect
         m_abilityActionType = abilityActionType;
         m_abilityCooldown = abilityCooldown;
         m_onTriggerSequencePrefab = onTriggerSequencePrefab;
+        m_passive = passive;
 
         HitPhase = AbilityPriority.Prep_Defense;
         m_time.duration = 2;
@@ -82,8 +85,18 @@ public class DinoDashOrShieldEffect : StandardActorEffect
         ActorHitResults hitRes = new ActorHitResults(new ActorHitParameters(Target, Caster.GetFreePos()));
         hitRes.AddStandardEffectInfo(m_delayedShieldInfo);
         hitRes.AddBaseHealing(m_healIfNoDash);
-        hitRes.AddMiscHitEvent(new MiscHitEventData_OverrideCooldown(m_abilityActionType, m_abilityCooldown));
+        hitRes.AddMiscHitEvent(
+            new MiscHitEventData_OverrideCooldown(
+                m_abilityActionType,
+                m_abilityCooldown + m_passive.m_dashCooldownAdjust));
         effectResults.StoreActorHit(hitRes);
+    }
+
+    public override void OnEnd()
+    {
+        base.OnEnd();
+
+        m_passive.m_dashCooldownAdjust = 0;
     }
 }
 #endif

@@ -3,6 +3,7 @@ using System.Linq;
 using AbilityContextNamespace;
 using UnityEngine;
 
+// TODO DINO Cooldown is zero, which can break cooldown reductions
 public class DinoDashOrShield : GenericAbility_Container
 {
 	[Separator("Targeting")]
@@ -316,6 +317,11 @@ public class DinoDashOrShield : GenericAbility_Container
 		{
 			m_syncComp.Networkm_dashOrShieldLastCastTurn = IsInReadyStance() ? -1 : GameFlowData.Get().CurrentTurn;
 		}
+
+		if (m_passive != null && IsInReadyStance())
+		{
+			m_passive.m_dashCooldownAdjust = 0;
+		}
 	}
 
 	// custom
@@ -350,7 +356,8 @@ public class DinoDashOrShield : GenericAbility_Container
 					m_noDashShieldAnimIndex,
 					abilityActionType,
 					GetDelayedCooldown() - GetCdrIfNoDash(),
-					m_onTriggerSequencePrefab));
+					m_onTriggerSequencePrefab,
+					m_passive));
 		}
 		else
 		{
@@ -359,7 +366,7 @@ public class DinoDashOrShield : GenericAbility_Container
 			casterHitResults.AddEffect(CreateShieldEffect(
 				this, caster, GetShieldPerEnemyHit() * enemiesHit, GetShieldDuration()));
 			casterHitResults.AddMiscHitEvent(
-				new MiscHitEventData_OverrideCooldown(abilityActionType, GetDelayedCooldown()));
+				new MiscHitEventData_OverrideCooldown(abilityActionType, GetDelayedCooldown() + m_passive.m_dashCooldownAdjust));
 		}
 
 		if (m_passive != null

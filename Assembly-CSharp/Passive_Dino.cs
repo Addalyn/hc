@@ -10,9 +10,11 @@ public class Passive_Dino : Passive
     private Dino_SyncComponent m_syncComp;
     private DinoLayerCones m_primaryAbility;
     private DinoTargetedKnockback m_knockbackAbility;
+    private AbilityData.ActionType m_dashActionType;
 
     private int m_pendingPowerLevel = -1;
     private List<ActorData> m_actorsPendingKnockback;
+    public int m_dashCooldownAdjust;
 
     protected override void OnStartup()
     {
@@ -21,6 +23,7 @@ public class Passive_Dino : Passive
         m_primaryAbility = Owner.GetAbilityData().GetAbilityOfType(typeof(DinoLayerCones)) as DinoLayerCones;
         m_knockbackAbility =
             Owner.GetAbilityData().GetAbilityOfType(typeof(DinoTargetedKnockback)) as DinoTargetedKnockback;
+        m_dashActionType = Owner.GetAbilityData().GetActionTypeOfAbilityOfType(typeof(DinoDashOrShield));
         Owner.OnKnockbackHitExecutedDelegate += OnKnockbackMovementHitExecuted;
     }
 
@@ -154,6 +157,19 @@ public class Passive_Dino : Passive
             {
                 m_pendingPowerLevel = powerLevelParam.m_powerLevel;
             }
+        }
+    }
+    
+    public override void OnAddToCooldownAttemptOnHit(
+        AbilityData.ActionType actionType,
+        int cooldownChangeDesired,
+        int finalCooldown)
+    {
+        if (actionType == m_dashActionType
+            && cooldownChangeDesired < 0
+            && m_syncComp.m_dashOrShieldLastCastTurn == GameFlowData.Get().CurrentTurn)
+        {
+            m_dashCooldownAdjust += cooldownChangeDesired;
         }
     }
 
