@@ -33,16 +33,16 @@ public class UIDebugItem : MonoBehaviour
 	{
 		m_listener = listener;
 		m_itemName.text = listener.GetDebugItemName();
-		if (listener._001D() != 0)
+		if (listener.GetKeyCode() != 0)
 		{
 			TextMeshProUGUI itemName = m_itemName;
 			string text = itemName.text;
-			itemName.text = text + " (" + GetModifierKeyPrefix(listener) + listener._001D().ToString() + ")";
+			itemName.text = text + " (" + GetModifierKeyPrefix(listener) + listener.GetKeyCode().ToString() + ")";
 		}
 		m_itemValue.text = listener.GetDebugItemValue();
 		m_increaseLabel.text = listener.GetIncreaseString();
-		m_decreaseLabel.text = listener._0013();
-		m_increaseButton.gameObject.SetActive(m_listener._0016());
+		m_decreaseLabel.text = listener.GetDecreaseString();
+		m_increaseButton.gameObject.SetActive(m_listener.DisplayIncreaseButton());
 		m_decreaseButton.gameObject.SetActive(m_listener.DisplayDecreaseButton());
 		m_scrollRect = scrollRect;
 	}
@@ -57,15 +57,15 @@ public class UIDebugItem : MonoBehaviour
 		string text = string.Empty;
 		if (listener != null)
 		{
-			if (listener._000E())
+			if (listener.RequireCtrlKey())
 			{
 				text += "Ctrl+";
 			}
-			if (listener._0012())
+			if (listener.RequireAltKey())
 			{
 				text += "Alt+";
 			}
-			if (listener._0015())
+			if (listener.RequireShiftKey())
 			{
 				text += "Shift+";
 			}

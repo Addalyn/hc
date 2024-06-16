@@ -190,7 +190,7 @@ public class UIDebugMenu : MonoBehaviour
                 continue;
             }
 
-            if (cmd._001D() != 0 && Input.GetKeyDown(cmd._001D()) && HasRequiredModifierKeys(cmd))
+            if (cmd.GetKeyCode() != 0 && Input.GetKeyDown(cmd.GetKeyCode()) && HasRequiredModifierKeys(cmd))
             {
                 UISounds.GetUISounds().Play("ui_btn_menu_click");
                 cmd.OnIncreaseClick();
@@ -211,9 +211,9 @@ public class UIDebugMenu : MonoBehaviour
             return false;
         }
 
-        return (!listener._000E() || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
-               && (!listener._0012() || Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
-               && (!listener._0015() || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
+        return (!listener.RequireCtrlKey() || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+               && (!listener.RequireAltKey() || Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt))
+               && (!listener.RequireShiftKey() || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
     }
 
     public void UpPathLevel()

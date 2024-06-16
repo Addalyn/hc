@@ -43,7 +43,7 @@ public class DebugCommands
     bool flag2 = false;
     foreach (DebugCommand debugCommand in m_debugCommands)
     {
-      if ((!flag1 || debugCommand.AvailableInFrontEnd()) && (debugCommand._0018().Contains(command.ToLower()) && (flag2 = debugCommand.OnSlashCommand(arguments))))
+      if ((!flag1 || debugCommand.AvailableInFrontEnd()) && (debugCommand.GetSlashCommands().Contains(command.ToLower()) && (flag2 = debugCommand.OnSlashCommand(arguments))))
       {
         ClientGameManager.Get().symbol_001D(command, arguments);
         break;
