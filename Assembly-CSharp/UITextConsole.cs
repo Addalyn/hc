@@ -1284,207 +1284,50 @@ public class UITextConsole : MonoBehaviour
 
 	private bool CheckInputField()
 	{
-		if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject != null)
+		if (EventSystem.current == null || EventSystem.current.currentSelectedGameObject == null)
 		{
-			TMP_InputField component = EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>();
-			if (component != null)
-			{
-				while (true)
-				{
-					switch (5)
-					{
-					case 0:
-						break;
-					default:
-						if (component != m_textInput)
-						{
-							string text = "ENTER INPUT FALSE: " + component.name;
-							Transform transform = component.transform;
-							while (transform.parent != null)
-							{
-								text = text + " -> " + transform.parent.name;
-								transform = transform.parent;
-							}
-							Log.Info(text);
-						}
-						return component == m_textInput;
-					}
-				}
-			}
+			return true;
 		}
-		return true;
+		
+		TMP_InputField component = EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>();
+		if (component == null)
+		{
+			return true;
+		}
+		
+		if (component != m_textInput)
+		{
+			string text = "ENTER INPUT FALSE: " + component.name;
+			Transform elem = component.transform;
+			while (elem.parent != null)
+			{
+				text += " -> " + elem.parent.name;
+				elem = elem.parent;
+			}
+			Log.Info(text);
+		}
+		return component == m_textInput;
 	}
 
 	private void Update()
 	{
-		int num;
-		if (!Input.GetKeyDown(KeyCode.Return))
-		{
-			if (!Input.GetKeyDown(KeyCode.KeypadEnter))
-			{
-				num = 0;
-				goto IL_0041;
-			}
-		}
-		num = (CheckInputField() ? 1 : 0);
-		goto IL_0041;
-		IL_08f1:
-		if ((double)m_scrollBar.size < 0.9999 && (double)m_scrollBar.value <= 0.0001)
-		{
-			ToggleVisibility();
-		}
-		goto IL_092f;
-		IL_0095:
-		int num2;
-		bool flag = (byte)num2 != 0;
-		int num3;
-		if (InputManager.Get().IsKeyBindingNewlyHeld(KeyPreference.ChatReply))
-		{
-			if (DebugParameters.Get() != null)
-			{
-				num3 = ((!DebugParameters.Get().GetParameterAsBool("DebugCamera")) ? 1 : 0);
-			}
-			else
-			{
-				num3 = 1;
-			}
-		}
-		else
-		{
-			num3 = 0;
-		}
-		bool flag2 = (byte)num3 != 0;
-		bool flag3 = InputManager.Get().IsKeyBindingNewlyHeld(KeyPreference.ChatAll);
-		int num4;
-		if (m_textInput.isFocused)
-		{
-			num4 = (Input.GetKeyDown(KeyCode.UpArrow) ? 1 : 0);
-		}
-		else
-		{
-			num4 = 0;
-		}
-		bool flag4 = (byte)num4 != 0;
-		bool flag5 = m_textInput.isFocused && Input.GetKeyDown(KeyCode.DownArrow);
-		int num5;
-		if (m_textInput.isFocused)
-		{
-			if (!Input.GetKeyDown(KeyCode.RightArrow))
-			{
-				if (!Input.GetKeyDown(KeyCode.LeftArrow))
-				{
-					if (!Input.GetKeyDown(KeyCode.Home))
-					{
-						num5 = (Input.GetKeyDown(KeyCode.End) ? 1 : 0);
-						goto IL_01a0;
-					}
-				}
-			}
-			num5 = 1;
-		}
-		else
-		{
-			num5 = 0;
-		}
-		goto IL_01a0;
-		IL_0b01:
-		float num6;
-		if (num6 > 0f)
-		{
-			TextConsole.Get().Write(string.Format(StringUtil.TR("NextAlertIn", "Global"), StringUtil.GetTimeDifferenceText(TimeSpan.FromHours(num6), true)));
-		}
-		goto IL_0b49;
-		IL_030f:
-		if (flag)
-		{
-			SelectInput("/");
-			EventSystem.current.SetSelectedGameObject(m_textInput.gameObject);
-			MoveCaretToEnd();
-		}
-		else if (flag2)
-		{
-			SelectInput(GenerateReplyPrefix());
-			MoveCaretToEnd();
-		}
-		else if (flag3)
-		{
-			if (GameFlowData.Get() == null)
-			{
-				SelectInput(StringUtil.TR("/general", "SlashCommand") + " ");
-			}
-			else
-			{
-				SelectInput(StringUtil.TR("/game", "SlashCommand") + " ");
-			}
-			MoveCaretToEnd();
-		}
-		else
-		{
-			SelectInput(string.Empty);
-			SetCaretToLastKnownPosition();
-		}
-		goto IL_03ea;
-		IL_092f:
-		int lastIsTextInputNotSelected;
-		if (EventSystem.current.currentSelectedGameObject != null)
-		{
-			lastIsTextInputNotSelected = ((EventSystem.current.currentSelectedGameObject != m_textInput.gameObject) ? 1 : 0);
-		}
-		else
-		{
-			lastIsTextInputNotSelected = 0;
-		}
-		m_lastIsTextInputNotSelected = ((byte)lastIsTextInputNotSelected != 0);
-		DateTime dateTime = ClientGameManager.Get().PacificNow();
-		LobbyAlertMissionDataNotification alertMissionsData = ClientGameManager.Get().AlertMissionsData;
-		if (alertMissionsData != null)
-		{
-			if (alertMissionsData.NextAlert.HasValue)
-			{
-				num6 = 0f;
-				if (!m_hadNextAlertTime)
-				{
-					float num7 = alertMissionsData.ReminderHours.DefaultIfEmpty().Max();
-					if (num7 != 0f)
-					{
-						if (!(alertMissionsData.NextAlert.Value.AddHours(0f - num7) <= dateTime))
-						{
-							goto IL_0b01;
-						}
-					}
-					num6 = (float)(alertMissionsData.NextAlert.Value - dateTime).TotalHours;
-				}
-				else if (!alertMissionsData.ReminderHours.IsNullOrEmpty())
-				{
-					for (int i = 0; i < alertMissionsData.ReminderHours.Count; i++)
-					{
-						DateTime t = alertMissionsData.NextAlert.Value.AddHours(0f - alertMissionsData.ReminderHours[i]);
-						if (t > m_lastSystemMessageCheckPST)
-						{
-							if (t <= dateTime)
-							{
-								num6 = alertMissionsData.ReminderHours[i];
-							}
-						}
-					}
-				}
-				goto IL_0b01;
-			}
-		}
-		goto IL_0b49;
-		IL_01a0:
-		bool flag6 = (byte)num5 != 0;
-		int num8;
-		if (m_textInput.isFocused)
-		{
-			num8 = (Input.GetKeyDown(KeyCode.Tab) ? 1 : 0);
-		}
-		else
-		{
-			num8 = 0;
-		}
-		bool flag7 = (byte)num8 != 0;
-		bool flag8 = m_autocompleteList.IsVisible();
+		bool pressedEnter = (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)) && CheckInputField();
+		bool pressedSlash = Input.GetKeyDown(KeyCode.Slash)
+		            && EventSystem.current != null
+		            && EventSystem.current.currentSelectedGameObject != m_textInput.gameObject;
+		bool pressedChatReply = InputManager.Get().IsKeyBindingNewlyHeld(KeyPreference.ChatReply)
+		             && (DebugParameters.Get() == null || !DebugParameters.Get().GetParameterAsBool("DebugCamera"));
+		bool pressedChatAll = InputManager.Get().IsKeyBindingNewlyHeld(KeyPreference.ChatAll);
+		bool pressedUp = m_textInput.isFocused && Input.GetKeyDown(KeyCode.UpArrow);
+		bool pressedDown = m_textInput.isFocused && Input.GetKeyDown(KeyCode.DownArrow);
+		bool pressedTextNavigation = m_textInput.isFocused
+		             && (Input.GetKeyDown(KeyCode.RightArrow)
+		                 || Input.GetKeyDown(KeyCode.LeftArrow)
+		                 || Input.GetKeyDown(KeyCode.Home)
+		                 || Input.GetKeyDown(KeyCode.End));
+		bool pressedTab = m_textInput.isFocused && Input.GetKeyDown(KeyCode.Tab);
+		bool isAutocompleteVisible = m_autocompleteList.IsVisible();
+		
 		if (setInputSelected && (float)chatAlpha > 0.5f)
 		{
 			if (EventSystem.current.currentSelectedGameObject != m_textInput.gameObject)
@@ -1496,200 +1339,105 @@ public class UITextConsole : MonoBehaviour
 				setInputSelected = false;
 			}
 		}
+
 		m_escapeJustPressed = false;
-		bool flag9;
-		if (!InputJustcleared())
+		if (!InputJustcleared()
+		    && (pressedEnter || pressedSlash || pressedChatReply || pressedChatAll)
+		    && (EventSystem.current.currentSelectedGameObject == null
+		        || (EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>() == null
+		            && EventSystem.current.currentSelectedGameObject.GetComponent<InputField>() == null)))
 		{
-			if (!flag9)
+			if (pressedSlash)
 			{
-				if (!flag)
+				SelectInput("/");
+				EventSystem.current.SetSelectedGameObject(m_textInput.gameObject);
+				MoveCaretToEnd();
+			}
+			else if (pressedChatReply)
+			{
+				SelectInput(GenerateReplyPrefix());
+				MoveCaretToEnd();
+			}
+			else if (pressedChatAll)
+			{
+				if (GameFlowData.Get() == null)
 				{
-					if (!flag2)
-					{
-						if (!flag3)
-						{
-							goto IL_03ea;
-						}
-					}
-				}
-			}
-			if (EventSystem.current.currentSelectedGameObject == null)
-			{
-				goto IL_030f;
-			}
-			if (EventSystem.current.currentSelectedGameObject.GetComponent<TMP_InputField>() == null)
-			{
-				if (EventSystem.current.currentSelectedGameObject.GetComponent<InputField>() == null)
-				{
-					goto IL_030f;
-				}
-			}
-		}
-		goto IL_03ea;
-		IL_07fb:
-		if (m_visible && EventSystem.current.currentSelectedGameObject != null)
-		{
-			if (EventSystem.current.currentSelectedGameObject != m_textInput.gameObject && EventSystem.current.currentSelectedGameObject != m_scrollBar.gameObject && m_lastIsTextInputNotSelected)
-			{
-				if (EmoticonPanel.Get() == null)
-				{
-					goto IL_08f1;
-				}
-				if (!EmoticonPanel.Get().IsPanelOpen())
-				{
-					if (EmoticonPanel.Get().m_emoticonBtn.spriteController.gameObject != EventSystem.current.currentSelectedGameObject)
-					{
-						goto IL_08f1;
-					}
-				}
-			}
-		}
-		goto IL_092f;
-		IL_0041:
-		flag9 = ((byte)num != 0);
-		if (Input.GetKeyDown(KeyCode.Slash))
-		{
-			if (EventSystem.current != null)
-			{
-				num2 = ((EventSystem.current.currentSelectedGameObject != m_textInput.gameObject) ? 1 : 0);
-				goto IL_0095;
-			}
-		}
-		num2 = 0;
-		goto IL_0095;
-		IL_0b49:
-		int hadNextAlertTime;
-		if (alertMissionsData != null)
-		{
-			hadNextAlertTime = (alertMissionsData.NextAlert.HasValue ? 1 : 0);
-		}
-		else
-		{
-			hadNextAlertTime = 0;
-		}
-		m_hadNextAlertTime = ((byte)hadNextAlertTime != 0);
-		if (alertMissionsData != null && alertMissionsData.CurrentAlert != null)
-		{
-			if (!m_hadCurrentAlert)
-			{
-				TextConsole.Get().Write(StringUtil.TR("AlertActive", "Global"));
-			}
-		}
-		int hadCurrentAlert;
-		if (alertMissionsData != null)
-		{
-			hadCurrentAlert = ((alertMissionsData.CurrentAlert != null) ? 1 : 0);
-		}
-		else
-		{
-			hadCurrentAlert = 0;
-		}
-		m_hadCurrentAlert = ((byte)hadCurrentAlert != 0);
-		m_lastSystemMessageCheckPST = dateTime;
-		return;
-		IL_0725:
-		m_inputJustCleared = false;
-		if (m_timeTillCollapse > 0f)
-		{
-			m_timeTillCollapse -= Time.deltaTime;
-		}
-		if (lastAlphaSet != (float)chatAlpha)
-		{
-			ApplyChatAlpha();
-		}
-		ScrollBarAfterNewChat();
-		if (m_newTextGlow != null)
-		{
-			if (m_checkForNextTextGlow)
-			{
-				if (m_scrollRect.verticalScrollbar.value > 0f)
-				{
-					if (UIManager.Get().CurrentState == UIManager.ClientState.InFrontEnd)
-					{
-						UIManager.SetGameObjectActive(m_newTextGlow, true);
-						goto IL_07fb;
-					}
-				}
-				UIManager.SetGameObjectActive(m_newTextGlow, false);
-				m_checkForNextTextGlow = false;
-			}
-		}
-		goto IL_07fb;
-		IL_03ea:
-		if (Input.GetKeyDown(KeyCode.Escape))
-		{
-			if (IsTextInputFocused(true))
-			{
-				if (m_autocompleteList.IsVisible())
-				{
-					m_autocompleteList.SetVisible(false);
+					SelectInput(StringUtil.TR("/general", "SlashCommand") + " ");
 				}
 				else
 				{
-					ClearInputSelect();
-					if (m_visible && m_timeTillCollapse <= 0f)
-					{
-						ToggleVisibility();
-					}
-					m_escapeJustPressed = true;
-					UIUtils.MarkInputFieldHasFocusDirty();
+					SelectInput(StringUtil.TR("/game", "SlashCommand") + " ");
 				}
-				goto IL_0725;
+
+				MoveCaretToEnd();
+			}
+			else
+			{
+				SelectInput(string.Empty);
+				SetCaretToLastKnownPosition();
 			}
 		}
-		if (!flag5)
+
+		if (Input.GetKeyDown(KeyCode.Escape) && IsTextInputFocused(true))
 		{
-			if (!flag4)
+			if (m_autocompleteList.IsVisible())
 			{
-				if (flag7)
+				m_autocompleteList.SetVisible(false);
+			}
+			else
+			{
+				ClearInputSelect();
+				if (m_visible && m_timeTillCollapse <= 0f)
 				{
-					if (flag8)
+					ToggleVisibility();
+				}
+
+				m_escapeJustPressed = true;
+				UIUtils.MarkInputFieldHasFocusDirty();
+			}
+		}
+		else if (!pressedDown && !pressedUp)
+		{
+			if (pressedTab && isAutocompleteVisible)
+			{
+				m_autocompleteList.SelectCurrent();
+			}
+			else if (pressedTab && m_textInput.text.StartsWith("/"))
+			{
+				GetAutoCompletePossibilities(true, out string _);
+			}
+			else if (pressedTab && !m_textInput.text.StartsWith("/"))
+			{
+				List<string> availableChatRooms = GetAvailableChatRooms();
+				availableChatRooms.Add(availableChatRooms[0]);
+				for (int j = 0; j < availableChatRooms.Count; j++)
+				{
+					if (j == availableChatRooms.Count - 1)
 					{
-						m_autocompleteList.SelectCurrent();
-						goto IL_0725;
+						m_chatCommand = StringUtil.TR("/general", "SlashCommand");
+						break;
+					}
+
+					if (m_chatCommand == availableChatRooms[j])
+					{
+						m_chatCommand = availableChatRooms[j + 1];
+						break;
 					}
 				}
-				if (flag7)
-				{
-					if (m_textInput.text.StartsWith("/"))
-					{
-						GetAutoCompletePossibilities(true, out string _);
-						goto IL_0725;
-					}
-				}
-				if (flag7)
-				{
-					if (!m_textInput.text.StartsWith("/"))
-					{
-						List<string> availableChatRooms = GetAvailableChatRooms();
-						availableChatRooms.Add(availableChatRooms[0]);
-						for (int j = 0; j < availableChatRooms.Count; j++)
-						{
-							if (j == availableChatRooms.Count - 1)
-							{
-								m_chatCommand = StringUtil.TR("/general", "SlashCommand");
-								break;
-							}
-							if (m_chatCommand == availableChatRooms[j])
-							{
-								m_chatCommand = availableChatRooms[j + 1];
-								break;
-							}
-						}
-						RefreshChatRoomDisplay();
-						goto IL_0725;
-					}
-				}
-				if (flag6)
+
+				RefreshChatRoomDisplay();
+			}
+			else
+			{
+				if (pressedTextNavigation)
 				{
 					m_autocompleteList.SetVisible(false);
 				}
-				goto IL_0725;
 			}
 		}
-		if (flag8)
+		else if (isAutocompleteVisible)
 		{
-			if (flag5)
+			if (pressedDown)
 			{
 				m_autocompleteList.SelectDown();
 			}
@@ -1705,21 +1453,15 @@ public class UITextConsole : MonoBehaviour
 				m_storedChatCommand = m_chatCommand;
 				m_storedHistory = m_textInput.text;
 			}
+
 			int historyIndex = m_historyIndex;
-			int num9;
-			if (flag5)
-			{
-				num9 = 1;
-			}
-			else
-			{
-				num9 = -1;
-			}
-			m_historyIndex = historyIndex + num9;
+
+			m_historyIndex = historyIndex + (pressedDown ? 1 : -1);
 			if (m_historyIndex < 0)
 			{
 				m_historyIndex = 0;
 			}
+
 			string text;
 			if (m_historyIndex >= s_history.Count)
 			{
@@ -1733,6 +1475,7 @@ public class UITextConsole : MonoBehaviour
 			{
 				text = s_history[m_historyIndex];
 			}
+
 			m_ignoreNextTypeInput = true;
 			if (text.IsNullOrEmpty())
 			{
@@ -1743,9 +1486,95 @@ public class UITextConsole : MonoBehaviour
 				m_textInput.text = text;
 				SetChatRoom(m_textInput.text);
 			}
+
 			MoveCaretToEnd();
 		}
-		goto IL_0725;
+
+		m_inputJustCleared = false;
+		if (m_timeTillCollapse > 0f)
+		{
+			m_timeTillCollapse -= Time.deltaTime;
+		}
+
+		if (lastAlphaSet != (float)chatAlpha)
+		{
+			ApplyChatAlpha();
+		}
+
+		ScrollBarAfterNewChat();
+		if (m_newTextGlow != null && m_checkForNextTextGlow)
+		{
+			if (m_scrollRect.verticalScrollbar.value > 0f
+			    && UIManager.Get().CurrentState == UIManager.ClientState.InFrontEnd)
+			{
+				UIManager.SetGameObjectActive(m_newTextGlow, true);
+			}
+			else
+			{
+				UIManager.SetGameObjectActive(m_newTextGlow, false);
+				m_checkForNextTextGlow = false;
+			}
+		}
+		
+		if (m_visible && EventSystem.current.currentSelectedGameObject != null
+		              && EventSystem.current.currentSelectedGameObject != m_textInput.gameObject
+		              && EventSystem.current.currentSelectedGameObject != m_scrollBar.gameObject
+		              && m_lastIsTextInputNotSelected && (EmoticonPanel.Get() == null
+		                                                  || !EmoticonPanel.Get().IsPanelOpen()
+		                                                  && EmoticonPanel.Get().m_emoticonBtn.spriteController
+			                                                  .gameObject != EventSystem.current
+			                                                  .currentSelectedGameObject))
+		{
+			if (m_scrollBar.size < 0.9999 && m_scrollBar.value <= 0.0001)
+			{
+				ToggleVisibility();
+			}
+		}
+		
+		m_lastIsTextInputNotSelected = EventSystem.current.currentSelectedGameObject != null
+		                               && EventSystem.current.currentSelectedGameObject != m_textInput.gameObject;
+		DateTime dateTime = ClientGameManager.Get().PacificNow();
+		LobbyAlertMissionDataNotification alertMissionsData = ClientGameManager.Get().AlertMissionsData;
+		if (alertMissionsData != null && alertMissionsData.NextAlert.HasValue)
+		{
+			float num6 = 0f;
+			if (!m_hadNextAlertTime)
+			{
+				float num7 = alertMissionsData.ReminderHours.DefaultIfEmpty().Max();
+				if (num7 == 0f || alertMissionsData.NextAlert.Value.AddHours(0f - num7) <= dateTime)
+				{
+					num6 = (float)(alertMissionsData.NextAlert.Value - dateTime).TotalHours;
+				}
+			}
+			else if (!alertMissionsData.ReminderHours.IsNullOrEmpty())
+			{
+				for (int i = 0; i < alertMissionsData.ReminderHours.Count; i++)
+				{
+					DateTime t = alertMissionsData.NextAlert.Value.AddHours(0f - alertMissionsData.ReminderHours[i]);
+					if (t > m_lastSystemMessageCheckPST && t <= dateTime)
+					{
+						num6 = alertMissionsData.ReminderHours[i];
+					}
+				}
+			}
+
+			if (num6 > 0f)
+			{
+				TextConsole.Get().Write(
+					string.Format(
+						StringUtil.TR("NextAlertIn", "Global"),
+						StringUtil.GetTimeDifferenceText(TimeSpan.FromHours(num6), true)));
+			}
+		}
+
+		m_hadNextAlertTime = alertMissionsData != null && alertMissionsData.NextAlert.HasValue;
+		if (alertMissionsData != null && alertMissionsData.CurrentAlert != null && !m_hadCurrentAlert)
+		{
+			TextConsole.Get().Write(StringUtil.TR("AlertActive", "Global"));
+		}
+
+		m_hadCurrentAlert = alertMissionsData != null && alertMissionsData.CurrentAlert != null;
+		m_lastSystemMessageCheckPST = dateTime;
 	}
 
 	public bool CheckTextInput()
@@ -1852,86 +1681,52 @@ public class UITextConsole : MonoBehaviour
 
 	public List<string> GetAvailableChatRooms()
 	{
-		bool flag = AppState.IsInGame();
-		int num;
-		if (GameManager.Get() != null && GameManager.Get().GameInfo != null)
-		{
-			num = ((GameManager.Get().GameInfo.GameStatus != GameStatus.Stopped) ? 1 : 0);
-		}
-		else
-		{
-			num = 0;
-		}
-		bool flag2 = (byte)num != 0;
-		int num2;
-		if (ClientGameManager.Get() != null)
-		{
-			if (ClientGameManager.Get().GroupInfo != null)
-			{
-				num2 = (ClientGameManager.Get().GroupInfo.InAGroup ? 1 : 0);
-				goto IL_0095;
-			}
-		}
-		num2 = 0;
-		goto IL_0095;
-		IL_01bf:
-		bool flag3;
-		List<string> list;
-		if (flag3)
-		{
-			list.Add(StringUtil.TR("/group", "SlashCommand"));
-		}
-		for (int i = 0; i < m_whisperedPlayers.Count; i++)
-		{
-			list.Add(StringUtil.TR("/whisper", "SlashCommand") + " " + m_whisperedPlayers[i]);
-		}
-		return list;
-		IL_0152:
-		if (flag2)
-		{
-			if (Options_UI.Get() != null)
-			{
-				if (Options_UI.Get().GetShowAllChat())
-				{
-					goto IL_01aa;
-				}
-			}
-			if (!flag && GameManager.Get().GameInfo.IsCustomGame)
-			{
-				goto IL_01aa;
-			}
-		}
-		goto IL_01bf;
-		IL_01aa:
-		list.Add(StringUtil.TR("/game", "SlashCommandAlias1"));
-		goto IL_01bf;
-		IL_0095:
-		flag3 = ((byte)num2 != 0);
-		list = new List<string>();
-		if (!flag)
+		bool isInGame = AppState.IsInGame();
+		bool isInActiveGame = GameManager.Get() != null
+		             && GameManager.Get().GameInfo != null
+		             && GameManager.Get().GameInfo.GameStatus != GameStatus.Stopped;
+		bool isInGroup = ClientGameManager.Get() != null
+		             && ClientGameManager.Get().GroupInfo != null
+		             && ClientGameManager.Get().GroupInfo.InAGroup;
+		
+		List<string> list = new List<string>();
+		if (!isInGame)
 		{
 			list.Add(StringUtil.TR("/general", "SlashCommand"));
 		}
-		if (!flag2)
+
+		if (isInActiveGame || isInGame)
 		{
-			if (!flag)
+			if (GameManager.Get() != null
+			    && GameManager.Get().PlayerInfo != null
+			    && GameManager.Get().PlayerInfo.TeamId != Team.Spectator)
 			{
-				goto IL_0152;
+				list.Add(StringUtil.TR("/team", "SlashCommand"));
+			}
+			else
+			{
+				list.Add(StringUtil.TR("/team", "SlashCommandAlias1"));
 			}
 		}
-		if (!(GameManager.Get() == null))
+
+		if (isInActiveGame
+		    && ((Options_UI.Get() != null && Options_UI.Get().GetShowAllChat())
+		        || (!isInGame && GameManager.Get().GameInfo.IsCustomGame)))
 		{
-			if (GameManager.Get().PlayerInfo != null)
-			{
-				if (GameManager.Get().PlayerInfo.TeamId != Team.Spectator)
-				{
-					list.Add(StringUtil.TR("/team", "SlashCommand"));
-					goto IL_0152;
-				}
-			}
+			list.Add(StringUtil.TR("/game", "SlashCommandAlias1"));
 		}
-		list.Add(StringUtil.TR("/team", "SlashCommandAlias1"));
-		goto IL_0152;
+		
+		if (isInGroup)
+		{
+			list.Add(StringUtil.TR("/group", "SlashCommand"));
+		}
+		
+		foreach (string player in m_whisperedPlayers)
+		{
+			list.Add(StringUtil.TR("/whisper", "SlashCommand") + " " + player);
+		}
+		
+		return list;
 	}
 
 	public List<string> GetAutoCompletePossibilities(bool doAutocomplete, out string beforeAutocomplete)
@@ -3076,76 +2871,26 @@ public class UITextConsole : MonoBehaviour
 
 	public void ChangeChatRoom()
 	{
-		if (m_chatRoomName == null)
+		if (m_chatRoomName == null || !m_textInput.text.IsNullOrEmpty())
 		{
 			return;
 		}
-		if (!m_textInput.text.IsNullOrEmpty())
-		{
-			while (true)
-			{
-				return;
-			}
-		}
+
 		m_chatroomList.SetVisible(false);
-		m_hasGame = (GameManager.Get() != null && GameManager.Get().GameInfo != null && GameManager.Get().GameInfo.GameStatus != GameStatus.Stopped);
-		int num;
-		if (ClientGameManager.Get() != null)
+		m_hasGame = GameManager.Get() != null
+		            && GameManager.Get().GameInfo != null
+		            && GameManager.Get().GameInfo.GameStatus != GameStatus.Stopped;
+		bool isInGroup = ClientGameManager.Get() != null
+		                 && ClientGameManager.Get().GroupInfo != null
+		                 && ClientGameManager.Get().GroupInfo.InAGroup;
+		if ((!m_hasGame && (m_teamCommand.IsSlashCommand(m_chatCommand) || m_allCommand.IsSlashCommand(m_chatCommand)))
+		    || (m_globalCommand.IsSlashCommand(m_chatCommand) && (isInGroup || m_hasGame))
+		    || (m_groupCommand.IsSlashCommand(m_chatCommand) && (!isInGroup || m_hasGame)))
 		{
-			if (ClientGameManager.Get().GroupInfo != null)
-			{
-				num = (ClientGameManager.Get().GroupInfo.InAGroup ? 1 : 0);
-				goto IL_00d1;
-			}
+			m_chatCommand = null;
 		}
-		num = 0;
-		goto IL_00d1;
-		IL_00d1:
-		bool flag = (byte)num != 0;
-		if (m_hasGame)
-		{
-			goto IL_0124;
-		}
-		if (!m_teamCommand.IsSlashCommand(m_chatCommand))
-		{
-			if (!m_allCommand.IsSlashCommand(m_chatCommand))
-			{
-				goto IL_0124;
-			}
-		}
-		goto IL_0190;
-		IL_015f:
-		if (m_groupCommand.IsSlashCommand(m_chatCommand))
-		{
-			if (flag)
-			{
-				if (!m_hasGame)
-				{
-					goto IL_0197;
-				}
-			}
-			goto IL_0190;
-		}
-		goto IL_0197;
-		IL_0197:
+
 		SetChatRoom();
-		return;
-		IL_0190:
-		m_chatCommand = null;
-		goto IL_0197;
-		IL_0124:
-		if (!m_globalCommand.IsSlashCommand(m_chatCommand))
-		{
-			goto IL_015f;
-		}
-		if (!flag)
-		{
-			if (!m_hasGame)
-			{
-				goto IL_015f;
-			}
-		}
-		goto IL_0190;
 	}
 
 	private void SetChatRoom(string chatText = null)
@@ -3154,267 +2899,162 @@ public class UITextConsole : MonoBehaviour
 		{
 			return;
 		}
+
 		if (chatText == null)
 		{
 			chatText = m_chatText.text;
 		}
-		int num;
-		if (GameManager.Get() != null && GameManager.Get().GameInfo != null)
+
+		bool hasGame = GameManager.Get() != null
+		               && GameManager.Get().GameInfo != null
+		               && GameManager.Get().GameInfo.GameStatus != GameStatus.Stopped;
+		bool isInGroup = ClientGameManager.Get() != null
+		                 && ClientGameManager.Get().GroupInfo != null
+		                 && ClientGameManager.Get().GroupInfo.InAGroup;
+
+		string[] parts = chatText.Split((string[])null, 3, StringSplitOptions.RemoveEmptyEntries);
+
+		if (parts.Length > 1
+		    || (chatText.EndsWith(" ") && !chatText.Trim().IsNullOrEmpty()))
 		{
-			num = ((GameManager.Get().GameInfo.GameStatus != GameStatus.Stopped) ? 1 : 0);
-		}
-		else
-		{
-			num = 0;
-		}
-		bool flag = (byte)num != 0;
-		int num2;
-		if (ClientGameManager.Get() != null && ClientGameManager.Get().GroupInfo != null)
-		{
-			num2 = (ClientGameManager.Get().GroupInfo.InAGroup ? 1 : 0);
-		}
-		else
-		{
-			num2 = 0;
-		}
-		bool flag2 = (byte)num2 != 0;
-		string[] array = chatText.Split((string[])null, 3, StringSplitOptions.RemoveEmptyEntries);
-		if (array.Length > 1)
-		{
-			goto IL_010f;
-		}
-		if (chatText.EndsWith(" "))
-		{
-			if (!chatText.Trim().IsNullOrEmpty())
+			foreach (SlashCommand command in m_chatCommands)
 			{
-				goto IL_010f;
-			}
-		}
-		goto IL_0445;
-		IL_010f:
-		using (List<SlashCommand>.Enumerator enumerator = m_chatCommands.GetEnumerator())
-		{
-			while (true)
-			{
-				if (!enumerator.MoveNext())
+				if (!command.IsSlashCommand(parts[0]))
 				{
-					break;
+					continue;
 				}
-				SlashCommand current = enumerator.Current;
-				if (current.IsSlashCommand(array[0]))
+
+				if (command == m_whisperCommand)
 				{
-					while (true)
+					if (parts.Length >= 3 || parts.Length >= 2 && chatText.EndsWith(" "))
 					{
-						switch (1)
+						parts = chatText.Split((string[])null, 3, StringSplitOptions.RemoveEmptyEntries);
+						m_chatCommand = command.Command + " " + parts[1];
+						m_textInput.text = parts.Length >= 3 ? parts[2] : string.Empty;
+					}
+				}
+				else if (command != m_allCommand
+				         || !AppState.IsInGame()
+				         && GameManager.Get().GameInfo != null
+				         && GameManager.Get().GameInfo.IsCustomGame
+				         && GameManager.Get().GameInfo.GameStatus != GameStatus.Stopped
+				         || Options_UI.Get() != null
+				         && Options_UI.Get().GetShowAllChat())
+				{
+					if (!hasGame
+					    && (command == m_teamCommand || command == m_allCommand))
+					{
+						AddTextEntry(
+							StringUtil.TR("NotInAGame", "Invite"),
+							HUD_UIResources.Get().m_TeamChatColor,
+							true);
+						chatText = string.Empty;
+						for (int i = 1; i < parts.Length; i++)
 						{
-						case 0:
-							break;
-						default:
+							chatText = chatText.IsNullOrEmpty()
+								? parts[i]
+								: chatText + " " + parts[i];
+						}
+
+						m_textInput.text = chatText;
+					}
+					else if (command == m_groupCommand && !isInGroup)
+					{
+						AddTextEntry(
+							StringUtil.TR("NotInAGroup", "Invite"),
+							HUD_UIResources.Get().m_GroupChatColor,
+							true);
+						chatText = string.Empty;
+						for (int i = 1; i < parts.Length; i++)
+						{
+							chatText = !chatText.IsNullOrEmpty() ? chatText + " " + parts[i] : parts[i];
+						}
+
+						m_textInput.text = chatText;
+					}
+					else
+					{
+						m_chatCommand = command.Command;
+						if (parts.Length > 1)
+						{
+							chatText = parts[1];
+							if (parts.Length > 2)
 							{
-								if (current == m_whisperCommand)
-								{
-									if (array.Length >= 3)
-									{
-										goto IL_0188;
-									}
-									if (array.Length >= 2)
-									{
-										if (chatText.EndsWith(" "))
-										{
-											goto IL_0188;
-										}
-									}
-								}
-								else
-								{
-									if (current != m_allCommand)
-									{
-										goto IL_026a;
-									}
-									if (!AppState.IsInGame() && GameManager.Get().GameInfo != null)
-									{
-										if (GameManager.Get().GameInfo.IsCustomGame && GameManager.Get().GameInfo.GameStatus != GameStatus.Stopped)
-										{
-											goto IL_026a;
-										}
-									}
-									if (!(Options_UI.Get() == null))
-									{
-										if (Options_UI.Get().GetShowAllChat())
-										{
-											goto IL_026a;
-										}
-									}
-								}
-								goto end_IL_011d;
+								chatText = chatText + " " + parts[2];
 							}
-							IL_03b6:
-							m_chatCommand = current.Command;
-							if (array.Length > 1)
-							{
-								while (true)
-								{
-									switch (7)
-									{
-									case 0:
-										break;
-									default:
-										chatText = array[1];
-										if (array.Length > 2)
-										{
-											chatText = chatText + " " + array[2];
-										}
-										m_textInput.text = chatText;
-										goto end_IL_011d;
-									}
-								}
-							}
+
+							m_textInput.text = chatText;
+						}
+						else
+						{
 							m_textInput.text = string.Empty;
-							goto end_IL_011d;
-							IL_0188:
-							array = chatText.Split((string[])null, 3, StringSplitOptions.RemoveEmptyEntries);
-							m_chatCommand = current.Command + " " + array[1];
-							if (array.Length >= 3)
-							{
-								m_textInput.text = array[2];
-							}
-							else
-							{
-								m_textInput.text = string.Empty;
-							}
-							goto end_IL_011d;
-							IL_0323:
-							if (current != m_groupCommand)
-							{
-								goto IL_03b6;
-							}
-							if (flag2)
-							{
-								goto IL_03b6;
-							}
-							AddTextEntry(StringUtil.TR("NotInAGroup", "Invite"), HUD_UIResources.Get().m_GroupChatColor, true);
-							chatText = string.Empty;
-							for (int i = 1; i < array.Length; i++)
-							{
-								chatText = ((!chatText.IsNullOrEmpty()) ? (chatText + " " + array[i]) : array[i]);
-							}
-							m_textInput.text = chatText;
-							goto end_IL_011d;
-							IL_026a:
-							if (flag)
-							{
-								goto IL_0323;
-							}
-							if (current != m_teamCommand)
-							{
-								if (current != m_allCommand)
-								{
-									goto IL_0323;
-								}
-							}
-							AddTextEntry(StringUtil.TR("NotInAGame", "Invite"), HUD_UIResources.Get().m_TeamChatColor, true);
-							chatText = string.Empty;
-							for (int j = 1; j < array.Length; j++)
-							{
-								if (chatText.IsNullOrEmpty())
-								{
-									chatText = array[j];
-								}
-								else
-								{
-									chatText = chatText + " " + array[j];
-								}
-							}
-							m_textInput.text = chatText;
-							goto end_IL_011d;
 						}
 					}
 				}
+
+				break;
 			}
-			end_IL_011d:;
 		}
-		goto IL_0445;
-		IL_0445:
+
 		if (m_chatCommand.IsNullOrEmpty())
 		{
-			if (m_hasGame)
-			{
-				m_chatCommand = StringUtil.TR("/team", "SlashCommand");
-			}
-			else if (flag2)
-			{
-				m_chatCommand = StringUtil.TR("/group", "SlashCommand");
-			}
-			else
-			{
-				m_chatCommand = StringUtil.TR("/general", "SlashCommand");
-			}
+			m_chatCommand = m_hasGame
+				? StringUtil.TR("/team", "SlashCommand")
+				: isInGroup
+					? StringUtil.TR("/group", "SlashCommand")
+					: StringUtil.TR("/general", "SlashCommand");
 		}
+
 		RefreshChatRoomDisplay();
 	}
 
 	private void RefreshChatRoomDisplay()
 	{
-		string text = m_chatCommand;
+		string command = m_chatCommand;
 		int num = m_chatCommand.IndexOf(' ');
 		if (num > 0)
 		{
-			text = m_chatCommand.Substring(0, num);
+			command = m_chatCommand.Substring(0, num);
 		}
-		if (m_allCommand.IsSlashCommand(text))
+
+		if (m_allCommand.IsSlashCommand(command))
 		{
 			m_chatRoomName.text = StringUtil.TR("GameChannel", "Chat");
 		}
-		else if (m_globalCommand.IsSlashCommand(text))
+		else if (m_globalCommand.IsSlashCommand(command))
 		{
 			m_chatRoomName.text = StringUtil.TR("GlobalChannel", "Chat");
 		}
-		else if (m_groupCommand.IsSlashCommand(text))
+		else if (m_groupCommand.IsSlashCommand(command))
 		{
 			m_chatRoomName.text = StringUtil.TR("GroupChannel", "Chat");
 		}
-		else if (m_teamCommand.IsSlashCommand(text))
+		else if (m_teamCommand.IsSlashCommand(command))
 		{
-			if (!(GameManager.Get() == null))
+			if (GameManager.Get() != null
+			    && GameManager.Get().PlayerInfo != null
+			    && GameManager.Get().PlayerInfo.TeamId != Team.Spectator)
 			{
-				if (GameManager.Get().PlayerInfo != null)
-				{
-					if (GameManager.Get().PlayerInfo.TeamId != Team.Spectator)
-					{
-						m_chatRoomName.text = StringUtil.TR("TeamChannel", "Chat");
-						goto IL_01e8;
-					}
-				}
+				m_chatRoomName.text = StringUtil.TR("TeamChannel", "Chat");
 			}
-			m_chatRoomName.text = StringUtil.TR("SpectatorChannel", "Chat");
+			else
+			{
+				m_chatRoomName.text = StringUtil.TR("SpectatorChannel", "Chat");
+			}
 		}
-		else if (m_whisperCommand.IsSlashCommand(text))
+		else if (m_whisperCommand.IsSlashCommand(command))
 		{
-			m_chatRoomName.text = m_chatCommand.Substring(text.Length);
+			m_chatRoomName.text = m_chatCommand.Substring(command.Length);
 		}
 		else
 		{
 			m_chatRoomName.text = "[" + m_chatCommand.Substring(1, 1).ToUpper() + m_chatCommand.Substring(2) + "]";
 		}
-		goto IL_01e8;
-		IL_036a:
-		Color color;
-		m_chatRoomName.color = color;
-		if (m_changeChannelAlpha)
-		{
-			TextMeshProUGUI chatRoomName = m_chatRoomName;
-			Color color2 = m_chatRoomName.color;
-			float r = color2.r;
-			Color color3 = m_chatRoomName.color;
-			float g = color3.g;
-			Color color4 = m_chatRoomName.color;
-			chatRoomName.color = new Color(r, g, color4.b, chatAlpha);
-		}
-		return;
-		IL_01e8:
+
 		m_chatRoomName.text += ":";
+
 		AlignChatText();
-		color = Color.white;
+		Color color = Color.white;
 		if (HUD_UIResources.Get() != null)
 		{
 			if (m_chatCommand == StringUtil.TR("/group", "SlashCommand"))
@@ -3425,44 +3065,44 @@ public class UITextConsole : MonoBehaviour
 			{
 				color = HUD_UIResources.Get().m_GlobalChatColor;
 			}
-			else
+			else if (m_chatCommand == StringUtil.TR("/game", "SlashCommand")
+			         || m_chatCommand == StringUtil.TR("/game", "SlashCommandAlias1"))
 			{
-				if (!(m_chatCommand == StringUtil.TR("/game", "SlashCommand")))
-				{
-					if (!(m_chatCommand == StringUtil.TR("/game", "SlashCommandAlias1")))
-					{
-						if (!m_chatCommand.StartsWith(StringUtil.TR("/whisper", "SlashCommand")))
-						{
-							color = ((!(m_chatCommand == StringUtil.TR("/team", "SlashCommand"))) ? Color.white : HUD_UIResources.Get().m_TeamChatColor);
-						}
-						else
-						{
-							color = HUD_UIResources.Get().m_whisperChatColor;
-						}
-						goto IL_036a;
-					}
-				}
 				color = HUD_UIResources.Get().m_GameChatColor;
 			}
+			else if (m_chatCommand.StartsWith(StringUtil.TR("/whisper", "SlashCommand")))
+			{
+				color = HUD_UIResources.Get().m_whisperChatColor;
+			}
+			else if (m_chatCommand == StringUtil.TR("/team", "SlashCommand"))
+			{
+				color = HUD_UIResources.Get().m_TeamChatColor;
+			}
+			else
+			{
+				color = Color.white;
+			}
 		}
-		goto IL_036a;
+
+		m_chatRoomName.color = color;
+
+		if (m_changeChannelAlpha)
+		{
+			m_chatRoomName.color = new Color(
+				m_chatRoomName.color.r,
+				m_chatRoomName.color.g,
+				m_chatRoomName.color.b,
+				chatAlpha);
+		}
 	}
 
 	private void UnsetChatRoom()
 	{
 		if (m_chatRoomName == null)
 		{
-			while (true)
-			{
-				switch (3)
-				{
-				case 0:
-					break;
-				default:
-					return;
-				}
-			}
+			return;
 		}
+
 		m_chatRoomName.text = string.Empty;
 		AlignChatText();
 	}
