@@ -176,16 +176,6 @@ public class ServerActorController : MonoBehaviour
 		}
 		bool isAutoSelect = boardSquare != null;
 		
-		// custom
-		if (abilityData != null
-		    && abilityData.GetSelectedAbility() != null
-		    && !abilityData.ValidateActionIsRequestable(abilityData.GetSelectedActionType()))
-		{
-			Log.Info($"{actorData.DisplayName}'s movement cancelled because of selected ability {abilityData.GetSelectedAbility().m_abilityName}");
-			ProcessCancelMovementRequests();
-		}
-		// end custom
-		
 		if (SinglePlayerManager.Get())
 		{
 			SinglePlayerManager.Get().OnActorAbilitySelected(actorData);

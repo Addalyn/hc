@@ -1375,6 +1375,18 @@ public class ActorTurnSM : NetworkBehaviour
 		{
 			Debug.LogError(string.Format("HACK ATTEMPT: Client sent invalid TurnMessage enum value for CmdGUITurnMessage - {0}", msgEnum));
 		}
+
+		// custom
+		if (NetworkServer.active
+		    && msgEnum == (int)TurnMessage.CANCEL_MOVEMENT
+		    && (CurrentState == TurnStateEnum.DECIDING
+		        || CurrentState == TurnStateEnum.DECIDING_MOVEMENT
+		        || CurrentState == TurnStateEnum.CONFIRMED && m_actorData.GetTimeBank().AllowUnconfirm()))
+		{
+			GetComponent<ServerActorController>().ProcessCancelMovementRequests();
+		}
+		// end custom
+		
 		OnMessage((TurnMessage)msgEnum, extraData, true);
 #endif
 	}
