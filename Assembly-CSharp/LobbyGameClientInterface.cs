@@ -281,11 +281,11 @@ public class LobbyGameClientInterface : WebSocketInterface
 	{
 		switch (notification.MessageToSend)
 		{
-			case MatchmakingQueueToPlayersNotification.MatchmakingQueueMessage._0012:
+			case MatchmakingQueueToPlayersNotification.MatchmakingQueueMessage.ReQueued:
 				AppState_GroupCharacterSelect.Get().ReEnter(true);
 				UIManager.SetGameObjectActive(UIFrontEnd.Get().m_frontEndNavPanel, true);
 				return;
-			case MatchmakingQueueToPlayersNotification.MatchmakingQueueMessage._0015:
+			case MatchmakingQueueToPlayersNotification.MatchmakingQueueMessage.RuinedGameStartSoThrownOutOfQueue:
 			{
 				string desc = StringUtil.TR("RuinedGameStartSoThrownOutOfQueue", "Global");
 				UIDialogPopupManager.OpenOneButtonDialog(StringUtil.TR("QueuingNotification", "Global"), desc, StringUtil.TR("Ok", "Global"));
@@ -293,7 +293,7 @@ public class LobbyGameClientInterface : WebSocketInterface
 				AppState_GroupCharacterSelect.Get().UpdateReadyState(false);
 				return;
 			}
-			case MatchmakingQueueToPlayersNotification.MatchmakingQueueMessage._000E:
+			case MatchmakingQueueToPlayersNotification.MatchmakingQueueMessage.QueueConfirmed:
 				ClientGameManager.Get().HandleQueueConfirmation();
 				return;
 			default:

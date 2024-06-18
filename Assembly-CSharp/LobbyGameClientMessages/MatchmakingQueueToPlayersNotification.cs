@@ -2,23 +2,21 @@ using System;
 
 namespace LobbyGameClientMessages
 {
-	[Serializable]
-	public class MatchmakingQueueToPlayersNotification : WebSocketMessage
-	{
-		public enum MatchmakingQueueMessage
-		{
-			_001D,
-			_000E,
-			_0012,
-			_0015
-		}
+    [Serializable]
+    public class MatchmakingQueueToPlayersNotification : WebSocketMessage
+    {
+        public enum MatchmakingQueueMessage
+        {
+            // names are custom
+            None,
+            QueueConfirmed,
+            ReQueued,
+            RuinedGameStartSoThrownOutOfQueue
+        }
 
-		public long AccountId;
-
-		public MatchmakingQueueMessage MessageToSend;
-
-		public GameType GameType;
-
-		public ushort SubTypeMask;
-	}
+        public long AccountId;
+        public MatchmakingQueueMessage MessageToSend;
+        public GameType GameType;
+        public ushort SubTypeMask;
+    }
 }
