@@ -1648,9 +1648,9 @@ public class ClientGameManager : MonoBehaviour
 			return;
 		}
 		ForceMatchmakingQueueNotification.ActionType action = notification.Action;
-		if (action != ForceMatchmakingQueueNotification.ActionType._000E)
+		if (action != ForceMatchmakingQueueNotification.ActionType.Join)
 		{
-			if (action != ForceMatchmakingQueueNotification.ActionType._0012)
+			if (action != ForceMatchmakingQueueNotification.ActionType.Leave)
 			{
 				throw new Exception("Unhandled ForceQueueNotification.ActionType");
 			}

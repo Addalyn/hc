@@ -2,18 +2,17 @@ using System;
 
 namespace LobbyGameClientMessages
 {
-	[Serializable]
-	public class ForceMatchmakingQueueNotification : WebSocketMessage
-	{
-		public enum ActionType
-		{
-			_001D,
-			_000E,
-			_0012
-		}
+    [Serializable]
+    public class ForceMatchmakingQueueNotification : WebSocketMessage
+    {
+        public enum ActionType
+        {
+            Unknown,
+            Join,
+            Leave
+        }
 
-		public ActionType Action;
-
-		public GameType GameType;
-	}
+        public ActionType Action;
+        public GameType GameType;
+    }
 }
