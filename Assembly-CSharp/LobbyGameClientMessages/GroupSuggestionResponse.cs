@@ -2,18 +2,18 @@ using System;
 
 namespace LobbyGameClientMessages
 {
-	[Serializable]
-	public class GroupSuggestionResponse : WebSocketResponseMessage
-	{
-		public enum Status
-		{
-			_001D,
-			_000E,
-			_0012
-		}
+    [Serializable]
+    public class GroupSuggestionResponse : WebSocketResponseMessage
+    {
+        public enum Status
+        {
+            // custom names
+            Denied,
+            Error,
+            Success
+        }
 
-		public Status SuggestionStatus;
-
-		public long SuggesterAccountId;
-	}
+        public Status SuggestionStatus;
+        public long SuggesterAccountId;
+    }
 }
