@@ -97,6 +97,7 @@ public class Passive_Scamp : Passive
 		}
 		
 		m_syncComp.Networkm_suitWasActiveOnTurnStart = m_syncComp.m_suitActive;
+		m_syncComp.Networkm_suitShieldingOnTurnStart = (uint)GetCurrentAbsorb();
 	}
 
 	// custom
@@ -137,6 +138,7 @@ public class Passive_Scamp : Passive
 		{
 			DestroyShield(effects);
 			m_syncComp.Networkm_suitActive = false;
+			m_syncComp.Networkm_lastSuitLostTurn = (uint)GameFlowData.Get().CurrentTurn;
 
 			if (m_clearEnergyOnSuitRemoval)
 			{
