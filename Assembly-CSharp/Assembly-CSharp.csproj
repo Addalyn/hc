@@ -2094,6 +2094,7 @@
     <Compile Include="ScampErraticCore.cs" />
     <Compile Include="ScampHoloBlobs.cs" />
     <Compile Include="ScampHug.cs" />
+    <Compile Include="ScampOrbEffect.cs" />
     <Compile Include="ScampSideLaserOrCone.cs" />
     <Compile Include="ScampSlamDown.cs" />
     <Compile Include="ScampSuitToggle.cs" />

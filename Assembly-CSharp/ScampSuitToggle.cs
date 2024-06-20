@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -32,6 +34,10 @@ public class ScampSuitToggle : Ability
 	private Passive_Scamp m_passive;
 	private StandardEffectInfo m_cachedEffectForSuitGained;
 	private StandardEffectInfo m_cachedEffectForSuitLost;
+	
+#if SERVER
+	private AbilityData.ActionType m_actionType; // custom
+#endif
 
 	private void Start()
 	{
@@ -47,6 +53,9 @@ public class ScampSuitToggle : Ability
 		m_passive = GetPassiveOfType<Passive_Scamp>();
 		SetCachedFields();
 		m_syncComp = GetComponent<Scamp_SyncComponent>();
+#if SERVER
+		m_actionType = GetActionTypeOfAbility(this); // custom
+#endif
 		Targeter = new AbilityUtil_Targeter_Shape(
 			this,
 			AbilityAreaShape.SingleSquare,
@@ -134,6 +143,7 @@ public class ScampSuitToggle : Ability
 			: m_passiveEnergyRegen;
 	}
 
+	// TODO SCAMP unused, always false
 	public bool ConsiderRespawnForSuitGainEffect()
 	{
 		return m_abilityMod != null
@@ -212,4 +222,94 @@ public class ScampSuitToggle : Ability
 		m_abilityMod = null;
 		Setup();
 	}
+
+#if SERVER
+	public override void Run(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		base.Run(targets, caster, additionalData);
+
+		m_syncComp.Networkm_suitActive = true;
+	}
+
+	// custom
+	public override List<ServerClientUtils.SequenceStartData> GetAbilityRunSequenceStartDataList(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		var list = new List<ServerClientUtils.SequenceStartData>
+		{
+			new ServerClientUtils.SequenceStartData(
+				m_castSequencePrefab,
+				caster.GetFreePos(),
+				caster.AsArray(),
+				caster,
+				additionalData.m_sequenceSource)
+		};
+
+		if (!m_syncComp.m_suitWasActiveOnTurnStart)
+		{
+			list.Add(
+				new ServerClientUtils.SequenceStartData(
+					m_addSuitAnimSeqPrefab,
+					caster.GetFreePos(),
+					null,
+					caster,
+					additionalData.m_sequenceSource));
+		}
+
+		if (ClearEnergyOrbsOnCast())
+		{
+			foreach (ScampOrbEffect orbEffect in m_passive.GetOrbs())
+			{
+				list.Add(orbEffect.GetEffectEndSeqData(additionalData.m_sequenceSource));
+			}
+		}
+
+		return list;
+	}
+
+	// custom
+	public override void GatherAbilityResults(List<AbilityTarget> targets, ActorData caster, ref AbilityResults abilityResults)
+	{
+		ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(caster, caster.GetFreePos()));
+		
+		StandardActorEffectData effectData = m_passive.m_shieldEffectData.GetShallowCopy();
+
+		int absorb = Mathf.RoundToInt(ActorData.TechPoints * GetEnergyToShieldMult());
+		absorb = Mathf.Clamp(absorb, 1, m_passive.GetMaxSuitShield() - m_passive.GetCurrentAbsorb());
+		effectData.m_absorbAmount = absorb;
+		actorHitResults.AddStandardEffectInfo(new StandardEffectInfo
+		{
+			m_applyEffect = true,
+			m_effectData = effectData
+		});
+
+		if (!m_syncComp.m_suitWasActiveOnTurnStart)
+		{
+			actorHitResults.AddStandardEffectInfo(GetEffectForSuitGained());
+			actorHitResults.AddMiscHitEvent(
+				new MiscHitEventData_OverrideCooldown(
+					m_actionType,
+					GetCooldownCreateSuit()));
+		}
+		else
+		{
+			actorHitResults.AddMiscHitEvent(
+				new MiscHitEventData_OverrideCooldown(
+					m_actionType,
+					GetCooldownRefillShield()));
+		}
+
+		if (ClearEnergyOrbsOnCast())
+		{
+			foreach (ScampOrbEffect orbEffect in m_passive.GetOrbs())
+			{
+				actorHitResults.AddEffectForRemoval(orbEffect);
+			}
+		}
+		
+		abilityResults.StoreActorHit(actorHitResults);
+	}
+#endif
 }
