@@ -1,4 +1,7 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ScampDashAndAoe : GenericAbility_Container
@@ -23,6 +26,9 @@ public class ScampDashAndAoe : GenericAbility_Container
 	private AbilityMod_ScampDashAndAoe m_abilityMod;
 	private Scamp_SyncComponent m_syncComp;
 	private OnHitAuthoredData m_cachedShieldDownOnHitData;
+#if SERVER
+	private Passive_Scamp m_passive; // custom
+#endif
 
 	public override string GetOnHitDataDesc()
 	{
@@ -42,6 +48,9 @@ public class ScampDashAndAoe : GenericAbility_Container
 	protected override void SetupTargetersAndCachedVars()
 	{
 		m_syncComp = GetComponent<Scamp_SyncComponent>();
+#if SERVER
+		m_passive = GetPassiveOfType(typeof(Passive_Dino)) as Passive_Scamp; // custom
+#endif
 		base.SetupTargetersAndCachedVars();
 		m_cachedShieldDownOnHitData = m_abilityMod != null
 			? m_abilityMod.m_shieldDownOnHitDataMod.GetModdedOnHitData(m_shieldDownOnHitData)
@@ -128,6 +137,7 @@ public class ScampDashAndAoe : GenericAbility_Container
 			: base.GetBaseCooldown();
 	}
 
+	// TODO SCAMP unused
 	public int CalcCurrentMaxCooldown(bool inSuit)
 	{
 		return GetShieldDownCooldown() < 0 || inSuit
@@ -170,4 +180,38 @@ public class ScampDashAndAoe : GenericAbility_Container
 			m_shieldDownTargetSelect.ClearTargetSelectMod();
 		}
 	}
+	
+#if SERVER
+	// custom
+	protected override void ProcessGatheredHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		AbilityResults abilityResults,
+		List<ActorHitResults> actorHitResults,
+		List<PositionHitResults> positionHitResults,
+		List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+
+		ActorHitResults casterHitResults = GetOrAddHitResults(caster, actorHitResults);
+		if (IsInSuit() && GetShieldCost() > 0)
+		{
+			casterHitResults.AddBaseDamage(GetShieldCost()); // TODO SCAMP wording feels weird. What if you don't have enough shields? Does it cap?
+		}
+
+		if (caster.HitPoints < GetShieldDownNoCooldownHealthThresh())
+		{
+			casterHitResults.AddMiscHitEvent(new MiscHitEventData_AddToCasterCooldown(GetActionTypeOfAbility(this), -10));
+		}
+
+		if (GetExtraEnergyForDashOnOrb() > 0)
+		{
+			BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
+			if (m_passive.GetOrbs().Any(e => e.TargetSquare == targetSquare))
+			{
+				casterHitResults.AddTechPointGain(GetExtraEnergyForDashOnOrb());
+			}
+		}
+	}
+#endif
 }

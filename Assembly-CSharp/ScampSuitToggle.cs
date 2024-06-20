@@ -36,7 +36,10 @@ public class ScampSuitToggle : Ability
 	private StandardEffectInfo m_cachedEffectForSuitLost;
 	
 #if SERVER
-	private AbilityData.ActionType m_actionType; // custom
+	// custom
+	private AbilityData.ActionType m_actionType;
+	private ScampDashAndAoe m_dashAbility;
+	private AbilityData.ActionType m_dashAbilityActionType;
 #endif
 
 	private void Start()
@@ -54,7 +57,10 @@ public class ScampSuitToggle : Ability
 		SetCachedFields();
 		m_syncComp = GetComponent<Scamp_SyncComponent>();
 #if SERVER
-		m_actionType = GetActionTypeOfAbility(this); // custom
+		// custom
+		m_actionType = GetActionTypeOfAbility(this);
+		m_dashAbility = GetAbilityOfType<ScampDashAndAoe>();
+		m_dashAbilityActionType = GetActionTypeOfAbility(m_dashAbility);
 #endif
 		Targeter = new AbilityUtil_Targeter_Shape(
 			this,
@@ -292,6 +298,13 @@ public class ScampSuitToggle : Ability
 				new MiscHitEventData_OverrideCooldown(
 					m_actionType,
 					GetCooldownCreateSuit()));
+			if (m_dashAbility.GetCdrOnSuitApply() > 0)
+			{
+				actorHitResults.AddMiscHitEvent(
+					new MiscHitEventData_AddToCasterCooldown(
+						m_dashAbilityActionType,
+						-m_dashAbility.GetCdrOnSuitApply()));
+			}
 		}
 		else
 		{
