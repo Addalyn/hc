@@ -2,125 +2,96 @@ using LobbyGameClientMessages;
 
 public class SlashCommand_GroupInvite : SlashCommand
 {
-	public SlashCommand_GroupInvite()
-		: base("/invite", SlashCommandType.Everywhere)
-	{
-	}
+    public SlashCommand_GroupInvite()
+        : base("/invite", SlashCommandType.Everywhere)
+    {
+    }
 
-	public override void OnSlashCommand(string arguments)
-	{
-		if (!arguments.IsNullOrEmpty())
-		{
-			if (!(ClientGameManager.Get() == null))
-			{
-				TextConsole.Get().Write(new TextConsole.Message
-				{
-					Text = string.Format(StringUtil.TR("InvitedFriendToGroup", "Global"), arguments),
-					MessageType = ConsoleMessageType.SystemMessage
-				});
-				ClientGameManager.Get().InviteToGroup(arguments, delegate(GroupInviteResponse r)
-				{
-					if (!r.Success)
-					{
-						string text;
-						if (r.LocalizedFailure != null)
-						{
-							int num;
-							if (ClientGameManager.Get().GroupInfo != null)
-							{
-								num = (ClientGameManager.Get().GroupInfo.InAGroup ? 1 : 0);
-							}
-							else
-							{
-								num = 0;
-							}
-							if (num == 0 && r.LocalizedFailure.Context == "Invite" && r.LocalizedFailure.Term == "OtherPlayerInOtherGroup")
-							{
-								while (true)
-								{
-									switch (7)
-									{
-									case 0:
-										break;
-									default:
-									{
-										string empty = string.Empty;
-										string description = string.Format(StringUtil.TR("OtherPlayerInOtherGroupSendJoinRequest", "Invite"), arguments);
-										string leftButtonLabel = StringUtil.TR("Yes", "Global");
-										string rightButtonLabel = StringUtil.TR("No", "Global");
-										UIDialogBox.DialogButtonCallback leftButtonCallback = delegate
-										{
-											ClientGameManager clientGameManager = ClientGameManager.Get();
-											string friendHandle = arguments;
-											
-											clientGameManager.RequestToJoinGroup(friendHandle, delegate(GroupJoinResponse response)
-												{
-													if (response.Success)
-													{
-														while (true)
-														{
-															switch (7)
-															{
-															case 0:
-																break;
-															default:
-																return;
-															}
-														}
-													}
-													string text2;
-													if (response.LocalizedFailure != null)
-													{
-														text2 = response.LocalizedFailure.ToString();
-													}
-													else if (!response.ErrorMessage.IsNullOrEmpty())
-													{
-														text2 = $"Failed: {response.ErrorMessage}#NeedsLocalization";
-													}
-													else
-													{
-														text2 = StringUtil.TR("UnknownErrorTryAgain", "Frontend");
-													}
-													TextConsole.Get().Write(new TextConsole.Message
-													{
-														Text = text2,
-														MessageType = ConsoleMessageType.SystemMessage
-													});
-												});
-										};
-										
-										UIDialogPopupManager.OpenTwoButtonDialog(empty, description, leftButtonLabel, rightButtonLabel, leftButtonCallback, delegate
-											{
-											});
-										return;
-									}
-									}
-								}
-							}
-							text = r.LocalizedFailure.ToString();
-						}
-						else if (!r.ErrorMessage.IsNullOrEmpty())
-						{
-							text = $"Failed: {r.ErrorMessage}#NeedsLocalization";
-						}
-						else
-						{
-							text = StringUtil.TR("UnknownErrorTryAgain", "Frontend");
-						}
-						TextConsole.Get().Write(new TextConsole.Message
-						{
-							Text = text,
-							MessageType = ConsoleMessageType.SystemMessage
-						});
-					}
-				});
-				return;
-			}
-		}
-		TextConsole.Get().Write(new TextConsole.Message
-		{
-			Text = StringUtil.TR("InviteNameError", "SlashCommand"),
-			MessageType = ConsoleMessageType.SystemMessage
-		});
-	}
+    public override void OnSlashCommand(string arguments)
+    {
+        if (arguments.IsNullOrEmpty() || ClientGameManager.Get() == null)
+        {
+            TextConsole.Get().Write(
+                new TextConsole.Message
+                {
+                    Text = StringUtil.TR("InviteNameError", "SlashCommand"),
+                    MessageType = ConsoleMessageType.SystemMessage
+                });
+            return;
+        }
+
+        TextConsole.Get().Write(
+            new TextConsole.Message
+            {
+                Text = string.Format(StringUtil.TR("InvitedFriendToGroup", "Global"), arguments),
+                MessageType = ConsoleMessageType.SystemMessage
+            });
+
+        ClientGameManager.Get().InviteToGroup(
+            arguments,
+            delegate(GroupInviteResponse r)
+            {
+                if (r.Success)
+                {
+                    return;
+                }
+
+                string text;
+                if (r.LocalizedFailure != null)
+                {
+                    if ((ClientGameManager.Get().GroupInfo == null || !ClientGameManager.Get().GroupInfo.InAGroup)
+                        && r.LocalizedFailure.Context == "Invite"
+                        && r.LocalizedFailure.Term == "OtherPlayerInOtherGroup")
+                    {
+                        UIDialogPopupManager.OpenTwoButtonDialog(
+                            string.Empty,
+                            string.Format(
+                                StringUtil.TR("OtherPlayerInOtherGroupSendJoinRequest", "Invite"),
+                                arguments),
+                            StringUtil.TR("Yes", "Global"),
+                            StringUtil.TR("No", "Global"),
+                            delegate
+                            {
+                                ClientGameManager.Get().RequestToJoinGroup(
+                                    arguments,
+                                    delegate(GroupJoinResponse response)
+                                    {
+                                        if (response.Success)
+                                        {
+                                            return;
+                                        }
+
+                                        TextConsole.Get().Write(
+                                            new TextConsole.Message
+                                            {
+                                                Text = response.LocalizedFailure != null
+                                                    ? response.LocalizedFailure.ToString()
+                                                    : !response.ErrorMessage.IsNullOrEmpty()
+                                                        ? $"Failed: {response.ErrorMessage}#NeedsLocalization"
+                                                        : StringUtil.TR("UnknownErrorTryAgain", "Frontend"),
+                                                MessageType = ConsoleMessageType.SystemMessage
+                                            });
+                                    });
+                            },
+                            delegate { });
+                        return;
+                    }
+
+                    text = r.LocalizedFailure.ToString();
+                }
+                else
+                {
+                    text = r.ErrorMessage.IsNullOrEmpty()
+                        ? StringUtil.TR("UnknownErrorTryAgain", "Frontend")
+                        : $"Failed: {r.ErrorMessage}#NeedsLocalization";
+                }
+
+                TextConsole.Get().Write(
+                    new TextConsole.Message
+                    {
+                        Text = text,
+                        MessageType = ConsoleMessageType.SystemMessage
+                    });
+            });
+    }
 }
