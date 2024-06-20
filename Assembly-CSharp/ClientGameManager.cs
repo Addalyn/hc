@@ -1687,11 +1687,11 @@ public class ClientGameManager : MonoBehaviour
 								: $"Failed: {r.ErrorMessage}#NeedsLocalization",
 						MessageType = ConsoleMessageType.SystemMessage
 					});
-					resp.SuggestionStatus = GroupSuggestionResponse.Status._000E;
+					resp.SuggestionStatus = GroupSuggestionResponse.Status.Error;
 				}
 				else
 				{
-					resp.SuggestionStatus = GroupSuggestionResponse.Status._0012;
+					resp.SuggestionStatus = GroupSuggestionResponse.Status.Success;
 				}
 				m_lobbyGameClientInterface.SendMessage(resp);
 			});
@@ -1702,8 +1702,8 @@ public class ClientGameManager : MonoBehaviour
 			{
 				SuggesterAccountId = request.SuggesterAccountId,
 				SuggestionStatus = bBusy
-					? GroupSuggestionResponse.Status._000E
-					: GroupSuggestionResponse.Status._001D
+					? GroupSuggestionResponse.Status.Error
+					: GroupSuggestionResponse.Status.Denied
 			});
 		}
 	}
