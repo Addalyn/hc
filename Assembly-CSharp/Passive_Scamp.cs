@@ -37,7 +37,10 @@ public class Passive_Scamp : Passive
 	// custom
 	private ScampSuitToggle m_ultimateAbility;
 	private AbilityData.ActionType m_ultimateAbilityActionType;
+	private ScampAoeTether m_tetherAbility;
+	private AbilityData.ActionType m_tetherAbilityActionType;
 	private Scamp_SyncComponent m_syncComp;
+	private int m_pendingCdrOnTether;
 
 	private static readonly List<Int2> s_orbLocations = new List<Int2>
 	{
@@ -77,6 +80,8 @@ public class Passive_Scamp : Passive
 		AbilityData abilityData = Owner.GetAbilityData();
 		m_ultimateAbility = abilityData.GetAbilityOfType(typeof(ScampSuitToggle)) as ScampSuitToggle;
 		m_ultimateAbilityActionType = abilityData.GetActionTypeOfAbility(m_ultimateAbility);
+		m_tetherAbility = abilityData.GetAbilityOfType(typeof(ScampAoeTether)) as ScampAoeTether;
+		m_tetherAbilityActionType = abilityData.GetActionTypeOfAbility(m_tetherAbility);
 		m_syncComp = Owner.GetComponent<Scamp_SyncComponent>();
 	}
 	
@@ -117,6 +122,20 @@ public class Passive_Scamp : Passive
 	{
 		base.OnTurnEnd();
 		CheckShield();
+
+		if (m_pendingCdrOnTether > 0)
+		{
+			ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(Owner, Owner.GetFreePos()));
+			actorHitResults.AddMiscHitEvent(new MiscHitEventData_AddToCasterCooldown(
+				m_tetherAbilityActionType,
+				-m_pendingCdrOnTether));
+			MovementResults.SetupAndExecuteAbilityResultsOutsideResolution(
+				Owner,
+				Owner,
+				actorHitResults,
+				m_tetherAbility);
+			m_pendingCdrOnTether = 0;
+		}
 	}
 
 	// custom
@@ -337,6 +356,18 @@ public class Passive_Scamp : Passive
 	public int GetCurrentAbsorb()
 	{
 		return GetShieldEffects().Select(e => e.Absorbtion.m_absorbRemaining).Sum();
+	}
+	
+	// custom
+	public void SetPendingCdrOnTether(int cdr)
+	{
+		m_pendingCdrOnTether = cdr;
+	}
+	
+	// custom
+	public void OnTetherBroken()
+	{
+		m_pendingCdrOnTether = 0;
 	}
 #endif
 }

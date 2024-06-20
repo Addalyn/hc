@@ -2088,6 +2088,7 @@
     <Compile Include="SavedResourceLink.cs" />
     <Compile Include="ScampAoeLaserSequence.cs" />
     <Compile Include="ScampAoeTether.cs" />
+    <Compile Include="ScampAoeTetherEffect.cs" />
     <Compile Include="ScampDashAndAoe.cs" />
     <Compile Include="ScampDelayedAoe.cs" />
     <Compile Include="ScampDualLasers.cs" />

@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -28,6 +30,10 @@ public class ScampAoeTether : Ability
 	private AbilityMod_ScampAoeTether m_abilityMod;
 	private StandardEffectInfo m_cachedTetherApplyEnemyEffect;
 	private StandardEffectInfo m_cachedTetherBreakEnemyEffecf;
+	
+#if SERVER
+	private Passive_Scamp m_passive; // custom
+#endif
 
 	private void Start()
 	{
@@ -41,6 +47,9 @@ public class ScampAoeTether : Ability
 	private void Setup()
 	{
 		m_syncComp = GetComponent<Scamp_SyncComponent>();
+#if SERVER
+		m_passive = GetPassiveOfType(typeof(Passive_Dino)) as Passive_Scamp; // custom
+#endif
 		SetCachedFields();
 		Targeter = new AbilityUtil_Targeter_AoE_Smooth(this, GetAoeRadius(), IgnoreLos());
 	}
@@ -164,4 +173,64 @@ public class ScampAoeTether : Ability
 		m_abilityMod = null;
 		Setup();
 	}
+	
+#if SERVER
+	// custom
+	public override void Run(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		base.Run(targets, caster, additionalData);
+
+		if (GetCdrIfNoTetherTrigger() > 0)
+		{
+			m_passive.SetPendingCdrOnTether(GetCdrIfNoTetherTrigger());
+		}
+	}
+
+	// custom
+	public override ServerClientUtils.SequenceStartData GetAbilityRunSequenceStartData(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		return new ServerClientUtils.SequenceStartData(
+			m_castSequencePrefab,
+			caster.GetCurrentBoardSquare().ToVector3(),
+			additionalData.m_abilityResults.HitActorsArray(),
+			caster,
+			additionalData.m_sequenceSource);
+	}
+	
+	// custom
+	public override void GatherAbilityResults(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		ref AbilityResults abilityResults)
+	{
+		var nonActorTargetInfo = new List<NonActorTargetInfo>();
+		List<ActorData> hitActors = AreaEffectUtils.GetActorsInRadius(
+			caster.GetFreePos(),
+			GetAoeRadius(),
+			IgnoreLos(),
+			caster,
+			caster.GetOtherTeams(),
+			nonActorTargetInfo);
+		foreach (ActorData hitActor in hitActors)
+		{
+			ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(hitActor, caster.GetFreePos()));
+			actorHitResults.AddEffect(new ScampAoeTetherEffect(
+				AsEffectSource(),
+				hitActor,
+				caster,
+				GetTetherApplyEnemyEffect().m_effectData,
+				GetTetherBreakDistanceOverride(),
+				PullToCasterInKnockback(),
+				GetMaxKnockbackDist(),
+				GetTetherBreakDamage(),
+				GetTetherBreakEnemyEffecf(),
+				m_tetherBreakTriggerSequencePrefab,
+				m_passive));
+			abilityResults.StoreActorHit(actorHitResults);
+		}
+	}
+#endif
 }
