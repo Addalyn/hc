@@ -167,4 +167,35 @@ public class ScampDualLasers : GenericAbility_Container
 			m_shieldDownTargetSelect.ClearTargetSelectMod();
 		}
 	}
+	
+#if SERVER
+	protected override void ProcessGatheredHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		AbilityResults abilityResults,
+		List<ActorHitResults> actorHitResults,
+		List<PositionHitResults> positionHitResults,
+		List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+		
+		if (IsTurnAfterLostSuit() && GetExtraDamageTurnAfterLosingSuit() > 0)
+		{
+			Dictionary<ActorData, ActorHitContext> actorHitContextMap = GetTargetSelectComp().GetActorHitContextMap();
+			
+			foreach (ActorHitResults actorHitResult in actorHitResults)
+			{
+				ActorData hitActor = actorHitResult.m_hitParameters.Target;
+				ActorHitContext ctx = actorHitContextMap[hitActor];
+				int hash = ContextKeys.s_InAoe.GetKey();
+				if (hitActor.GetTeam() != caster.GetTeam()
+				    && actorHitContextMap[hitActor].m_contextVars.HasVarInt(hash)
+				    && ctx.m_contextVars.GetValueInt(hash) > 0)
+				{
+					actorHitResult.AddBaseDamage(GetExtraDamageTurnAfterLosingSuit());
+				}
+			}
+		}
+	}
+#endif
 }
