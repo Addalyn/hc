@@ -1,6 +1,7 @@
 // ROGUES
 // SERVER
 using System.Collections.Generic;
+using System.Linq;
 using AbilityContextNamespace;
 using UnityEngine;
 
@@ -285,6 +286,7 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
             caster.GetSquareAtPhaseStart(),
             true);
         List<ActorData> actorsOnPath = ClaymoreCharge.GetActorsOnPath(path, caster.GetOtherTeams(), caster);
+        List<ActorData> evaders = GameFlowData.Get().GetActors().Where(ServerActionBuffer.Get().ActorIsEvading).ToList();
         // end custom
         List<ActorData> actorsInLaser = AreaEffectUtils.GetActorsInLaser(
             loSCheckPos,
@@ -297,8 +299,9 @@ public class TargetSelect_LaserChargeWithReverseCones : GenericAbility_TargetSel
             1,
             true,
             true,
-            out _,  // custom, out laserEndPoint in rogues
-            null);
+            out laserEndPoint,
+            null,
+            evaders); // custom, null in rogues
         // custom
         actorsInLaser.AddRange(actorsOnPath);
         TargeterUtils.SortActorsByDistanceToPos(ref actorsInLaser, loSCheckPos);

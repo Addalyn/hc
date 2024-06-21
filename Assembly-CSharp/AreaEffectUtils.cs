@@ -1953,6 +1953,7 @@ public static class AreaEffectUtils
 	}
 #endif
 
+	// TODO make sure we properly use laserEndPos on server -- it is modified even if there are not enough targets hit!
 	public static List<ActorData> GetActorsInLaser(
 		Vector3 startPos,
 		Vector3 dir,
