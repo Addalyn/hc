@@ -21,7 +21,7 @@ public class ScampSuitToggle : Ability
 	[Separator("Passive Energy Regen")]
 	public int m_passiveEnergyRegen;
 	[Separator("Effect to apply when suit is gained or lost (applied on start of turn)")]
-	public bool m_considerRespawnForSuitGainEffect;
+	public bool m_considerRespawnForSuitGainEffect; // TODO SCAMP unused, always false
 	public StandardEffectInfo m_effectForSuitGained;
 	public StandardEffectInfo m_effectForSuitLost;
 	[Separator("Sequences")]
@@ -148,8 +148,7 @@ public class ScampSuitToggle : Ability
 			? m_abilityMod.m_passiveEnergyRegenMod.GetModifiedValue(m_passiveEnergyRegen)
 			: m_passiveEnergyRegen;
 	}
-
-	// TODO SCAMP unused, always false
+	
 	public bool ConsiderRespawnForSuitGainEffect()
 	{
 		return m_abilityMod != null
@@ -230,6 +229,7 @@ public class ScampSuitToggle : Ability
 	}
 
 #if SERVER
+	// custom
 	public override void Run(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
 	{
 		base.Run(targets, caster, additionalData);
@@ -282,8 +282,8 @@ public class ScampSuitToggle : Ability
 		
 		StandardActorEffectData effectData = m_passive.m_shieldEffectData.GetShallowCopy();
 
-		int absorb = Mathf.RoundToInt(ActorData.TechPoints * GetEnergyToShieldMult());
-		absorb = Mathf.Clamp(absorb, 1, m_passive.GetMaxSuitShield() - m_passive.GetCurrentAbsorb());
+		int absorb = Mathf.RoundToInt(ActorData.ReservedTechPoints * GetEnergyToShieldMult()); // all TP were reserved for cast
+		absorb = Mathf.Clamp(absorb, 1, m_passive.GetMaxSuitShield() - (int)m_syncComp.m_suitShieldingOnTurnStart); // TODO SCAMP or does it clamp on turn end?
 		effectData.m_absorbAmount = absorb;
 		actorHitResults.AddStandardEffectInfo(new StandardEffectInfo
 		{

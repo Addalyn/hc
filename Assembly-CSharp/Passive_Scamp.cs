@@ -40,6 +40,7 @@ public class Passive_Scamp : Passive
 	private ScampAoeTether m_tetherAbility;
 	private AbilityData.ActionType m_tetherAbilityActionType;
 	private Scamp_SyncComponent m_syncComp;
+	private bool m_pendingShield;
 	private int m_pendingCdrOnTether;
 
 	private static readonly List<Int2> s_orbLocations = new List<Int2>
@@ -95,26 +96,9 @@ public class Passive_Scamp : Passive
 		{
 			CreateShield();
 		}
-
-		if (m_clearOrbsOnDeath && currentTurn == Owner.LastDeathTurn + 1)
-		{
-			DestroyOrbs();
-		}
 		
 		m_syncComp.Networkm_suitWasActiveOnTurnStart = m_syncComp.m_suitActive;
 		m_syncComp.Networkm_suitShieldingOnTurnStart = (uint)GetCurrentAbsorb();
-	}
-
-	// custom
-	public override void OnActorRespawn()
-	{
-		base.OnActorRespawn();
-		CreateShield();
-
-		if (m_resetEnergyOnRespawn)
-		{
-			Owner.SetTechPoints(0);
-		}
 	}
 
 	// custom
@@ -122,6 +106,7 @@ public class Passive_Scamp : Passive
 	{
 		base.OnTurnEnd();
 		CheckShield();
+		m_syncComp.CallRpcSetAnimParamForSuit(m_syncComp.m_suitActive);
 
 		if (m_pendingCdrOnTether > 0)
 		{
@@ -136,14 +121,56 @@ public class Passive_Scamp : Passive
 				m_tetherAbility);
 			m_pendingCdrOnTether = 0;
 		}
+
+		if (Owner.IsDead() && m_resetEnergyOnRespawn)
+		{
+			Owner.SetTechPoints(0);
+		}
 	}
 
 	// custom
-	public override void OnAbilityPhaseEnd(AbilityPriority phase)
+	public override void OnActorRespawn()
 	{
-		base.OnAbilityPhaseEnd(phase);
+		base.OnActorRespawn();
+		m_pendingShield = true;
+	}
 
-		if (phase == AbilityPriority.Combat_Final)
+	// custom
+	public override void OnDied(List<UnresolvedHealthChange> killers)
+	{
+		base.OnDied(killers);
+		
+		if (m_clearOrbsOnDeath)
+		{
+			DestroyOrbs();
+		}
+		if (m_resetEnergyOnRespawn)
+		{
+			Owner.SetTechPoints(0);
+		}
+	}
+
+	public override void OnResolveStart(bool hasAbilities, bool hasMovement)
+	{
+		base.OnResolveStart(hasAbilities, hasMovement);
+
+		if (!Owner.IsDead())
+		{
+			m_syncComp.CallRpcResetAttackParam();
+		}
+	}
+
+	// custom
+	public override void OnAbilitiesDone()
+	{
+		base.OnAbilitiesDone();
+
+		if (m_pendingShield)
+		{
+			CreateShield();
+			m_pendingShield = false;
+		}
+		else
 		{
 			CheckShield();
 		}
@@ -156,8 +183,11 @@ public class Passive_Scamp : Passive
 		if (m_syncComp.m_suitActive && !effects.Any(e => e.CanAbsorb()))
 		{
 			DestroyShield(effects);
+			m_syncComp.CallRpcPlayShieldRemoveAnim();
+			m_syncComp.CallRpcResetTargetersForSuitMode(false);
 			m_syncComp.Networkm_suitActive = false;
 			m_syncComp.Networkm_lastSuitLostTurn = (uint)GameFlowData.Get().CurrentTurn;
+			m_syncComp.CallRpcSetAnimParamForSuit(false);
 
 			if (m_clearEnergyOnSuitRemoval)
 			{
@@ -189,11 +219,19 @@ public class Passive_Scamp : Passive
 			Owner,
 			actorHitResults,
 			m_ultimateAbility);
+		m_syncComp.CallRpcResetTargetersForSuitMode(true);
+		m_syncComp.Networkm_suitActive = true;
+		m_syncComp.CallRpcSetAnimParamForSuit(true);
 	}
 	
 	// custom
 	private void DestroyShield(List<StandardActorEffect> effects)
 	{
+		if (Owner.IsDead())
+		{
+			return;
+		}
+		
 		ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(Owner, Owner.GetFreePos()));
 		foreach (StandardActorEffect effect in effects)
 		{
@@ -226,8 +264,6 @@ public class Passive_Scamp : Passive
 				seqSource),
 			seqSource);
 
-		SequenceSource permSeqSource = seqSource.GetShallowCopy();
-		permSeqSource.RemoveAtEndOfTurn = false;
 		foreach (BoardSquare boardSquare in GetSquaresToSpawnOrbsOn())
 		{
 			PositionHitResults positionHitResults = new PositionHitResults(new PositionHitParameters(boardSquare.ToVector3()));
@@ -248,8 +284,9 @@ public class Passive_Scamp : Passive
 					boardSquare.ToVector3(),
 					Owner.AsArray(),
 					Owner,
-					permSeqSource),
-				permSeqSource);
+					seqSource),
+				seqSource,
+				false);
 			movementResults.GetPowerUpResults().StorePositionHit(positionHitResults);
 		}
 		movementResults.ExecuteUnexecutedMovementHits(false);
@@ -331,6 +368,7 @@ public class Passive_Scamp : Passive
 					float dist = centerSquare.HorizontalDistanceInSquaresTo(s);
 					return dist >= m_orbMinSpawnDist
 					       && dist <= m_orbMaxSpawnDist
+					       && s.IsValidForGameplay()
 					       && centerSquare.GetLOS(s.x, s.y)
 					       && !res.Contains(s);
 				})

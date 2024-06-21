@@ -213,5 +213,19 @@ public class ScampDashAndAoe : GenericAbility_Container
 			}
 		}
 	}
+	
+	// custom
+	public override BoardSquare GetModifiedMoveStartSquare(ActorData caster, List<AbilityTarget> targets)
+	{
+		if (CanOverrideMoveStartSquare())
+		{
+			BoardSquare square = Board.Get().GetSquare(targets[0].GridPos);
+			if (square != null)
+			{
+				return square;
+			}
+		}
+		return base.GetModifiedMoveStartSquare(caster, targets);
+	}
 #endif
 }

@@ -10,6 +10,7 @@ public class ScampAoeTetherEffect: StandardActorEffect
     private readonly StandardEffectInfo m_tetherBreakEnemyEffect;
     private readonly GameObject m_tetherBreakTriggerSequencePrefab;
     private readonly Passive_Scamp m_passive;
+    private readonly float m_aoeRadiusForAnimation;
 
     private static readonly float s_tetherBreakDist = 2.5f * Board.SquareSizeStatic;
     private static readonly float s_tetherBreakDistSqr = s_tetherBreakDist * s_tetherBreakDist;
@@ -25,7 +26,8 @@ public class ScampAoeTetherEffect: StandardActorEffect
         int tetherBreakDamage,
         StandardEffectInfo tetherBreakEnemyEffect,
         GameObject tetherBreakTriggerSequencePrefab,
-        Passive_Scamp passive)
+        Passive_Scamp passive,
+        float aoeRadiusForAnimation)
         : base(parent, null, target, caster, data)
     {
         m_tetherBreakDistanceOverride = tetherBreakDistanceOverride;
@@ -35,6 +37,7 @@ public class ScampAoeTetherEffect: StandardActorEffect
         m_tetherBreakEnemyEffect = tetherBreakEnemyEffect;
         m_tetherBreakTriggerSequencePrefab = tetherBreakTriggerSequencePrefab;
         m_passive = passive;
+        m_aoeRadiusForAnimation = aoeRadiusForAnimation;
         HitPhase = AbilityPriority.Combat_Knockback;
         m_time.duration = 1;
     }
@@ -64,48 +67,32 @@ public class ScampAoeTetherEffect: StandardActorEffect
                 Target.AsArray(),
                 Caster,
                 sequenceSource,
-                new Sequence.IExtraSequenceParams[]
-                {
-                    new Sequence.FxAttributeParam
-                    {
-                        m_paramNameCode = Sequence.FxAttributeParam.ParamNameCode.ScaleControl,
-                        m_paramTarget = Sequence.FxAttributeParam.ParamTarget.MainVfx,
-                        m_paramValue = 4.8f
-                    },
-                    new Sequence.FxAttributeParam
-                    {
-                        m_paramNameCode = Sequence.FxAttributeParam.ParamNameCode.ScaleControl,
-                        m_paramTarget = Sequence.FxAttributeParam.ParamTarget.ImpactVfx,
-                        m_paramValue = 4.8f
-                    }
-                })
+                AbilityCommon_LayeredRings.GetAdjustableRingSequenceParams(m_aoeRadiusForAnimation))
         };
     }
 
 	public override void GatherEffectResults(ref EffectResults effectResults, bool isReal)
 	{
-		if (!IsBroken())
-		{
-			return;
-		}
-
-        if (isReal)
-        {
-            m_passive.OnTetherBroken();
-        }
-		
 		ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(Target, Caster.GetFreePos()));
-        KnockbackHitData knockbackData = new KnockbackHitData(
-            Target,
-            Caster,
-            KnockbackType.PullToSourceActor,
-            Vector3.zero,
-            Vector3.zero,
-            m_maxKnockbackDist);
-        actorHitResults.AddKnockbackData(knockbackData);
-        actorHitResults.AddBaseDamage(m_tetherBreakDamage);
-        actorHitResults.AddStandardEffectInfo(m_tetherBreakEnemyEffect);
-            
+		if (IsBroken())
+		{
+			if (isReal)
+			{
+				m_passive.OnTetherBroken();
+			}
+
+			KnockbackHitData knockbackData = new KnockbackHitData(
+				Target,
+				Caster,
+				KnockbackType.PullToSourceActor,
+				Vector3.zero,
+				Caster.GetCurrentBoardSquare().ToVector3(),
+				m_maxKnockbackDist);
+			actorHitResults.AddKnockbackData(knockbackData);
+			actorHitResults.AddBaseDamage(m_tetherBreakDamage);
+			actorHitResults.AddStandardEffectInfo(m_tetherBreakEnemyEffect);
+		}
+		EndAllEffectSequences(actorHitResults);
 		effectResults.StoreActorHit(actorHitResults);
 	}
 

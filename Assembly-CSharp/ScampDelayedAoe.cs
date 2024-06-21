@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using AbilityContextNamespace;
 using UnityEngine;
@@ -118,4 +120,55 @@ public class ScampDelayedAoe : GenericAbility_Container
 	{
 		m_abilityMod = null;
 	}
+	
+#if SERVER
+	// custom
+	protected override void PreProcessForCalcAbilityHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		Dictionary<ActorData, ActorHitContext> actorHitContextMap,
+		ContextVars abilityContext)
+	{
+		base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
+		
+		abilityContext.SetValue(s_cvarMissingShields.GetKey(), m_passive.GetMaxSuitShield() - m_syncComp.m_suitShieldingOnTurnStart);
+	}
+
+	// custom
+	protected override void ProcessGatheredHits(
+		List<AbilityTarget> targets,
+		ActorData caster,
+		AbilityResults abilityResults,
+		List<ActorHitResults> actorHitResults,
+		List<PositionHitResults> positionHitResults,
+		List<NonActorTargetInfo> nonActorTargetInfo)
+	{
+		base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+
+		actorHitResults.Clear();
+
+		ActorHitResults casterHitResults = new ActorHitResults(new ActorHitParameters(caster, caster.GetFreePos()));
+		casterHitResults.AddEffect(new ScampDelayedAoeEffect(
+			AsEffectSource(),
+			caster,
+			caster,
+			GetDelayedEffectBase(),
+			GetRadius(),
+			GetOnHitAuthoredData(),
+			GetExtraDamageIfShieldDownForm(),
+			GetSubseqTurnDamageMultiplier(),
+			SubseqTurnNoEnergyGain(),
+			m_animIndexOnTrigger,
+			m_onTriggerSequencePrefab,
+			m_syncComp,
+			m_passive));
+		actorHitResults.Add(casterHitResults);
+	}
+
+	// custom
+	private float GetRadius()
+	{
+		return (GetTargetSelectComp() as TargetSelect_AoeRadius)?.m_radius ?? 0;
+	}
+#endif
 }

@@ -48,7 +48,7 @@ public class ScampAoeTether : Ability
 	{
 		m_syncComp = GetComponent<Scamp_SyncComponent>();
 #if SERVER
-		m_passive = GetPassiveOfType(typeof(Passive_Dino)) as Passive_Scamp; // custom
+		m_passive = GetPassiveOfType(typeof(Passive_Scamp)) as Passive_Scamp; // custom
 #endif
 		SetCachedFields();
 		Targeter = new AbilityUtil_Targeter_AoE_Smooth(this, GetAoeRadius(), IgnoreLos());
@@ -228,7 +228,8 @@ public class ScampAoeTether : Ability
 				GetTetherBreakDamage(),
 				GetTetherBreakEnemyEffecf(),
 				m_tetherBreakTriggerSequencePrefab,
-				m_passive));
+				m_passive,
+				GetAoeRadius()));
 			abilityResults.StoreActorHit(actorHitResults);
 		}
 	}

@@ -6,6 +6,7 @@ using UnityEngine;
 
 #if SERVER
 // custom
+// TODO SCAMP affected by energized - should it be?
 public class ScampOrbEffect : Effect
 {
     private readonly int m_orbEnergyGainOnTrigger;

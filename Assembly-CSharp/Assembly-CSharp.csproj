@@ -2091,6 +2091,7 @@
     <Compile Include="ScampAoeTetherEffect.cs" />
     <Compile Include="ScampDashAndAoe.cs" />
     <Compile Include="ScampDelayedAoe.cs" />
+    <Compile Include="ScampDelayedAoeEffect.cs" />
     <Compile Include="ScampDualLasers.cs" />
     <Compile Include="ScampErraticCore.cs" />
     <Compile Include="ScampHoloBlobs.cs" />
