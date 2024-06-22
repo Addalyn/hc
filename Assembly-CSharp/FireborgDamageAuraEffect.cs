@@ -10,7 +10,7 @@ public class FireborgDamageAuraEffect : StandardActorEffect
     private readonly AbilityAreaShape m_shape;
     private readonly OnHitAuthoredData m_onHitData;
     private readonly bool m_excludeTargetedActor;
-    private readonly bool m_ignite; // TODO FIREBORG not supposed to do anything?
+    private readonly bool m_ignite; // TODO FIREBORG not supposed to do anything? check replays
     private readonly GameObject m_auraPersistentSeqPrefab;
     private readonly GameObject m_auraOnTriggerSeqPrefab;
 

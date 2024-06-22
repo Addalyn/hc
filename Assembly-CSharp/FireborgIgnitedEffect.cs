@@ -1,8 +1,12 @@
 // ROGUES
 // SERVER
 
+using System.Collections.Generic;
+using UnityEngine;
+
 #if SERVER
 // custom
+// TODO FIREBORG focus on it? wait for client enable doesn't help, only breaks everything
 public class FireborgIgnitedEffect : StandardActorEffect
 {
     private readonly int m_ignitedTriggerDamage;
@@ -39,6 +43,11 @@ public class FireborgIgnitedEffect : StandardActorEffect
         actorHitResults.SetIgnoreTechpointInteractionForHit(true);
         EndAllEffectSequences(actorHitResults);
         effectResults.StoreActorHit(actorHitResults);
+    }
+
+    public override List<Vector3> CalcPointsOfInterestForCamera()
+    {
+        return new List<Vector3> { Target.GetFreePos() };
     }
 }
 #endif

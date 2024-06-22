@@ -257,7 +257,8 @@ public class Fireborg_SyncComponent : NetworkBehaviour
     public FireborgGroundFireEffect MakeGroundFireEffect(
         EffectSource parent,
         ActorData caster,
-        List<BoardSquare> affectedSquares)
+        List<BoardSquare> affectedSquares,
+        int duration = 1)
     {
         return new FireborgGroundFireEffect(
             parent,
@@ -267,7 +268,7 @@ public class Fireborg_SyncComponent : NetworkBehaviour
             caster,
             new GroundEffectField
             {
-                duration = 1,
+                duration = duration,
                 shape = AbilityAreaShape.SingleSquare,
                 damageAmount = InSuperheatMode()
                     ? m_groundFireDamageSuperheated
@@ -293,18 +294,29 @@ public class Fireborg_SyncComponent : NetworkBehaviour
         ActorData caster,
         List<BoardSquare> affectedSquares,
         Vector3 posForHit,
-        int duration, // TODO FIREBORG
-        bool applyIgnited, // TODO FIREBORG
+        int duration, // TODO FIREBORG check
+        bool applyIgnited, // TODO FIREBORG check
         bool isReal,
-        out FireborgGroundFireEffect effect)
+        out FireborgGroundFireEffect groundFireEffect,
+        out Dictionary<ActorData, FireborgIgnitedEffect> ignitedEffects)
     {
         affectedSquares = affectedSquares.Where(s => s.IsValidForGameplay()).ToList();
-        effect = MakeGroundFireEffect(ability.AsEffectSource(), caster, affectedSquares);
-        effect.AddToActorsHitThisTurn(GetActorsHitByGroundFireThisTurn(isReal).ToList());
+        groundFireEffect = MakeGroundFireEffect(ability.AsEffectSource(), caster, affectedSquares, duration);
+        List<ActorData> hitActors = GetActorsHitByGroundFireThisTurn(isReal).ToList();
+        groundFireEffect.AddToActorsHitThisTurn(hitActors);
+        ignitedEffects = new Dictionary<ActorData, FireborgIgnitedEffect>(hitActors.Count);
+        if (applyIgnited) // TODO FIREBORG is it even needed?
+        {
+            foreach (ActorData hitActor in hitActors)
+            {
+                FireborgIgnitedEffect ignitedEffect = MakeIgnitedEffect(ability.AsEffectSource(), caster, hitActor);
+                ignitedEffects.Add(hitActor, ignitedEffect);
+            }
+        }
         
         PositionHitResults posHitResults = new PositionHitResults(new PositionHitParameters(posForHit));
-        EffectResults effectResults = new EffectResults(effect, caster, isReal);
-        effect.GatherEffectResults(ref effectResults, isReal);
+        EffectResults effectResults = new EffectResults(groundFireEffect, caster, isReal);
+        groundFireEffect.GatherEffectResults(ref effectResults, isReal);
         SequenceSource sequenceSource = new SequenceSource(null, null);
         foreach (ActorHitResults hitResults in effectResults.m_actorToHitResults.Values)
         {

@@ -239,7 +239,8 @@ public class FireborgDash : GenericAbility_Container
                         isSuperheated ? GetGroundFireDurationIfSuperheated() : GetGroundFireDuration(),
                         false,
                         ServerAbilityUtils.CurrentlyGatheringRealResults(),
-                        out FireborgGroundFireEffect effect));
+                        out FireborgGroundFireEffect effect,
+                        out _));
                     GetOrAddHitResults(caster, actorHitResults).AddEffect(effect);
                 }
             } 
