@@ -1,85 +1,81 @@
-using System;
 using System.Collections.Generic;
 
 public class SlashCommand_Apropos : SlashCommand
 {
-	public SlashCommand_Apropos() : base("/apropos", SlashCommandType.Everywhere)
-	{
-	}
+    public SlashCommand_Apropos() : base("/apropos", SlashCommandType.Everywhere)
+    {
+    }
 
-	private void DumpCommand(string arguments, string command, List<string> aliases, bool bAvailableBecauseWereInFrontEnd, bool bAvailableBecauseWereInGame)
-	{
-		bool flag = arguments.IsNullOrEmpty() || command.Contains(arguments);
-		if (!flag && !aliases.IsNullOrEmpty<string>())
-		{
-			foreach (string text in aliases)
-			{
-				if (text.Contains(arguments))
-				{
-					flag = true;
-					break;
-				}
-			}
-		}
-		if (flag)
-		{
-			if (!bAvailableBecauseWereInFrontEnd)
-			{
-				if (!bAvailableBecauseWereInGame)
-				{
-					return;
-				}
-			}
-			TextConsole.Message message = default(TextConsole.Message);
-			message.MessageType = ConsoleMessageType.SystemMessage;
-			message.Text = command;
-			if (!aliases.IsNullOrEmpty<string>())
-			{
-				using (List<string>.Enumerator enumerator2 = aliases.GetEnumerator())
-				{
-					while (enumerator2.MoveNext())
-					{
-						string str = enumerator2.Current;
-						message.Text = message.Text + ", " + str;
-					}
-				}
-			}
-			TextConsole.Get().Write(message, null);
-		}
-	}
+    private void DumpCommand(
+        string arguments,
+        string command,
+        List<string> aliases,
+        bool bAvailableBecauseWereInFrontEnd,
+        bool bAvailableBecauseWereInGame)
+    {
+        bool isMatch = arguments.IsNullOrEmpty() || command.Contains(arguments);
+        if (!isMatch && !aliases.IsNullOrEmpty())
+        {
+            foreach (string alias in aliases)
+            {
+                if (alias.Contains(arguments))
+                {
+                    isMatch = true;
+                    break;
+                }
+            }
+        }
 
-	public override void OnSlashCommand(string arguments)
-	{
-		ClientGameManager clientGameManager = ClientGameManager.Get();
-		if (clientGameManager != null)
-		{
-			bool flag = GameFlowData.Get() == null;
-			using (List<SlashCommand>.Enumerator enumerator = SlashCommands.Get().m_slashCommands.GetEnumerator())
-			{
-				while (enumerator.MoveNext())
-				{
-					SlashCommand slashCommand = enumerator.Current;
-					if (!slashCommand.PublicFacing)
-					{
-						if (!clientGameManager.HasDeveloperAccess())
-						{
-							continue;
-						}
-					}
-					bool bAvailableBecauseWereInFrontEnd = flag && slashCommand.AvailableInFrontEnd;
-					bool flag2;
-					if (!flag)
-					{
-						flag2 = slashCommand.AvailableInGame;
-					}
-					else
-					{
-						flag2 = false;
-					}
-					bool bAvailableBecauseWereInGame = flag2;
-					this.DumpCommand(arguments, slashCommand.Command, slashCommand.Aliases, bAvailableBecauseWereInFrontEnd, bAvailableBecauseWereInGame);
-				}
-			}
-		}
-	}
+        if (!isMatch)
+        {
+            return;
+        }
+
+        if (!bAvailableBecauseWereInFrontEnd && !bAvailableBecauseWereInGame)
+        {
+            return;
+        }
+
+        TextConsole.Message message = new TextConsole.Message
+        {
+            MessageType = ConsoleMessageType.SystemMessage,
+            Text = command
+        };
+        if (!aliases.IsNullOrEmpty())
+        {
+            foreach (string alias in aliases)
+            {
+                message.Text = message.Text + ", " + alias;
+            }
+        }
+
+        TextConsole.Get().Write(message);
+    }
+
+    public override void OnSlashCommand(string arguments)
+    {
+        ClientGameManager clientGameManager = ClientGameManager.Get();
+        if (clientGameManager == null)
+        {
+            return;
+        }
+
+        bool isNotInGame = GameFlowData.Get() == null;
+        foreach (SlashCommand slashCommand in SlashCommands.Get().m_slashCommands)
+        {
+            if (!slashCommand.PublicFacing && !clientGameManager.HasDeveloperAccess())
+            {
+                continue;
+            }
+
+            bool bAvailableBecauseWereInFrontEnd = isNotInGame && slashCommand.AvailableInFrontEnd;
+            bool bAvailableBecauseWereInGame = !isNotInGame && slashCommand.AvailableInGame;
+            DumpCommand(
+                arguments,
+                slashCommand.Command,
+                slashCommand.Aliases,
+                bAvailableBecauseWereInFrontEnd,
+                bAvailableBecauseWereInGame);
+        }
+    }
 }

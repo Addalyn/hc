@@ -9,33 +9,16 @@ public class SlashCommand_ChatWhisper : SlashCommand
 
 	public override void OnSlashCommand(string arguments)
 	{
-		if (arguments.IsNullOrEmpty())
+		if (arguments.IsNullOrEmpty() || ClientGameManager.Get() == null)
 		{
 			return;
 		}
-		while (true)
+		string[] array = arguments.Split((string[])null, 2, StringSplitOptions.RemoveEmptyEntries);
+		if (array.Length >= 2)
 		{
-			if (ClientGameManager.Get() == null)
-			{
-				while (true)
-				{
-					switch (6)
-					{
-					default:
-						return;
-					case 0:
-						break;
-					}
-				}
-			}
-			string[] array = arguments.Split((string[])null, 2, StringSplitOptions.RemoveEmptyEntries);
-			if (array.Length >= 2)
-			{
-				string recipientHandle = array[0];
-				string text = array[1];
-				ClientGameManager.Get().SendChatNotification(recipientHandle, ConsoleMessageType.WhisperChat, text);
-			}
-			return;
+			string recipientHandle = array[0];
+			string text = array[1];
+			ClientGameManager.Get().SendChatNotification(recipientHandle, ConsoleMessageType.WhisperChat, text);
 		}
 	}
 }
