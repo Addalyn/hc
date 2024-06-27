@@ -75,7 +75,7 @@ public class UINameplateOvercon : MonoBehaviour
 							}
 						}
 					}
-					m_timeToDestroy = Time.time + ((!(entry.m_ageInSeconds <= 0f)) ? entry.m_ageInSeconds : 8f);
+					m_timeToDestroy = Time.time + ((!(entry.m_ageInSeconds <= 0f)) ? entry.m_ageInSeconds : UIOverconData.c_defaultOverconAgeInSeconds);
 					return;
 				}
 			}

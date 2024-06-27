@@ -1,299 +1,212 @@
-using LobbyGameClientMessages;
 using System;
 using System.Collections.Generic;
+using LobbyGameClientMessages;
 using UnityEngine;
 
 public class UIOverconData : MonoBehaviour
 {
-	[Serializable]
-	public class NameToOverconEntry
-	{
-		public int m_overconId;
+    [Serializable]
+    public class NameToOverconEntry
+    {
+        public int m_overconId;
+        public bool m_isHidden;
+        public string m_commandName;
+        public string m_displayName;
+        public string m_obtainedDescription;
+        public int m_sortOrder;
+        public int m_maxUsesPerMatch = 3;
+        public InventoryItemRarity m_rarity;
+        [AssetFileSelector("", "", "")]
+        [Header("-- Static Sprite --")]
+        public string m_staticSpritePath;
+        public float m_initialAlpha = 1f;
+        [AssetFileSelector("", "", "")]
+        [Header("-- Icon Sprite --")]
+        public string m_iconSpritePath;
+        [AssetFileSelector("Assets/Prefabs/New GUI/V2/Resources/OverconPrefabs/", "OverconPrefabs/", ".prefab")]
+        [Header("-- Custom Prfab for more fancy overcons --")]
+        public string m_customPrefabPath;
+        public float m_customPrefabHeightOffset;
+        [AudioEvent(false)]
+        [Header("-- Audio Event --")]
+        public string m_audioEvent = string.Empty;
+        [Header("-- if <= 0, will use default time (8 seconds) before destroying")]
+        public float m_ageInSeconds = -1f;
+        [Header("-- Unlock Data --")]
+        public GameBalanceVars.UnlockData m_unlockDataForGeneratingLobbyData;
 
-		public bool m_isHidden;
+        public string GetUnlocalizedDisplayName()
+        {
+            return string.IsNullOrEmpty(m_displayName) ? m_commandName : m_displayName;
+        }
 
-		public string m_commandName;
+        public string GetDisplayName()
+        {
+            string text = StringUtil.TR_GetOverconDisplayName(m_overconId);
+            if (text.IsNullOrEmpty())
+            {
+                text = $"#overcon{m_overconId}";
+            }
 
-		public string m_displayName;
+            return text;
+        }
 
-		public string m_obtainedDescription;
+        public string GetCommandName()
+        {
+            string text = StringUtil.TR_GetOverconCommandName(m_overconId);
+            if (text.IsNullOrEmpty())
+            {
+                text = m_commandName;
+            }
 
-		public int m_sortOrder;
+            return text;
+        }
 
-		public int m_maxUsesPerMatch = 3;
+        public string GetObtainedDescription()
+        {
+            string text = StringUtil.TR_GetOverconObtainedDesc(m_overconId);
+            if (text.IsNullOrEmpty())
+            {
+                text = m_obtainedDescription;
+            }
 
-		public InventoryItemRarity m_rarity;
+            return text;
+        }
 
-		[AssetFileSelector("", "", "")]
-		[Header("-- Static Sprite --")]
-		public string m_staticSpritePath;
+        public GameBalanceVars.OverconUnlockData CreateUnlockDataEntry()
+        {
+            return new GameBalanceVars.OverconUnlockData
+            {
+                ID = m_overconId,
+                Name = m_commandName,
+                m_sortOrder = m_sortOrder,
+                m_isHidden = m_isHidden,
+                m_commandName = m_commandName,
+                Rarity = m_rarity,
+                m_unlockData = m_unlockDataForGeneratingLobbyData.Clone()
+            };
+        }
+    }
 
-		public float m_initialAlpha = 1f;
+    public const float c_defaultOverconAgeInSeconds = 8f;
 
-		[AssetFileSelector("", "", "")]
-		[Header("-- Icon Sprite --")]
-		public string m_iconSpritePath;
+    public List<NameToOverconEntry> m_nameToOverconEntry = new List<NameToOverconEntry>();
 
-		[AssetFileSelector("Assets/Prefabs/New GUI/V2/Resources/OverconPrefabs/", "OverconPrefabs/", ".prefab")]
-		[Header("-- Custom Prfab for more fancy overcons --")]
-		public string m_customPrefabPath;
+    private static UIOverconData s_instance;
 
-		public float m_customPrefabHeightOffset;
+    private Dictionary<int, NameToOverconEntry> m_cachedIdToOverconMap = new Dictionary<int, NameToOverconEntry>();
+    private Dictionary<string, int> m_cachedNameToId = new Dictionary<string, int>();
 
-		[AudioEvent(false)]
-		[Header("-- Audio Event --")]
-		public string m_audioEvent = string.Empty;
+    public static UIOverconData Get()
+    {
+        return s_instance;
+    }
 
-		[Header("-- if <= 0, will use default time (8 seconds) before destroying")]
-		public float m_ageInSeconds = -1f;
+    private void Awake()
+    {
+        s_instance = this;
+        m_cachedIdToOverconMap = new Dictionary<int, NameToOverconEntry>();
+        m_cachedNameToId = new Dictionary<string, int>();
+    }
 
-		[Header("-- Unlock Data --")]
-		public GameBalanceVars.UnlockData m_unlockDataForGeneratingLobbyData;
+    private void Start()
+    {
+        foreach (NameToOverconEntry nameToOverconEntry in m_nameToOverconEntry)
+        {
+            if (nameToOverconEntry.m_overconId <= 0
+                || m_cachedIdToOverconMap.ContainsKey(nameToOverconEntry.m_overconId))
+            {
+                continue;
+            }
 
-		public string GetUnlocalizedDisplayName()
-		{
-			if (string.IsNullOrEmpty(m_displayName))
-			{
-				while (true)
-				{
-					switch (7)
-					{
-					case 0:
-						break;
-					default:
-						return m_commandName;
-					}
-				}
-			}
-			return m_displayName;
-		}
+            m_cachedIdToOverconMap.Add(nameToOverconEntry.m_overconId, nameToOverconEntry);
+            if (!m_cachedNameToId.ContainsKey(nameToOverconEntry.m_commandName))
+            {
+                m_cachedNameToId.Add(nameToOverconEntry.m_commandName.ToLower(), nameToOverconEntry.m_overconId);
+                string commandName = nameToOverconEntry.GetCommandName();
+                if (commandName.IsNullOrEmpty())
+                {
+                    continue;
+                }
 
-		public string GetDisplayName()
-		{
-			string text = StringUtil.TR_GetOverconDisplayName(m_overconId);
-			if (text.IsNullOrEmpty())
-			{
-				text = $"#overcon{m_overconId}";
-			}
-			return text;
-		}
+                if (!m_cachedNameToId.ContainsKey(commandName.ToLower()))
+                {
+                    m_cachedNameToId.Add(commandName.ToLower(), nameToOverconEntry.m_overconId);
+                }
+            }
+            else
+            {
+                Log.Error("UIOverconData has duplicate overcon names");
+            }
+        }
 
-		public string GetCommandName()
-		{
-			string text = StringUtil.TR_GetOverconCommandName(m_overconId);
-			if (text.IsNullOrEmpty())
-			{
-				text = m_commandName;
-			}
-			return text;
-		}
+        if (ClientGameManager.Get() != null)
+        {
+            ClientGameManager.Get().OnUseOverconNotification += HandleUseOverconNotification;
+        }
+    }
 
-		public string GetObtainedDescription()
-		{
-			string text = StringUtil.TR_GetOverconObtainedDesc(m_overconId);
-			if (text.IsNullOrEmpty())
-			{
-				text = m_obtainedDescription;
-			}
-			return text;
-		}
+    private void OnDestroy()
+    {
+        if (s_instance != this)
+        {
+            return;
+        }
 
-		public GameBalanceVars.OverconUnlockData CreateUnlockDataEntry()
-		{
-			GameBalanceVars.OverconUnlockData overconUnlockData = new GameBalanceVars.OverconUnlockData();
-			overconUnlockData.ID = m_overconId;
-			overconUnlockData.Name = m_commandName;
-			overconUnlockData.m_sortOrder = m_sortOrder;
-			overconUnlockData.m_isHidden = m_isHidden;
-			overconUnlockData.m_commandName = m_commandName;
-			overconUnlockData.Rarity = m_rarity;
-			overconUnlockData.m_unlockData = m_unlockDataForGeneratingLobbyData.Clone();
-			return overconUnlockData;
-		}
-	}
+        if (ClientGameManager.Get() != null)
+        {
+            ClientGameManager.Get().OnUseOverconNotification -= HandleUseOverconNotification;
+        }
 
-	public const float c_defaultOverconAgeInSeconds = 8f;
+        s_instance = null;
+    }
 
-	public List<NameToOverconEntry> m_nameToOverconEntry = new List<NameToOverconEntry>();
+    public int GetOverconIdByName(string name)
+    {
+        string key = name.ToLower();
+        if (m_cachedNameToId.ContainsKey(key))
+        {
+            return m_cachedNameToId[key];
+        }
 
-	private static UIOverconData s_instance;
+        return -1;
+    }
 
-	private Dictionary<int, NameToOverconEntry> m_cachedIdToOverconMap = new Dictionary<int, NameToOverconEntry>();
+    public NameToOverconEntry GetOverconEntryById(int overconId)
+    {
+        return m_cachedIdToOverconMap.ContainsKey(overconId)
+            ? m_cachedIdToOverconMap[overconId]
+            : null;
+    }
 
-	private Dictionary<string, int> m_cachedNameToId = new Dictionary<string, int>();
+    public void HandleUseOverconNotification(UseOverconResponse notification)
+    {
+        UseOvercon(notification.OverconId, notification.ActorId, false);
+    }
 
-	public static UIOverconData Get()
-	{
-		return s_instance;
-	}
+    public void UseOvercon(int overconId, int actorIndex, bool skipValidation)
+    {
+        if (GameFlowData.Get() == null || GameFlowData.Get().activeOwnedActorData == null)
+        {
+            return;
+        }
 
-	private void Awake()
-	{
-		s_instance = this;
-		m_cachedIdToOverconMap = new Dictionary<int, NameToOverconEntry>();
-		m_cachedNameToId = new Dictionary<string, int>();
-	}
-
-	private void Start()
-	{
-		for (int i = 0; i < m_nameToOverconEntry.Count; i++)
-		{
-			NameToOverconEntry nameToOverconEntry = m_nameToOverconEntry[i];
-			if (nameToOverconEntry.m_overconId <= 0 || m_cachedIdToOverconMap.ContainsKey(nameToOverconEntry.m_overconId))
-			{
-				continue;
-			}
-			m_cachedIdToOverconMap.Add(nameToOverconEntry.m_overconId, nameToOverconEntry);
-			if (!m_cachedNameToId.ContainsKey(nameToOverconEntry.m_commandName))
-			{
-				m_cachedNameToId.Add(nameToOverconEntry.m_commandName.ToLower(), nameToOverconEntry.m_overconId);
-				string commandName = nameToOverconEntry.GetCommandName();
-				if (commandName.IsNullOrEmpty())
-				{
-					continue;
-				}
-				if (!m_cachedNameToId.ContainsKey(commandName.ToLower()))
-				{
-					m_cachedNameToId.Add(commandName.ToLower(), nameToOverconEntry.m_overconId);
-				}
-			}
-			else
-			{
-				Log.Error("UIOverconData has duplicate overcon names");
-			}
-		}
-		while (true)
-		{
-			if (ClientGameManager.Get() != null)
-			{
-				while (true)
-				{
-					ClientGameManager.Get().OnUseOverconNotification += HandleUseOverconNotification;
-					return;
-				}
-			}
-			return;
-		}
-	}
-
-	private void OnDestroy()
-	{
-		if (!(s_instance == this))
-		{
-			return;
-		}
-		while (true)
-		{
-			if (ClientGameManager.Get() != null)
-			{
-				ClientGameManager.Get().OnUseOverconNotification -= HandleUseOverconNotification;
-			}
-			s_instance = null;
-			return;
-		}
-	}
-
-	public int GetOverconIdByName(string name)
-	{
-		string key = name.ToLower();
-		if (m_cachedNameToId.ContainsKey(key))
-		{
-			while (true)
-			{
-				switch (7)
-				{
-				case 0:
-					break;
-				default:
-					return m_cachedNameToId[key];
-				}
-			}
-		}
-		return -1;
-	}
-
-	public NameToOverconEntry GetOverconEntryById(int overconId)
-	{
-		if (m_cachedIdToOverconMap.ContainsKey(overconId))
-		{
-			return m_cachedIdToOverconMap[overconId];
-		}
-		return null;
-	}
-
-	public void HandleUseOverconNotification(UseOverconResponse notification)
-	{
-		UseOvercon(notification.OverconId, notification.ActorId, false);
-	}
-
-	public void UseOvercon(int overconId, int actorIndex, bool skipValidation)
-	{
-		if (!(GameFlowData.Get() != null))
-		{
-			return;
-		}
-		while (true)
-		{
-			if (!(GameFlowData.Get().activeOwnedActorData != null))
-			{
-				return;
-			}
-			object obj;
-			if (GameFlowData.Get() != null)
-			{
-				obj = GameFlowData.Get().activeOwnedActorData;
-			}
-			else
-			{
-				obj = null;
-			}
-			ActorData x = (ActorData)obj;
-			ActorData actorData = GameFlowData.Get().FindActorByActorIndex(actorIndex);
-			if (!(actorData != null))
-			{
-				return;
-			}
-			while (true)
-			{
-				if (!(x != null))
-				{
-					return;
-				}
-				while (true)
-				{
-					if (!actorData.IsActorVisibleToClient())
-					{
-						return;
-					}
-					while (true)
-					{
-						if (!(HUD_UI.Get() != null))
-						{
-							return;
-						}
-						while (true)
-						{
-							if (!(Get() != null))
-							{
-								return;
-							}
-							while (true)
-							{
-								NameToOverconEntry overconEntryById = Get().GetOverconEntryById(overconId);
-								if (overconEntryById != null)
-								{
-									while (true)
-									{
-										HUD_UI.Get().m_mainScreenPanel.m_nameplatePanel.SpawnOverconForActor(actorData, overconEntryById, skipValidation);
-										return;
-									}
-								}
-								return;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+        ActorData activeOwnedActorData = GameFlowData.Get() != null ? GameFlowData.Get().activeOwnedActorData : null;
+        ActorData actorData = GameFlowData.Get().FindActorByActorIndex(actorIndex);
+        if (actorData != null
+            && activeOwnedActorData != null
+            && actorData.IsActorVisibleToClient()
+            && HUD_UI.Get() != null
+            && Get() != null)
+        {
+            NameToOverconEntry overconEntryById = Get().GetOverconEntryById(overconId);
+            if (overconEntryById != null)
+            {
+                HUD_UI.Get().m_mainScreenPanel.m_nameplatePanel.SpawnOverconForActor(
+                    actorData,
+                    overconEntryById,
+                    skipValidation);
+            }
+        }
+    }
 }
