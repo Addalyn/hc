@@ -3,113 +3,81 @@ using System.Collections.Generic;
 
 public class SlashCommands
 {
-	private static SlashCommands s_instance;
+    private static SlashCommands s_instance;
 
-	public List<SlashCommand> m_slashCommands = new List<SlashCommand>();
+    public List<SlashCommand> m_slashCommands;
 
-	public SlashCommands()
-	{
-		m_slashCommands.Add(new SlashCommand_Apropos());
-		m_slashCommands.Add(new SlashCommand_ChatGame());
-		m_slashCommands.Add(new SlashCommand_ChatGeneral());
-		m_slashCommands.Add(new SlashCommand_ChatTeam());
-		m_slashCommands.Add(new SlashCommand_ShowGeneralChat());
-		m_slashCommands.Add(new SlashCommand_ShowAllChat());
-		m_slashCommands.Add(new SlashCommand_EnableProfanityFilter());
-		m_slashCommands.Add(new SlashCommand_ChatWhisper());
-		m_slashCommands.Add(new SlashCommand_Friend());
-		m_slashCommands.Add(new SlashCommand_GroupChat());
-		m_slashCommands.Add(new SlashCommand_GroupInvite());
-		m_slashCommands.Add(new SlashCommand_GroupKick());
-		m_slashCommands.Add(new SlashCommand_GroupLeave());
-		m_slashCommands.Add(new SlashCommand_GroupPromote());
-		m_slashCommands.Add(new SlashCommand_InviteToGame());
-		m_slashCommands.Add(new SlashCommand_SpectateGame());
-		m_slashCommands.Add(new SlashCommand_UserBlock());
-		m_slashCommands.Add(new SlashCommand_UserUnblock());
-		m_slashCommands.Add(new SlashCommand_NameplateOvercon());
-		m_slashCommands.Add(new SlashCommand_CustomGamePause());
-		m_slashCommands.Add(new SlashCommand_Help());
-		m_slashCommands.Add(new SlashCommand_UserReport());
-		m_slashCommands.Add(new SlashCommand_PlayReplay());
-		m_slashCommands.Add(new SlashCommand_Replay_FastForward());
-		m_slashCommands.Add(new SlashCommand_Replay_Restart());
-		m_slashCommands.Add(new SlashCommand_Replay_Seek());
-		m_slashCommands.Add(new SlashCommand_Language());
-		m_slashCommands.Add(new SlashCommand_Version());
-		m_slashCommands.Add(new SlashCommand_Log());
-		m_slashCommands.Add(new SlashCommand_SetDevChatTag());
-		RebuildLocalizedText();
-		LocalizationManager.OnLocalizeEvent += RebuildLocalizedText;
-	}
+    public SlashCommands()
+    {
+        m_slashCommands = new List<SlashCommand>
+        {
+            new SlashCommand_Apropos(),
+            new SlashCommand_ChatGame(),
+            new SlashCommand_ChatGeneral(),
+            new SlashCommand_ChatTeam(),
+            new SlashCommand_ShowGeneralChat(),
+            new SlashCommand_ShowAllChat(),
+            new SlashCommand_EnableProfanityFilter(),
+            new SlashCommand_ChatWhisper(),
+            new SlashCommand_Friend(),
+            new SlashCommand_GroupChat(),
+            new SlashCommand_GroupInvite(),
+            new SlashCommand_GroupKick(),
+            new SlashCommand_GroupLeave(),
+            new SlashCommand_GroupPromote(),
+            new SlashCommand_InviteToGame(),
+            new SlashCommand_SpectateGame(),
+            new SlashCommand_UserBlock(),
+            new SlashCommand_UserUnblock(),
+            new SlashCommand_NameplateOvercon(),
+            new SlashCommand_CustomGamePause(),
+            new SlashCommand_Help(),
+            new SlashCommand_UserReport(),
+            new SlashCommand_PlayReplay(),
+            new SlashCommand_Replay_FastForward(),
+            new SlashCommand_Replay_Restart(),
+            new SlashCommand_Replay_Seek(),
+            new SlashCommand_Language(),
+            new SlashCommand_Version(),
+            new SlashCommand_Log(),
+            new SlashCommand_SetDevChatTag()
+        };
+        RebuildLocalizedText();
+        LocalizationManager.OnLocalizeEvent += RebuildLocalizedText;
+    }
 
-	public static SlashCommands Get()
-	{
-		return s_instance;
-	}
+    public static SlashCommands Get()
+    {
+        return s_instance;
+    }
 
-	public static void Instantiate()
-	{
-		s_instance = new SlashCommands();
-	}
+    public static void Instantiate()
+    {
+        s_instance = new SlashCommands();
+    }
 
-	private void RebuildLocalizedText()
-	{
-		using (List<SlashCommand>.Enumerator enumerator = m_slashCommands.GetEnumerator())
-		{
-			while (enumerator.MoveNext())
-			{
-				SlashCommand current = enumerator.Current;
-				current.Localize();
-			}
-			while (true)
-			{
-				switch (1)
-				{
-				case 0:
-					break;
-				default:
-					return;
-				}
-			}
-		}
-	}
+    private void RebuildLocalizedText()
+    {
+        foreach (SlashCommand command in m_slashCommands)
+        {
+            command.Localize();
+        }
+    }
 
-	public bool RunSlashCommand(string command, string arguments)
-	{
-		bool flag = GameFlowData.Get() == null;
-		bool result = false;
-		foreach (SlashCommand slashCommand in m_slashCommands)
-		{
-			if (flag)
-			{
-				if (!slashCommand.AvailableInFrontEnd)
-				{
-					continue;
-				}
-			}
-			if (!flag)
-			{
-				if (!slashCommand.AvailableInGame)
-				{
-					continue;
-				}
-			}
-			if (slashCommand.IsSlashCommand(command))
-			{
-				while (true)
-				{
-					switch (2)
-					{
-					case 0:
-						break;
-					default:
-						slashCommand.OnSlashCommand(arguments);
-						return true;
-					}
-				}
-			}
-		}
-		return result;
-	}
+    public bool RunSlashCommand(string command, string arguments)
+    {
+        bool isNotInGame = GameFlowData.Get() == null;
+        foreach (SlashCommand slashCommand in m_slashCommands)
+        {
+            if ((!isNotInGame || slashCommand.AvailableInFrontEnd)
+                && (isNotInGame || slashCommand.AvailableInGame)
+                && slashCommand.IsSlashCommand(command))
+            {
+                slashCommand.OnSlashCommand(arguments);
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
