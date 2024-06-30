@@ -367,14 +367,6 @@ public class FireborgReactLasers : GenericAbility_Container
         actorHitResults.Clear();
         actorHitResults.Add(casterHitResults);
     }
-	
-    // custom
-    public override void OnExecutedActorHit_Ability(ActorData caster, ActorData target, ActorHitResults results)
-    {
-        caster.GetFreelancerStats().AddToValueOfStat(
-            FreelancerStats.FireborgStats.BlastwaveDamage,
-            results.FinalDamage);
-    }
 
     // custom
     public override void OnExecutedActorHit_Effect(ActorData caster, ActorData target, ActorHitResults results)
