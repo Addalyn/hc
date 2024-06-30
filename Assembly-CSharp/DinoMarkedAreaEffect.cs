@@ -122,10 +122,9 @@ public class DinoMarkedAreaEffect : Effect
 
     private void UpdateTargetSquares()
     {
-        m_targetSquares = m_targets.Select(
-                actor => actor.IsDead()
-                    ? actor.GetMostRecentDeathSquare()
-                    : actor.GetCurrentBoardSquare())
+        m_targetSquares = m_targets
+            .Where(actor => !actor.IsDead())
+            .Select(actor => actor.GetCurrentBoardSquare())
             .ToList();
     }
 
