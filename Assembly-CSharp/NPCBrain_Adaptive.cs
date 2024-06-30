@@ -1021,21 +1021,31 @@ public class NPCBrain_Adaptive : NPCBrain
 			case AbilityUtil_Targeter_AoE_AroundActor _:
 			case AbilityUtil_Targeter_MultipleShapes _: // custom
 			{
-				if (thisAbility.Targeter is AbilityUtil_Targeter_MultipleShapes && !(thisAbility is IceborgNovaOnReact)) // custom
+				// custom
+				List<ActorData> targets;
+				if (!(thisAbility.Targeter is AbilityUtil_Targeter_MultipleShapes) || thisAbility is IceborgNovaOnReact)
+				{
+					targets = GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam());
+				}
+				else if (thisAbility is FireborgDamageAura)
+				{
+					targets = GameFlowData.Get().GetActors();
+				}
+				else
 				{
 					goto default;
 				}
+				// end custom
 				
-				List<ActorData> allies = GameFlowData.Get().GetAllTeamMembers(actorData.GetTeam());
 				List<AbilityTarget> tempTargetList = new List<AbilityTarget>();
-				foreach (ActorData ally in allies)
+				foreach (ActorData targetActor in targets)
 				{
-					BoardSquare currentBoardSquare = ally.GetCurrentBoardSquare();
-					if (!ally.IsDead()
+					BoardSquare currentBoardSquare = targetActor.GetCurrentBoardSquare();
+					if (!targetActor.IsDead()
 					    && currentBoardSquare != null
-					    && !ally.IgnoreForAbilityHits)
+					    && !targetActor.IgnoreForAbilityHits)
 					{
-						AbilityTarget target = AbilityTarget.CreateAbilityTargetFromActor(ally, actorData);
+						AbilityTarget target = AbilityTarget.CreateAbilityTargetFromActor(targetActor, actorData);
 						if (thisAbility.CustomTargetValidation(actorData, target, 0, null))
 						{
 							if (potentialTargets == null)
@@ -2945,7 +2955,7 @@ public class NPCBrain_Adaptive : NPCBrain
 							}
 						}
 						
-						if (additionalScore == 0)
+						if (additionalScore == 0 && !(effect is FireborgGroundFireEffect))
 						{
 							additionalScore = -10f;
 						}
@@ -3236,6 +3246,66 @@ public class NPCBrain_Adaptive : NPCBrain
 		ActorData target = effect.Target;
 		if (target == null)
 		{
+			// TODO BOTS copied from ScoreWorldEffects. The dichotomy is actually actorHitResult/positionHitResults. Unite them.
+			if (effect is StandardGroundEffect || effect is StandardMultiAreaGroundEffect)
+			{
+				// calculating based on current positioning
+				float additionalScore = 0;
+				float additionalCoverScore = 0;
+
+				GroundEffectField fieldInfo;
+				ICollection<BoardSquare> squaresInShape;
+				if (effect is StandardGroundEffect standardGroundEffect)
+				{
+					fieldInfo = standardGroundEffect.m_fieldInfo;
+					squaresInShape = standardGroundEffect.GetSquaresInShape();
+				}
+				else if (effect is StandardMultiAreaGroundEffect standardMultiAreaGroundEffect)
+				{
+					fieldInfo = standardMultiAreaGroundEffect.m_fieldInfo;
+					squaresInShape = standardMultiAreaGroundEffect.GetSquaresInShape();
+				}
+				else
+				{
+					return false;
+				}
+						
+				ActorCover actorCover = caster.GetComponent<ActorCover>();
+
+				foreach (BoardSquare affectedSquare in squaresInShape)
+				{
+					if (actorCover.AmountOfCover(affectedSquare) > 1)
+					{
+						additionalCoverScore += 2;
+					}
+							
+					ActorData hitActor = AreaEffectUtils.GetTargetableActorOnSquare(
+						affectedSquare, 
+						fieldInfo.IncludeEnemies(),
+						fieldInfo.IncludeAllies(),
+						caster);
+							
+					if (hitActor == null || GetEnemyPlayerAliveAndVisibleMultiplier(hitActor) <= 0f)
+					{
+						continue;
+					}
+
+					if (hitActor.GetTeam() != caster.GetTeam())
+					{
+						additionalScore += ConvertDamageToScore(caster, hitActor, fieldInfo.damageAmount);
+					}
+				}
+						
+				if (additionalScore == 0 && !(effect is FireborgGroundFireEffect))
+				{
+					additionalScore = -10f;
+				}
+
+				potentialChoice.score += additionalScore + additionalCoverScore;
+				potentialChoice.reasoning += $"Added {additionalScore} score for projected damage.\n";
+				potentialChoice.reasoning += $"Added {additionalCoverScore} score for covered squares in cover.\n";
+				return true;
+			}
 			return false;
 		}
 		switch (effect)
@@ -3459,6 +3529,41 @@ public class NPCBrain_Adaptive : NPCBrain
 				}
 
 				return false; // also process standard effect data
+			}
+			case FireborgDamageAuraEffect damageAuraEffect:
+			{
+				List<ActorData> hitActors = damageAuraEffect.GetHitActors();
+				foreach (ActorData hitActor in hitActors)
+				{
+					if (GetEnemyPlayerAliveAndVisibleMultiplier(hitActor) <= 0f)
+					{
+						continue;
+					}
+
+					float score = ConvertDamageToScore(caster, hitActor, damageAuraEffect.GetBaseDamage());
+					potentialChoice.score += score;
+					potentialChoice.reasoning += $"Added {score} score for projected damage.\n";
+				}
+
+				return true;
+				// TODO BOT FIREBORG account for teammate's dash
+			}
+			case FireborgReactLasersEffect reactLasersEffect:
+			{
+				List<ActorData> hitActors = reactLasersEffect.GetHitActors(null, out _);
+				foreach (ActorData hitActor in hitActors)
+				{
+					if (GetEnemyPlayerAliveAndVisibleMultiplier(hitActor) <= 0f)
+					{
+						continue;
+					}
+
+					float score = ConvertDamageToScore(caster, hitActor, (int)(reactLasersEffect.GetBaseDamage() * 1.5f));
+					potentialChoice.score += score;
+					potentialChoice.reasoning += $"Added {score} score for projected damage.\n";
+				}
+
+				return true;
 			}
 			default:
 				return false;

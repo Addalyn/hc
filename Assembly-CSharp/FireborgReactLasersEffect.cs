@@ -305,7 +305,7 @@ public class FireborgReactLasersEffect : Effect
         }
     }
 
-    private List<ActorData> GetHitActors(List<NonActorTargetInfo> nonActorTargetInfo, out Vector3 endPos)
+    public List<ActorData> GetHitActors(List<NonActorTargetInfo> nonActorTargetInfo, out Vector3 endPos)
     {
         return AreaEffectUtils.GetActorsInLaser(
             Caster.GetLoSCheckPos(),
@@ -330,6 +330,11 @@ public class FireborgReactLasersEffect : Effect
             m_laserWidth,
             m_ignoreLos,
             Caster);
+    }
+
+    public int GetBaseDamage()
+    {
+        return m_onHitDataForFirstLaser.GetFirstDamageValue();
     }
 }
 #endif

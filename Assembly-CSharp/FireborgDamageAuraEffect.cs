@@ -82,23 +82,9 @@ public class FireborgDamageAuraEffect : Effect
 
     public override void GatherEffectResults(ref EffectResults effectResults, bool isReal)
     {
-        List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(
-            m_shape,
-            Target.GetFreePos(),
-            Target.GetCurrentBoardSquare(),
-            false,
-            Caster,
-            Caster.GetOtherTeams(),
-            null);
-
-        if (m_excludeTargetedActor)
-        {
-            actorsInShape.Remove(Target);
-        }
-
         bool needToEndSequence = m_time.age + 1 == m_time.duration;
 
-        foreach (ActorData hitActor in actorsInShape)
+        foreach (ActorData hitActor in GetHitActors())
         {
             ActorHitParameters hitParameters = new ActorHitParameters(hitActor, Target.GetFreePos());
             ActorHitResults actorHitResults = new ActorHitResults(hitParameters);
@@ -129,6 +115,25 @@ public class FireborgDamageAuraEffect : Effect
         }
     }
 
+    public List<ActorData> GetHitActors()
+    {
+        List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(
+            m_shape,
+            Target.GetFreePos(),
+            Target.GetCurrentBoardSquare(),
+            false,
+            Caster,
+            Caster.GetOtherTeams(),
+            null);
+
+        if (m_excludeTargetedActor)
+        {
+            actorsInShape.Remove(Target);
+        }
+
+        return actorsInShape;
+    }
+
     public override List<Vector3> CalcPointsOfInterestForCamera()
     {
         List<Vector3> list = new List<Vector3>();
@@ -144,6 +149,11 @@ public class FireborgDamageAuraEffect : Effect
         }
 
         return list;
+    }
+
+    public int GetBaseDamage()
+    {
+        return m_onHitData.GetFirstDamageValue();
     }
 }
 #endif

@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 // TODO FIREBORG check ground fire hits do not grant energy 
-// TODO FIREBORG bot
 // TODO FIREBORG what if you spawn in one ground fire and walk into another?
 // TODO FIREBORG check mods
 public class Fireborg_SyncComponent : NetworkBehaviour
