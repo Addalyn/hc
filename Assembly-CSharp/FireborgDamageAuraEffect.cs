@@ -5,7 +5,7 @@ using UnityEngine;
 
 #if SERVER
 // custom
-public class FireborgDamageAuraEffect : StandardActorEffect
+public class FireborgDamageAuraEffect : Effect
 {
     private readonly AbilityAreaShape m_shape;
     private readonly OnHitAuthoredData m_onHitData;
@@ -23,12 +23,13 @@ public class FireborgDamageAuraEffect : StandardActorEffect
         ActorData caster,
         AbilityAreaShape shape,
         OnHitAuthoredData onHitData,
+        int duration,
         bool excludeTargetedActor,
         bool ignite,
         GameObject auraPersistentSeqPrefab,
         GameObject auraOnTriggerSeqPrefab,
         Fireborg_SyncComponent syncComp)
-        : base(parent, targetSquare, target, caster, StandardActorEffectData.MakeDefault())
+        : base(parent, targetSquare, target, caster)
     {
         m_shape = shape;
         m_onHitData = onHitData;
@@ -37,6 +38,8 @@ public class FireborgDamageAuraEffect : StandardActorEffect
         m_auraPersistentSeqPrefab = auraPersistentSeqPrefab;
         m_auraOnTriggerSeqPrefab = auraOnTriggerSeqPrefab;
         m_syncComp = syncComp;
+        m_time.duration = duration;
+        HitPhase = AbilityPriority.Combat_Damage;
     }
 
     public override bool AddActorAnimEntryIfHasHits(AbilityPriority phaseIndex)
@@ -72,7 +75,7 @@ public class FireborgDamageAuraEffect : StandardActorEffect
                 m_auraOnTriggerSeqPrefab,
                 Target.GetCurrentBoardSquare(),
                 m_effectResults.HitActorsArray(),
-                Caster,
+                Target,
                 sequenceSource)
         };
     }
@@ -93,7 +96,7 @@ public class FireborgDamageAuraEffect : StandardActorEffect
             actorsInShape.Remove(Target);
         }
 
-        bool endedSequence = false;
+        bool needToEndSequence = m_time.age + 1 == m_time.duration;
 
         foreach (ActorData hitActor in actorsInShape)
         {
@@ -108,16 +111,16 @@ public class FireborgDamageAuraEffect : StandardActorEffect
                     actorHitResults.AddEffect(ignitedEffect);
                 }
             }
-            if (!endedSequence)
+            if (needToEndSequence)
             {
                 actorHitResults.AddEffectSequenceToEnd(m_auraPersistentSeqPrefab, m_guid);
-                endedSequence = true;
+                needToEndSequence = false;
             }
 
             effectResults.StoreActorHit(actorHitResults);
         }
 
-        if (!endedSequence)
+        if (needToEndSequence)
         {
             ActorHitParameters hitParameters = new ActorHitParameters(Target, Target.GetFreePos());
             ActorHitResults actorHitResults = new ActorHitResults(hitParameters);
