@@ -160,7 +160,7 @@ public class FireborgDash : GenericAbility_Container
     {
         m_abilityMod = null;
     }
-    
+
 #if SERVER
     // custom
     protected override void PreProcessForCalcAbilityHits(
@@ -170,7 +170,7 @@ public class FireborgDash : GenericAbility_Container
         ContextVars abilityContext)
     {
         base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
-        
+
         m_syncComp.SetSuperheatedContextVar(abilityContext);
     }
 
@@ -198,12 +198,12 @@ public class FireborgDash : GenericAbility_Container
         foreach (ActorHitResults actorHitResult in actorHitResults)
         {
             ActorData hitActor = actorHitResult.m_hitParameters.Target;
-        
+
             if (hitActor.GetTeam() == caster.GetTeam())
             {
                 continue;
             }
-        
+
             if (actorHitResult.HasDamage && isIgniting)
             {
                 FireborgIgnitedEffect fireborgIgnitedEffect =
@@ -267,6 +267,13 @@ public class FireborgDash : GenericAbility_Container
                 }
             }
         }
+    }
+
+    // custom
+    public override void OnExecutedActorHit_Effect(ActorData caster, ActorData target, ActorHitResults results)
+    {
+        base.OnExecutedActorHit_Effect(caster, target, results);
+        m_syncComp.OnExecutedActorHit_Effect(caster, target, results);
     }
 #endif
 }

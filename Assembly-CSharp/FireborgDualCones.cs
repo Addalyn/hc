@@ -202,7 +202,7 @@ public class FireborgDualCones : GenericAbility_Container
     {
         m_abilityMod = null;
     }
-    
+
 #if SERVER
     // custom
     protected override void PreProcessForCalcAbilityHits(
@@ -212,7 +212,7 @@ public class FireborgDualCones : GenericAbility_Container
         ContextVars abilityContext)
     {
         base.PreProcessForCalcAbilityHits(targets, caster, actorHitContextMap, abilityContext);
-        
+
         m_syncComp.SetSuperheatedContextVar(abilityContext);
     }
 
@@ -225,9 +225,15 @@ public class FireborgDualCones : GenericAbility_Container
         List<PositionHitResults> positionHitResults,
         List<NonActorTargetInfo> nonActorTargetInfo)
     {
-        base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+        base.ProcessGatheredHits(
+            targets,
+            caster,
+            abilityResults,
+            actorHitResults,
+            positionHitResults,
+            nonActorTargetInfo);
 
-        Dictionary<ActorData,ActorHitContext> actorHitContextMap = GetTargetSelectComp().GetActorHitContextMap();
+        Dictionary<ActorData, ActorHitContext> actorHitContextMap = GetTargetSelectComp().GetActorHitContextMap();
 
         foreach (ActorHitResults actorHitResult in actorHitResults)
         {
@@ -242,14 +248,16 @@ public class FireborgDualCones : GenericAbility_Container
 
             if (actorHitResult.HasDamage)
             {
-                actorHitResult.AddBaseDamage(hitCount > 1
-                    ? GetExtraDamageIfOverlap()
-                    : GetExtraDamageNonOverlap());
+                actorHitResult.AddBaseDamage(
+                    hitCount > 1
+                        ? GetExtraDamageIfOverlap()
+                        : GetExtraDamageNonOverlap());
 
                 if (hitCount > 1 && IgniteTargetIfOverlapHit()
                     || m_syncComp.InSuperheatMode() && IgniteTargetIfSuperheated())
                 {
-                    FireborgIgnitedEffect fireborgIgnitedEffect = m_syncComp.MakeIgnitedEffect(AsEffectSource(), caster, hitActor);
+                    FireborgIgnitedEffect fireborgIgnitedEffect =
+                        m_syncComp.MakeIgnitedEffect(AsEffectSource(), caster, hitActor);
                     if (fireborgIgnitedEffect != null)
                     {
                         actorHitResult.AddEffect(fireborgIgnitedEffect);
@@ -282,7 +290,6 @@ public class FireborgDualCones : GenericAbility_Container
                         out FireborgGroundFireEffect effect);
                     posHitResults.AddEffect(effect);
                     positionHitResults.Add(posHitResults);
-        
                 }
             }
         }
@@ -293,6 +300,13 @@ public class FireborgDualCones : GenericAbility_Container
     {
         // return true;
         return base.ShouldRevealCasterOnHostileEffectOrBarrierHit();
+    }
+
+    // custom
+    public override void OnExecutedActorHit_Effect(ActorData caster, ActorData target, ActorHitResults results)
+    {
+        base.OnExecutedActorHit_Effect(caster, target, results);
+        m_syncComp.OnExecutedActorHit_Effect(caster, target, results);
     }
 #endif
 }

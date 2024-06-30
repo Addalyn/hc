@@ -1,5 +1,6 @@
 // ROGUES
 // SERVER
+
 using System.Collections.Generic;
 using System.Linq;
 using AbilityContextNamespace;
@@ -264,6 +265,20 @@ public class FireborgDamageAura : GenericAbility_Container
 
         actorHitResults.Clear();
         actorHitResults.AddRange(actualActorHitResults);
+    }
+
+    // custom
+    public override void OnExecutedActorHit_Effect(ActorData caster, ActorData target, ActorHitResults results)
+    {
+        base.OnExecutedActorHit_Effect(caster, target, results);
+        m_syncComp.OnExecutedActorHit_Effect(caster, target, results);
+
+        if (caster.GetTeam() != target.GetTeam() && results.m_hitParameters.Effect is FireborgDamageAuraEffect)
+        {
+            caster.GetFreelancerStats().AddToValueOfStat(
+                FreelancerStats.FireborgStats.FireAuraDamage,
+                results.FinalDamage);
+        }
     }
 #endif
 }

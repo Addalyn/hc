@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 // TODO FIREBORG check ground fire hits do not grant energy 
-// TODO FIREBORG freelancer stats
 // TODO FIREBORG bot
 // TODO FIREBORG what if you spawn in one ground fire and walk into another?
 // TODO FIREBORG check mods
@@ -33,14 +32,14 @@ public class Fireborg_SyncComponent : NetworkBehaviour
 
     internal SyncListUInt m_actorsInGroundFireOnTurnStart = new SyncListUInt(); // for visuals
     // (if somebody is already burning, do not show additional damage as it is implied by them being in a state of burning)
-    
+
     private AbilityData m_abilityData;
     private FireborgSuperheat m_superheatAbility;
     private AbilityData.ActionType m_superheatActionType = AbilityData.ActionType.INVALID_ACTION;
     public static ContextNameKeyPair s_cvarSuperheated = new ContextNameKeyPair("Superheated");
     private HashSet<ActorData> m_ignitedActorsThisTurn = new HashSet<ActorData>();
     private static int kListm_actorsInGroundFireOnTurnStart = 1427115255;
-    
+
 #if SERVER
     // custom
     internal HashSet<ActorData> m_actorsIgnitedThisTurn = new HashSet<ActorData>();
@@ -106,7 +105,9 @@ public class Fireborg_SyncComponent : NetworkBehaviour
             return true;
         }
 
-        return m_abilityData.HasQueuedAction(m_superheatActionType); // TODO FIREBORG queued action is scary though we check last cast turn so it should be ok...
+        return
+            m_abilityData.HasQueuedAction(
+                m_superheatActionType); // TODO FIREBORG queued action is scary though we check last cast turn so it should be ok...
     }
 
     public void SetSuperheatedContextVar(ContextVars abilityContext)
@@ -238,18 +239,18 @@ public class Fireborg_SyncComponent : NetworkBehaviour
             SyncListUInt.ReadReference(reader, m_actorsInGroundFireOnTurnStart);
         }
     }
-    
+
 #if SERVER
     // custom 
     public bool GroundFireAddsIgnite => InSuperheatMode() && m_groundFireAddsIgniteIfSuperheated;
-    
+
     // custom
     public FireborgIgnitedEffect MakeIgnitedEffect(EffectSource parent, ActorData caster, ActorData target)
     {
         HashSet<ActorData> set = ServerActionBuffer.Get().GatheringFakeResults
-            ? m_actorsIgnitedThisTurn_Fake 
+            ? m_actorsIgnitedThisTurn_Fake
             : m_actorsIgnitedThisTurn;
-        
+
         if (set.Add(target))
         {
             return new FireborgIgnitedEffect(
@@ -264,7 +265,7 @@ public class Fireborg_SyncComponent : NetworkBehaviour
 
         return null;
     }
-    
+
     // custom
     public FireborgGroundFireEffect MakeGroundFireEffect(
         EffectSource parent,
@@ -275,7 +276,11 @@ public class Fireborg_SyncComponent : NetworkBehaviour
         return new FireborgGroundFireEffect(
             parent,
             affectedSquares
-                .Select(s => new StandardMultiAreaGroundEffect.GroundAreaInfo(s, s.ToVector3(), AbilityAreaShape.SingleSquare))
+                .Select(
+                    s => new StandardMultiAreaGroundEffect.GroundAreaInfo(
+                        s,
+                        s.ToVector3(),
+                        AbilityAreaShape.SingleSquare))
                 .ToList(),
             caster,
             new GroundEffectField
@@ -298,7 +303,7 @@ public class Fireborg_SyncComponent : NetworkBehaviour
                 enemyHitSequencePrefab = m_groundFireOnHitSeqPrefab
             });
     }
-    
+
     // custom
     // TODO DASH FireborgDash applies all of this on dash phase and
     // can hit other dashes with ground fire if they stop in it.
@@ -316,7 +321,7 @@ public class Fireborg_SyncComponent : NetworkBehaviour
         groundFireEffect = MakeGroundFireEffect(ability.AsEffectSource(), caster, affectedSquares, duration);
         List<ActorData> hitActors = GetActorsHitByGroundFireThisTurn(isReal).ToList();
         groundFireEffect.AddToActorsHitThisTurn(hitActors);
-        
+
         PositionHitResults posHitResults = new PositionHitResults(new PositionHitParameters(posForHit));
         EffectResults effectResults = new EffectResults(groundFireEffect, caster, isReal);
         groundFireEffect.GatherEffectResults(ref effectResults, isReal);
@@ -331,19 +336,40 @@ public class Fireborg_SyncComponent : NetworkBehaviour
             movementResults.AddActorHitResultsForReaction(hitResults);
             posHitResults.AddReactionOnPositionHit(movementResults);
         }
-        
+
         return posHitResults;
     }
-    
+
     // custom
     public HashSet<ActorData> GetActorsHitByGroundFireThisTurn(bool isReal)
     {
         return isReal ? m_actorsHitByGroundFireThisTurn : m_actorsHitByGroundFireThisTurn_Fake;
     }
 
+    // custom
     public void AddPendingShield(int shieldAmount)
     {
         m_pendingShield += shieldAmount;
+    }
+
+    // custom
+    public void OnExecutedActorHit_Effect(ActorData caster, ActorData target, ActorHitResults results)
+    {
+        if (caster.GetTeam() != target.GetTeam())
+        {
+            if (results.m_hitParameters.Effect is FireborgGroundFireEffect)
+            {
+                caster.GetFreelancerStats().AddToValueOfStat(
+                    FreelancerStats.FireborgStats.GroundFireDamage,
+                    results.FinalDamage);
+            }
+            else if (results.m_hitParameters.Effect is FireborgIgnitedEffect)
+            {
+                caster.GetFreelancerStats().AddToValueOfStat(
+                    FreelancerStats.FireborgStats.IgniteDamage,
+                    results.FinalDamage);
+            }
+        }
     }
 #endif
 }

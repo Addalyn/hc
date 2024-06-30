@@ -92,10 +92,10 @@ public class FreelancerStats : NetworkBehaviour
 	// removed in rogues
 	public enum FireborgStats
 	{
-		IgniteDamage,
-		GroundFireDamage,
-		FireAuraDamage,
-		BlastwaveDamage
+		IgniteDamage, // How much [^ignite^] damage you dealt to enemies.
+		GroundFireDamage, // How much [^ground fire^] damage you dealt to enemies.
+		FireAuraDamage, // How much damage you dealt to enemies using [ABILITY_1].
+		BlastwaveDamage // How much damage you dealt to enemies using [ABILITY_3].
 	}
 
 	public enum FishManStats
