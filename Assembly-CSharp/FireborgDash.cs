@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using AbilityContextNamespace;
 using UnityEngine;
 
@@ -182,7 +183,13 @@ public class FireborgDash : GenericAbility_Container
         List<PositionHitResults> positionHitResults,
         List<NonActorTargetInfo> nonActorTargetInfo)
     {
-        base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
+        base.ProcessGatheredHits(
+            targets,
+            caster,
+            abilityResults,
+            actorHitResults,
+            positionHitResults,
+            nonActorTargetInfo);
 
         bool isSuperheated = m_syncComp.InSuperheatMode();
         bool isIgniting = isSuperheated ? IgniteIfSuperheated() : IgniteIfNormal();
@@ -199,7 +206,8 @@ public class FireborgDash : GenericAbility_Container
         
             if (actorHitResult.HasDamage && isIgniting)
             {
-                FireborgIgnitedEffect fireborgIgnitedEffect = m_syncComp.MakeIgnitedEffect(AsEffectSource(), caster, hitActor);
+                FireborgIgnitedEffect fireborgIgnitedEffect =
+                    m_syncComp.MakeIgnitedEffect(AsEffectSource(), caster, hitActor);
                 if (fireborgIgnitedEffect != null)
                 {
                     actorHitResult.AddEffect(fireborgIgnitedEffect);
@@ -220,32 +228,45 @@ public class FireborgDash : GenericAbility_Container
             TargetSelect_ChargeAoE targetSelect = GetTargetSelectComp() as TargetSelect_ChargeAoE;
             if (targetSelect != null)
             {
-                Vector3 center = targetSelect.GetNonActorSpecificContext().GetValueVec3(ContextKeys.s_ChargeEndPos.GetKey());
-                BoardSquare centerSquare = Board.Get().GetSquareFromVec3(center);
+                Vector3 endPos = targetSelect.GetNonActorSpecificContext()
+                    .GetValueVec3(ContextKeys.s_ChargeEndPos.GetKey());
+                BoardSquare centerSquare = Board.Get().GetSquareFromVec3(endPos);
                 float radiusAroundEnd = targetSelect.GetRadiusAroundEnd();
-                List<BoardSquare> groundFireSquares = AreaEffectUtils.GetSquaresInRadius(
-                    centerSquare,
-                    radiusAroundEnd + 0.5f,
-                    false,
-                    caster);
+
+                BoardSquare squareAtPhaseStart = caster.GetSquareAtPhaseStart();
+                List<BoardSquare> groundFireSquares =
+                    AreaEffectUtils.GetSquaresInRadius(
+                            centerSquare,
+                            radiusAroundEnd + 0.5f,
+                            false,
+                            caster)
+                        .Concat(
+                            AreaEffectUtils.GetSquaresInBox(
+                                squareAtPhaseStart.ToVector3(),
+                                endPos,
+                                targetSelect.GetRangeFromLine(),
+                                false,
+                                caster))
+                        .Concat(new[] { squareAtPhaseStart })
+                        .Distinct()
+                        .ToList();
 
                 if (groundFireSquares.Count > 0)
                 {
-                    positionHitResults.Add(m_syncComp.MakeGroundFireEffectResults( // TODO FIREBORG make sure it doesn't hit evaders
-                        this,
-                        caster,
-                        groundFireSquares,
-                        Board.Get().GetSquare(targets[0].GridPos).ToVector3(),
-                        isSuperheated ? GetGroundFireDurationIfSuperheated() : GetGroundFireDuration(),
-                        false,
-                        ServerAbilityUtils.CurrentlyGatheringRealResults(),
-                        out FireborgGroundFireEffect effect,
-                        out _));
+                    // can hit evaders with ground fire reaction
+                    positionHitResults.Add(
+                        m_syncComp.MakeGroundFireEffectResults(
+                            this,
+                            caster,
+                            groundFireSquares,
+                            Board.Get().GetSquare(targets[0].GridPos).ToVector3(),
+                            isSuperheated ? GetGroundFireDurationIfSuperheated() : GetGroundFireDuration(),
+                            ServerAbilityUtils.CurrentlyGatheringRealResults(),
+                            out FireborgGroundFireEffect effect));
                     GetOrAddHitResults(caster, actorHitResults).AddEffect(effect);
                 }
-            } 
+            }
         }
-
     }
 #endif
 }

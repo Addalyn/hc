@@ -6,6 +6,7 @@ using AbilityContextNamespace;
 using UnityEngine;
 using UnityEngine.Networking;
 
+// TODO FIREBORG sequence targets a position (not a square, seemingly laser end) and only targets self
 public class FireborgReactLasers : GenericAbility_Container
 {
     [Serializable]
@@ -116,7 +117,6 @@ public class FireborgReactLasers : GenericAbility_Container
             : m_lowHealthThresh;
     }
 
-    // TODO FIREBORG
     public int GetShieldPerHitReceivedForNextTurn()
     {
         return m_abilityMod != null
@@ -124,7 +124,7 @@ public class FireborgReactLasers : GenericAbility_Container
             : m_shieldPerHitReceivedForNextTurn;
     }
 
-    // TODO FIREBORG
+    // TODO FIREBORG unused, always 0 in allowed mods
     public int GetEarlyDepleteShieldOnNextTurn()
     {
         return m_abilityMod != null
@@ -349,6 +349,7 @@ public class FireborgReactLasers : GenericAbility_Container
                 GetIgnoreLos(),
                 GetOnHitAuthoredData(),
                 GetOnHitDataForSecondLaser(),
+                GetShieldPerHitReceivedForNextTurn(),
                 m_ignitedApplySetting,
                 m_groundFireApplySetting,
                 m_mainLaserAnimationIndex,

@@ -2,22 +2,20 @@
 // SERVER
 using System.Collections.Generic;
 
+// TODO FIREBORG It used to add a hit animation with null prefab which doesn't play anyway
 #if SERVER
 // custom
 public class FireborgGroundFireEffect : StandardMultiAreaGroundEffect
 {
-    private readonly bool m_groundFireAddsIgnite;
     private readonly Fireborg_SyncComponent m_syncComp;
     
     public FireborgGroundFireEffect(
         EffectSource parent,
         List<GroundAreaInfo> areaInfoList,
         ActorData caster,
-        GroundEffectField fieldInfo,
-        bool groundFireAddsIgnite)
+        GroundEffectField fieldInfo)
         : base(parent, areaInfoList, caster, fieldInfo)
     {
-        m_groundFireAddsIgnite = groundFireAddsIgnite;
         m_syncComp = parent.Ability.GetComponent<Fireborg_SyncComponent>();
     }
 
@@ -39,7 +37,7 @@ public class FireborgGroundFireEffect : StandardMultiAreaGroundEffect
     {
         ActorData hitActor = actorHitResults.m_hitParameters.Target;
         actorHitResults.SetIgnoreTechpointInteractionForHit(true);
-        if (hitActor.GetTeam() != Caster.GetTeam() && m_groundFireAddsIgnite)
+        if (hitActor.GetTeam() != Caster.GetTeam() && m_syncComp.GroundFireAddsIgnite)
         {
             FireborgIgnitedEffect fireborgIgnitedEffect = m_syncComp.MakeIgnitedEffect(Parent, Caster, hitActor);
             if (fireborgIgnitedEffect != null)

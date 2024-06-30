@@ -10,9 +10,11 @@ public class FireborgDamageAuraEffect : StandardActorEffect
     private readonly AbilityAreaShape m_shape;
     private readonly OnHitAuthoredData m_onHitData;
     private readonly bool m_excludeTargetedActor;
-    private readonly bool m_ignite; // TODO FIREBORG not supposed to do anything? check replays
+    private readonly bool m_ignite;
     private readonly GameObject m_auraPersistentSeqPrefab;
     private readonly GameObject m_auraOnTriggerSeqPrefab;
+
+    private readonly Fireborg_SyncComponent m_syncComp;
 
     public FireborgDamageAuraEffect(
         EffectSource parent,
@@ -24,7 +26,8 @@ public class FireborgDamageAuraEffect : StandardActorEffect
         bool excludeTargetedActor,
         bool ignite,
         GameObject auraPersistentSeqPrefab,
-        GameObject auraOnTriggerSeqPrefab)
+        GameObject auraOnTriggerSeqPrefab,
+        Fireborg_SyncComponent syncComp)
         : base(parent, targetSquare, target, caster, StandardActorEffectData.MakeDefault())
     {
         m_shape = shape;
@@ -33,6 +36,7 @@ public class FireborgDamageAuraEffect : StandardActorEffect
         m_ignite = ignite;
         m_auraPersistentSeqPrefab = auraPersistentSeqPrefab;
         m_auraOnTriggerSeqPrefab = auraOnTriggerSeqPrefab;
+        m_syncComp = syncComp;
     }
 
     public override bool AddActorAnimEntryIfHasHits(AbilityPriority phaseIndex)
@@ -96,6 +100,14 @@ public class FireborgDamageAuraEffect : StandardActorEffect
             ActorHitParameters hitParameters = new ActorHitParameters(hitActor, Target.GetFreePos());
             ActorHitResults actorHitResults = new ActorHitResults(hitParameters);
             GenericAbility_Container.ApplyActorHitData(Caster, hitActor, actorHitResults, m_onHitData);
+            if (m_ignite)
+            {
+                FireborgIgnitedEffect ignitedEffect = m_syncComp.MakeIgnitedEffect(Parent, Caster, hitActor);
+                if (ignitedEffect != null)
+                {
+                    actorHitResults.AddEffect(ignitedEffect);
+                }
+            }
             if (!endedSequence)
             {
                 actorHitResults.AddEffectSequenceToEnd(m_auraPersistentSeqPrefab, m_guid);

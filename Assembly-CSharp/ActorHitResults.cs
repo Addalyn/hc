@@ -2035,6 +2035,7 @@ public class ActorHitResults
 					updateTargetLastKnownPos = relevantAbility.ShouldRevealTargetOnHostileEffectOrBarrierHit();
 				}
 			}
+			// TODO FIREBORG It seems DamageAuraEffect used to reveal effect holder even if holder == caster
 			if (m_hitParameters.Effect != null && m_hitParameters.Effect.Target != null && m_hitParameters.Effect.Target.GetTeam() != m_hitParameters.Target.GetTeam())
 			{
 				updateEffectHolderLastKnownPos = relevantAbility.ShouldRevealEffectHolderOnHostileEffectHit();

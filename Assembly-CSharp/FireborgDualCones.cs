@@ -278,16 +278,21 @@ public class FireborgDualCones : GenericAbility_Container
                         groundFireSquares,
                         posForHit,
                         1,
-                        false,
                         ServerAbilityUtils.CurrentlyGatheringRealResults(),
-                        out FireborgGroundFireEffect effect,
-                        out _);
+                        out FireborgGroundFireEffect effect);
                     posHitResults.AddEffect(effect);
                     positionHitResults.Add(posHitResults);
         
                 }
             }
         }
+    }
+
+    // custom TODO FIREBORG It looks like it used to reveal at least in some cases
+    public override bool ShouldRevealCasterOnHostileEffectOrBarrierHit()
+    {
+        // return true;
+        return base.ShouldRevealCasterOnHostileEffectOrBarrierHit();
     }
 #endif
 }

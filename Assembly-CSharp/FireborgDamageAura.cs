@@ -250,7 +250,8 @@ public class FireborgDamageAura : GenericAbility_Container
                     : m_auraPersistentSeqPrefab,
                 isSuperheated && m_superheatedOnTriggerSeqPrefab != null
                     ? m_superheatedOnTriggerSeqPrefab
-                    : m_auraOnTriggerSeqPrefab);
+                    : m_auraOnTriggerSeqPrefab,
+                m_syncComp);
             effect.SetDurationBeforeStart(isSuperheated ? GetAuraDurationIfSuperheated() : GetAuraDuration());
             hitResults.AddEffect(effect);
             if (hitActor.GetTeam() == caster.GetTeam())

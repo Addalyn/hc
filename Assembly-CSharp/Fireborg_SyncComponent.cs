@@ -5,6 +5,11 @@ using AbilityContextNamespace;
 using UnityEngine;
 using UnityEngine.Networking;
 
+// TODO FIREBORG check ground fire hits do not grant energy 
+// TODO FIREBORG freelancer stats
+// TODO FIREBORG bot
+// TODO FIREBORG what if you spawn in one ground fire and walk into another?
+// TODO FIREBORG check mods
 public class Fireborg_SyncComponent : NetworkBehaviour
 {
     [Separator("Ignited Effect")]
@@ -43,6 +48,8 @@ public class Fireborg_SyncComponent : NetworkBehaviour
     internal HashSet<ActorData> m_actorsHitByGroundFireThisTurn = new HashSet<ActorData>();
     // custom
     internal HashSet<ActorData> m_actorsHitByGroundFireThisTurn_Fake = new HashSet<ActorData>();
+    // custom
+    internal int m_pendingShield;
 #endif
 
     public int Networkm_superheatLastCastTurn
@@ -97,7 +104,7 @@ public class Fireborg_SyncComponent : NetworkBehaviour
             return true;
         }
 
-        return m_abilityData.HasQueuedAction(m_superheatActionType);
+        return m_abilityData.HasQueuedAction(m_superheatActionType); // TODO FIREBORG queued action is scary though we check last cast turn so it should be ok...
     }
 
     public void SetSuperheatedContextVar(ContextVars abilityContext)
@@ -231,6 +238,9 @@ public class Fireborg_SyncComponent : NetworkBehaviour
     }
     
 #if SERVER
+    // custom 
+    public bool GroundFireAddsIgnite => InSuperheatMode() && m_groundFireAddsIgniteIfSuperheated;
+    
     // custom
     public FireborgIgnitedEffect MakeIgnitedEffect(EffectSource parent, ActorData caster, ActorData target)
     {
@@ -284,35 +294,26 @@ public class Fireborg_SyncComponent : NetworkBehaviour
                     ? m_superheatedGroundFireSquareSeqPrefab
                     : m_groundFirePerSquareSeqPrefab,
                 enemyHitSequencePrefab = m_groundFireOnHitSeqPrefab
-            },
-            InSuperheatMode() && m_groundFireAddsIgniteIfSuperheated);
+            });
     }
     
     // custom
+    // TODO DASH FireborgDash applies all of this on dash phase and
+    // can hit other dashes with ground fire if they stop in it.
+    // Currently it works correctly but can break if we ch  ange what current board square means when you are dashing.
     public PositionHitResults MakeGroundFireEffectResults(
         Ability ability,
         ActorData caster,
         List<BoardSquare> affectedSquares,
         Vector3 posForHit,
-        int duration, // TODO FIREBORG check
-        bool applyIgnited, // TODO FIREBORG check
+        int duration,
         bool isReal,
-        out FireborgGroundFireEffect groundFireEffect,
-        out Dictionary<ActorData, FireborgIgnitedEffect> ignitedEffects)
+        out FireborgGroundFireEffect groundFireEffect)
     {
         affectedSquares = affectedSquares.Where(s => s.IsValidForGameplay()).ToList();
         groundFireEffect = MakeGroundFireEffect(ability.AsEffectSource(), caster, affectedSquares, duration);
         List<ActorData> hitActors = GetActorsHitByGroundFireThisTurn(isReal).ToList();
         groundFireEffect.AddToActorsHitThisTurn(hitActors);
-        ignitedEffects = new Dictionary<ActorData, FireborgIgnitedEffect>(hitActors.Count);
-        if (applyIgnited) // TODO FIREBORG is it even needed?
-        {
-            foreach (ActorData hitActor in hitActors)
-            {
-                FireborgIgnitedEffect ignitedEffect = MakeIgnitedEffect(ability.AsEffectSource(), caster, hitActor);
-                ignitedEffects.Add(hitActor, ignitedEffect);
-            }
-        }
         
         PositionHitResults posHitResults = new PositionHitResults(new PositionHitParameters(posForHit));
         EffectResults effectResults = new EffectResults(groundFireEffect, caster, isReal);
@@ -336,6 +337,11 @@ public class Fireborg_SyncComponent : NetworkBehaviour
     public HashSet<ActorData> GetActorsHitByGroundFireThisTurn(bool isReal)
     {
         return isReal ? m_actorsHitByGroundFireThisTurn : m_actorsHitByGroundFireThisTurn_Fake;
+    }
+
+    public void AddPendingShield(int shieldAmount)
+    {
+        m_pendingShield += shieldAmount;
     }
 #endif
 }

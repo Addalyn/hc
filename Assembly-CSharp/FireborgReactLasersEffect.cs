@@ -14,6 +14,7 @@ public class FireborgReactLasersEffect : Effect
 
     private readonly OnHitAuthoredData m_onHitDataForFirstLaser;
     private readonly OnHitAuthoredData m_onHitDataForSecondLaser;
+    private readonly int m_shieldPerHitReceivedForNextTurn;
     private readonly FireborgReactLasers.HitEffectApplySetting m_ignitedApplySetting;
     private readonly FireborgReactLasers.HitEffectApplySetting m_groundFireApplySetting;
     private readonly int m_mainLaserAnimationIndex;
@@ -28,6 +29,7 @@ public class FireborgReactLasersEffect : Effect
     private bool m_doneHittingFirst_Fake;
     private bool m_doneHittingReaction;
     private bool m_doneHittingReaction_Fake;
+    private bool m_hitsCanBeReactedTo;
 
     public FireborgReactLasersEffect(
         EffectSource parent,
@@ -40,6 +42,7 @@ public class FireborgReactLasersEffect : Effect
         bool ignoreLos,
         OnHitAuthoredData onHitDataForFirstLaser,
         OnHitAuthoredData onHitDataForSecondLaser,
+        int shieldPerHitReceivedForNextTurn,
         FireborgReactLasers.HitEffectApplySetting ignitedApplySetting,
         FireborgReactLasers.HitEffectApplySetting groundFireApplySetting,
         int mainLaserAnimationIndex,
@@ -56,6 +59,7 @@ public class FireborgReactLasersEffect : Effect
         m_ignoreLos = ignoreLos;
         m_onHitDataForFirstLaser = onHitDataForFirstLaser;
         m_onHitDataForSecondLaser = onHitDataForSecondLaser;
+        m_shieldPerHitReceivedForNextTurn = shieldPerHitReceivedForNextTurn;
         m_ignitedApplySetting = ignitedApplySetting;
         m_groundFireApplySetting = groundFireApplySetting;
         m_mainLaserAnimationIndex = mainLaserAnimationIndex;
@@ -75,10 +79,20 @@ public class FireborgReactLasersEffect : Effect
             : base.GetCasterAnimationIndex(phaseIndex);
     }
 
+    public override bool HitsCanBeReactedTo()
+    {
+        return m_hitsCanBeReactedTo;
+    }
+
     public override ServerClientUtils.SequenceStartData GetEffectStartSeqData()
     {
         // m_persistentSeqPrefab is null anyway
         return base.GetEffectStartSeqData();
+    }
+
+    public override bool AddActorAnimEntryIfHasHits(AbilityPriority phaseIndex)
+    {
+        return HitPhase == phaseIndex;
     }
 
     public override ServerClientUtils.SequenceStartData GetEffectHitSeqData()
@@ -89,7 +103,7 @@ public class FireborgReactLasersEffect : Effect
             sequenceSource.SetWaitForClientEnable(true);
         }
 
-        List<ActorData> hitActors = GetHitActors(null, out Vector3 endPos);
+        GetHitActors(null, out Vector3 endPos);
         return new ServerClientUtils.SequenceStartData(
             m_onTriggerSeqPrefab,
             endPos,
@@ -101,10 +115,12 @@ public class FireborgReactLasersEffect : Effect
     public override void GatherEffectResults(ref EffectResults effectResults, bool isReal)
     {
         Log.Info($"FIREFIRE GatherEffectResults isReal={isReal}");
+        m_hitsCanBeReactedTo = true;
         GatherResults(
             isReal,
             out List<ActorHitResults> actorHitResultsList,
             out PositionHitResults posHitResults,
+            out List<NonActorTargetInfo> nonActorTargetInfo,
             out _);
 
         if (posHitResults != null)
@@ -116,6 +132,9 @@ public class FireborgReactLasersEffect : Effect
         {
             effectResults.StoreActorHit(actorHitResults);
         }
+        
+        effectResults.StoreNonActorTargetInfo(nonActorTargetInfo);
+        m_hitsCanBeReactedTo = false;
     }
 
     public override void GatherResultsInResponseToActorHit(
@@ -131,6 +150,11 @@ public class FireborgReactLasersEffect : Effect
             return;
         }
 
+        if (isReal)
+        {
+            m_syncComp.AddPendingShield(m_shieldPerHitReceivedForNextTurn);
+        }
+
         if (doneHittingReaction)
         {
             Log.Info("FIREFIRE Already reacted");
@@ -144,6 +168,7 @@ public class FireborgReactLasersEffect : Effect
             isReal,
             out List<ActorHitResults> actorHitResultsList,
             out PositionHitResults posHitResults,
+            out List<NonActorTargetInfo> nonActorTargetInfo,
             out Vector3 endPos);
 
         foreach (ActorHitResults actorHitResults in actorHitResultsList)
@@ -214,6 +239,7 @@ public class FireborgReactLasersEffect : Effect
         bool isReal,
         out List<ActorHitResults> actorHitResultsList,
         out PositionHitResults posHitResults,
+        out List<NonActorTargetInfo> nonActorTargetInfo,
         out Vector3 endPos)
     {
         bool isFirst = isReal ? !m_doneHittingFirst : !m_doneHittingFirst_Fake;
@@ -224,11 +250,11 @@ public class FireborgReactLasersEffect : Effect
         Log.Info($"FIREFIRE GatherResults real={isReal} isFirst={isFirst} isSuperheated={isSuperheated} "
                  + $"applyGroundFire={applyGroundFire} applyIgnited={applyIgnited}");
 
-        List<ActorData> hitActors = GetHitActors(null, out endPos); // TODO FIREBORG null?
+        nonActorTargetInfo = new List<NonActorTargetInfo>();
+        List<ActorData> hitActors = GetHitActors(nonActorTargetInfo, out endPos);
         actorHitResultsList = new List<ActorHitResults>(hitActors.Count);
         posHitResults = null;
 
-        Dictionary<ActorData, FireborgIgnitedEffect> ignitedEffects = null;
         if (applyGroundFire)
         {
             Vector3 posForHit = Caster.GetLoSCheckPos();
@@ -238,17 +264,14 @@ public class FireborgReactLasersEffect : Effect
                 GameWideData.Get().m_actorTargetingRadiusInSquares);
             posHitResults =
                 m_syncComp
-                    .MakeGroundFireEffectResults( // TODO FIREBORG check that it adds ignited effect when superheated
+                    .MakeGroundFireEffectResults(
                         Parent.Ability,
                         Caster,
                         GetHitSquares(endPos),
                         endPos,
                         1,
-                        applyIgnited,
                         isReal,
-                        out FireborgGroundFireEffect groundFireEffect,
-                        out Dictionary<ActorData, FireborgIgnitedEffect> ignitedEffectsDict);
-            ignitedEffects = ignitedEffectsDict;
+                        out FireborgGroundFireEffect groundFireEffect);
             posHitResults.AddEffect(groundFireEffect);
         }
 
@@ -266,11 +289,6 @@ public class FireborgReactLasersEffect : Effect
                     actorHitResults.AddEffect(fireborgIgnitedEffect);
                 }
             }
-
-            // if (ignitedEffects != null && ignitedEffects.TryGetValue(hitActor, out FireborgIgnitedEffect effect))
-            // {
-            //     actorHitResults.AddEffect(effect);
-            // }
 
             actorHitResultsList.Add(actorHitResults);
         }
