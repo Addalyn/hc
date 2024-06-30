@@ -114,7 +114,6 @@ public class FireborgReactLasersEffect : Effect
 
     public override void GatherEffectResults(ref EffectResults effectResults, bool isReal)
     {
-        Log.Info($"FIREFIRE GatherEffectResults isReal={isReal}");
         m_hitsCanBeReactedTo = true;
         GatherResults(
             isReal,
@@ -142,11 +141,9 @@ public class FireborgReactLasersEffect : Effect
         ref List<AbilityResults_Reaction> reactions,
         bool isReal)
     {
-        Log.Info($"FIREFIRE GatherResultsInResponseToActorHit isReal={isReal}");
         bool doneHittingReaction = isReal ? m_doneHittingReaction : m_doneHittingReaction_Fake;
         if (!incomingHit.HasDamage)
         {
-            Log.Info("FIREFIRE Incoming hit no damage");
             return;
         }
 
@@ -157,7 +154,6 @@ public class FireborgReactLasersEffect : Effect
 
         if (doneHittingReaction)
         {
-            Log.Info("FIREFIRE Already reacted");
             return;
         }
 
@@ -226,12 +222,10 @@ public class FireborgReactLasersEffect : Effect
         if (isReal)
         {
             m_doneHittingReaction = true;
-            Log.Info("FIREFIRE m_doneHittingReaction");
         }
         else
         {
             m_doneHittingReaction_Fake = true;
-            Log.Info("FIREFIRE m_doneHittingReaction_Fake");
         }
     }
 
@@ -247,8 +241,6 @@ public class FireborgReactLasersEffect : Effect
         bool isSuperheated = m_syncComp.InSuperheatMode();
         bool applyGroundFire = m_groundFireApplySetting.ShouldApply(isFirst, isSuperheated);
         bool applyIgnited = m_ignitedApplySetting.ShouldApply(isFirst, isSuperheated);
-        Log.Info($"FIREFIRE GatherResults real={isReal} isFirst={isFirst} isSuperheated={isSuperheated} "
-                 + $"applyGroundFire={applyGroundFire} applyIgnited={applyIgnited}");
 
         nonActorTargetInfo = new List<NonActorTargetInfo>();
         List<ActorData> hitActors = GetHitActors(nonActorTargetInfo, out endPos);
@@ -296,12 +288,10 @@ public class FireborgReactLasersEffect : Effect
         if (isReal)
         {
             m_doneHittingFirst = true;
-            Log.Info("FIREFIRE m_doneHittingFirst");
         }
         else
         {
             m_doneHittingFirst_Fake = true;
-            Log.Info("FIREFIRE m_doneHittingFirst_Fake");
         }
     }
 

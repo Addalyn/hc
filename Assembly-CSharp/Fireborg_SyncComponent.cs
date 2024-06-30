@@ -5,9 +5,7 @@ using AbilityContextNamespace;
 using UnityEngine;
 using UnityEngine.Networking;
 
-// TODO FIREBORG check ground fire hits do not grant energy 
 // TODO FIREBORG what if you spawn in one ground fire and walk into another?
-// TODO FIREBORG check mods
 public class Fireborg_SyncComponent : NetworkBehaviour
 {
     [Separator("Ignited Effect")]
@@ -104,9 +102,7 @@ public class Fireborg_SyncComponent : NetworkBehaviour
             return true;
         }
 
-        return
-            m_abilityData.HasQueuedAction(
-                m_superheatActionType); // TODO FIREBORG queued action is scary though we check last cast turn so it should be ok...
+        return m_abilityData.HasQueuedAction(m_superheatActionType);
     }
 
     public void SetSuperheatedContextVar(ContextVars abilityContext)
