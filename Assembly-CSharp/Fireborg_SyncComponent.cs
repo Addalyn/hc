@@ -24,14 +24,16 @@ public class Fireborg_SyncComponent : NetworkBehaviour
     public bool m_groundFireAddsIgniteIfSuperheated = true;
     [Separator("Sequences")]
     public GameObject m_groundFirePerSquareSeqPrefab;
-    public GameObject m_groundFireOnHitSeqPrefab;
+    public GameObject m_groundFireOnHitSeqPrefab; // null
     [Header("-- Superheated versions")]
-    public GameObject m_superheatedGroundFireSquareSeqPrefab;
+    public GameObject m_superheatedGroundFireSquareSeqPrefab; // null
 
     [SyncVar]
     internal int m_superheatLastCastTurn;
 
-    internal SyncListUInt m_actorsInGroundFireOnTurnStart = new SyncListUInt();
+    internal SyncListUInt m_actorsInGroundFireOnTurnStart = new SyncListUInt(); // for visuals
+    // (if somebody is already burning, do not show additional damage as it is implied by them being in a state of burning)
+    
     private AbilityData m_abilityData;
     private FireborgSuperheat m_superheatAbility;
     private AbilityData.ActionType m_superheatActionType = AbilityData.ActionType.INVALID_ACTION;
