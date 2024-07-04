@@ -940,7 +940,7 @@ public class CameraManager : MonoBehaviour, IGameEventListener
 
 	public void Update()
 	{
-		// TODO HACK
+		// TODO HACK check if it is still needed
 #if !SERVER
 		bool isDebugCamera = DebugParameters.Get() != null && DebugParameters.Get().GetParameterAsBool("DebugCamera");
 		if (isDebugCamera && !GetDebugCamera().enabled)
@@ -1073,7 +1073,7 @@ public class CameraManager : MonoBehaviour, IGameEventListener
 	private bool ShouldUseAbilitiesCameraOutOfCinematics()
 	{
 #if SERVER
-		// TODO HACK
+		// TODO HACK check if it is still needed
 		return false;
 #else
 		if (Camera.main == null)

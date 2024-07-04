@@ -73,47 +73,6 @@ public class ServerGameManager : MonoBehaviour
 
 	// custom
 	private readonly Dictionary<Team, ReplayRecorder> m_replayRecorders = new Dictionary<Team, ReplayRecorder>();
-	
-	// custom Artemis
-	public static Dictionary<string, GameObject> ResourceNetworkObjects = new Dictionary<string, GameObject>();
-
-	// custom Artemis
-	private GameObject SpawnObject(string name, bool activate = true, bool network = true)
-	{
-		Log.Info($"Spawning {name}");
-		GameObject prefab = ResourceNetworkObjects[name];
-
-		if (prefab == null)
-		{
-			Log.Error($"Not found: {name}");
-			return null;
-		}
-		Log.Info($"Prefab {name}");
-		foreach (var ni in prefab.GetComponents<NetworkIdentity>())
-		{
-			Log.Info($"Prefab {name} - ni {ni.GetType().Name}");
-		}
-		foreach (var nb in prefab.GetComponents<NetworkBehaviour>())
-		{
-			Log.Info($"Prefab {name} - nb {nb.GetType().Name}");
-		}
-
-		GameObject obj = Instantiate(prefab);
-		Log.Info($"Instantiated {name}");
-
-		if (activate)
-		{
-			obj.SetActive(true);
-			Log.Info($"Activated {name}");
-		}
-
-		if (network)
-		{
-			NetworkServer.Spawn(obj);
-			Log.Info($"Network spawned {name}");
-		}
-		return obj;
-	}
 
 	protected void Awake()
 	{
@@ -128,7 +87,7 @@ public class ServerGameManager : MonoBehaviour
 		m_pendingDisconnects = new Dictionary<NetworkConnection, float>();
 		m_heartBeat = new Stopwatch();
 
-		// TODO HACK
+		// TODO HACK check if it is still needed
 		GameObject ServerBootstrap = new GameObject("ServerBootstrap");
 		ServerBootstrap.AddComponent<ServerBootstrap>();
 		ServerBootstrap.AddComponent<ClientGamePrefabInstantiator>();
@@ -148,27 +107,11 @@ public class ServerGameManager : MonoBehaviour
 
 		// custom
 		SceneManager.sceneLoaded += OnSceneLoaded; // TODO remove callback on destroy
-
-		// TODO HACK Artemis
-		NetworkIdentity[] objects = Resources.FindObjectsOfTypeAll<NetworkIdentity>();
-		foreach (NetworkIdentity netid in objects)
-		{
-			GameObject obj = netid.gameObject;
-			ResourceNetworkObjects.Add(obj.name, obj);
-		}
-		// end TODO HACK Artemis
 	}
 
 	public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
 	{
 		Log.Info($"Loaded scene {scene.name}");
-
-		//if (scene.name == "DevEnvironmentSingletons")
-		//{
-		//	// TODO HACK -- trying to get HighlightUtils and stuff
-		//	StartCoroutine(AssetBundleManager.Get().LoadSceneAsync("ServerEnvironmentSingletons", "frontend", LoadSceneMode.Additive));
-		//	return;
-		//}
 
 		foreach (GameObject g in scene.GetRootGameObjects())
 		{
@@ -896,28 +839,8 @@ public class ServerGameManager : MonoBehaviour
 		GameManager.Get().SetGameStatus(gameStatus, GameResult.NoResult, notify);
 	}
 
-	// was private, public for for quick Artemis hook
-	public void HandleLaunchGameRequest(LaunchGameRequest request) // async in rogues
+	private void HandleLaunchGameRequest(LaunchGameRequest request) // async in rogues
 	{
-		// TODO HACK
-		// var panels = FindObjectsOfType<UILoadingScreenPanel>();
-		// GameObject obj;
-		// UILoadingScreenPanel uILoadingScreenPanel;
-		// if (panels.IsNullOrEmpty())
-		// {
-		// 	obj = new GameObject("UILoadingScreenPanel");
-		// 	uILoadingScreenPanel = obj.AddComponent<UILoadingScreenPanel>();
-		// }
-		// else
-		// {
-		// 	uILoadingScreenPanel = panels[0];
-		// 	obj = uILoadingScreenPanel.gameObject;
-		// }
-		// RectTransform rectTransform = obj.AddComponent<RectTransform>();
-		// rectTransform.offsetMax = new Vector2(500, 500);
-		// uILoadingScreenPanel.m_container = rectTransform;
-
-
 		// TODO LOW pass config from lobby server
 		// custom
 		MatchmakingQueueConfig config = new MatchmakingQueueConfig();
@@ -1889,13 +1812,8 @@ public class ServerGameManager : MonoBehaviour
 				}
 
 				// custom artemis
+				// TODO HACK check if it is still needed
 				NetworkServer.SpawnObjects();
-
-				//List<LobbyPlayerInfo> playerInfoList = GameManager.Get().TeamInfo.TeamPlayerInfo;
-				//foreach(LobbyPlayerInfo playerInfo in playerInfoList)
-				//{
-				//	AddCharacterActor(playerInfo);
-				//}
 				// end custom artemis
 			}
 			bool flag2 = true;
@@ -1992,14 +1910,6 @@ public class ServerGameManager : MonoBehaviour
 			// }
 			GameFlow.Get().AddPlayer(serverPlayerState, serverPlayerState.SessionInfo != null && serverPlayerState.SessionInfo.AccountId < 0);  // custom replay generator flag
 		}
-
-		// custom artemis
-		// seems to be crucial for this to happen before spawning players
-		SpawnObject("ApplicationSingletonsNetId");
-		SpawnObject("GameSceneSingletons");
-
-		//SharedActionBuffer.Get().Networkm_actionPhase = ActionBufferPhase.Done;
-		// end custom artemis
 
 		GameFlowData.Get().gameState = GameState.SpawningPlayers;
 		SetGameStatus(GameStatus.Started);
