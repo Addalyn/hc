@@ -595,6 +595,17 @@ public class CameraManager : MonoBehaviour, IGameEventListener
 		{
 			abilitiesCamera = Camera.main.gameObject.AddComponent<AbilitiesCamera>();
 			abilitiesCamera.enabled = false;
+#if SERVER
+			Log.Warning("Missing AbilitiesCamera component on main camera. Generating dynamically for now."); // custom, was IsometricCamera in reactor
+		}
+		// custom
+		// TODO HACK do we really need cameras on the server?
+		if (isometricCamera == null)
+		{
+			isometricCamera = Camera.main.gameObject.AddComponent<IsometricCamera>();
+			isometricCamera.enabled = false;
+			
+#endif
 			Log.Warning("Missing IsometricCamera component on main camera. Generating dynamically for now.");
 		}
 		m_useAbilitiesCameraOutOfCinematics = false;
