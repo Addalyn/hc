@@ -47,7 +47,9 @@ public class AllianceMessageBase : MessageBase
 			}
 			else
 			{
-				writer.Write(JsonConvert.SerializeObject(o));
+				string jsonStr = JsonConvert.SerializeObject(o);
+				Log.Info($"Falling back to json deserializer for {o.GetType().Name}: {jsonStr}");
+				writer.Write(jsonStr);
 			}
 		}
 	}
