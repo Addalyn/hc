@@ -287,7 +287,8 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
             // float sqrDitToStart = (actorData.GetLoSCheckPos() - startPos).sqrMagnitude;
             float sqrDistToEnd = (actorData.GetLoSCheckPos() - targetPos).sqrMagnitude;
             // bool inStartAoe = sqrDitToStart <= m_radiusAroundStart * m_radiusAroundStart;
-            bool inEndAoe = sqrDistToEnd <= m_radiusAroundEnd * m_radiusAroundEnd;
+            bool inEndAoe = sqrDistToEnd <= m_radiusAroundEnd * m_radiusAroundEnd
+                                                              * Board.SquareSizeStatic * Board.SquareSizeStatic; // custom
             // custom
             SetActorContext(actorData, ContextKeys.s_InEndAoe.GetKey(), inEndAoe ? 1 : 0);
             // rogues
