@@ -277,6 +277,13 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
         
         // custom
         Vector3 targetPos = GetChangeEndSquare(targets, caster).GetOccupantLoSPos();
+        List<ActorData> actorsInEndAoe = AreaEffectUtils.GetActorsInRadius(
+            targetPos,
+            m_radiusAroundEnd,
+            m_ignoreLos,
+            caster,
+            TargeterUtils.GetRelevantTeams(caster, m_includeAllies, m_includeEnemies),
+            null);
         // rogues
         // Vector3 targetPos = Board.Get().GetSquare(targets[0].GridPos).GetOccupantLoSPos();
         
@@ -284,14 +291,14 @@ public class TargetSelect_ChargeAoE : GenericAbility_TargetSelectBase
         foreach (ActorData actorData in GetHitActorsInShape(loSCheckPos, targetPos, caster, nonActorTargetInfo))
         {
             AddHitActor(actorData, startPos);
-            // float sqrDitToStart = (actorData.GetLoSCheckPos() - startPos).sqrMagnitude;
-            float sqrDistToEnd = (actorData.GetLoSCheckPos() - targetPos).sqrMagnitude;
-            // bool inStartAoe = sqrDitToStart <= m_radiusAroundStart * m_radiusAroundStart;
-            bool inEndAoe = sqrDistToEnd <= m_radiusAroundEnd * m_radiusAroundEnd
-                                                              * Board.SquareSizeStatic * Board.SquareSizeStatic; // custom
             // custom
+            bool inEndAoe = actorsInEndAoe.Contains(actorData);
             SetActorContext(actorData, ContextKeys.s_InEndAoe.GetKey(), inEndAoe ? 1 : 0);
             // rogues
+            // float sqrDitToStart = (actorData.GetLoSCheckPos() - startPos).sqrMagnitude;
+            // float sqrDistToEnd = (actorData.GetLoSCheckPos() - targetPos).sqrMagnitude;
+            // bool inStartAoe = sqrDitToStart <= m_radiusAroundStart * m_radiusAroundStart;
+            // bool inEndAoe = sqrDistToEnd <= m_radiusAroundEnd * m_radiusAroundEnd;
             // SetActorContext(actorData, s_cvarInStart.GetKey(), inStartAoe ? 1 : 0);
             // SetActorContext(actorData, s_cvarInEnd.GetKey(), inEndAoe ? 1 : 0);
         }
