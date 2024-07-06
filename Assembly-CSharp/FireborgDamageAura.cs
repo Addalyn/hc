@@ -264,6 +264,8 @@ public class FireborgDamageAura : GenericAbility_Container
         }
 
         actorHitResults.Clear();
+        positionHitResults.Clear();
+        nonActorTargetInfo.Clear();
         actorHitResults.AddRange(actualActorHitResults);
     }
 

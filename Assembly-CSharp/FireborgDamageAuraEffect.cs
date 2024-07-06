@@ -83,8 +83,9 @@ public class FireborgDamageAuraEffect : Effect
     public override void GatherEffectResults(ref EffectResults effectResults, bool isReal)
     {
         bool needToEndSequence = m_time.age + 1 == m_time.duration;
-
-        foreach (ActorData hitActor in GetHitActors())
+        
+        List<NonActorTargetInfo> nonActorTargetInfo = new List<NonActorTargetInfo>();
+        foreach (ActorData hitActor in GetHitActors(nonActorTargetInfo))
         {
             ActorHitParameters hitParameters = new ActorHitParameters(hitActor, Target.GetFreePos());
             ActorHitResults actorHitResults = new ActorHitResults(hitParameters);
@@ -105,6 +106,7 @@ public class FireborgDamageAuraEffect : Effect
 
             effectResults.StoreActorHit(actorHitResults);
         }
+        effectResults.StoreNonActorTargetInfo(nonActorTargetInfo);
 
         if (needToEndSequence)
         {
@@ -115,7 +117,7 @@ public class FireborgDamageAuraEffect : Effect
         }
     }
 
-    public List<ActorData> GetHitActors()
+    public List<ActorData> GetHitActors(List<NonActorTargetInfo> nonActorTargetInfo = null)
     {
         List<ActorData> actorsInShape = AreaEffectUtils.GetActorsInShape(
             m_shape,
@@ -124,7 +126,7 @@ public class FireborgDamageAuraEffect : Effect
             false,
             Caster,
             Caster.GetOtherTeams(),
-            null);
+            nonActorTargetInfo);
 
         if (m_excludeTargetedActor)
         {
