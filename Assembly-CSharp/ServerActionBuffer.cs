@@ -442,7 +442,6 @@ public class ServerActionBuffer : NetworkBehaviour
 	// custom
 	public void OnAbilityPhaseStart()
 	{
-		GatheringFakeResults = false;
 		OnPhaseStartForRequestedAbilities(AbilityPhase);
 	}
 

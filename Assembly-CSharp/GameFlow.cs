@@ -709,6 +709,7 @@ public class GameFlow : NetworkBehaviour
 				
 				AbilityPriority phase = actionBuffer.AbilityPhase;
 				
+				ServerActionBuffer.Get().GatheringFakeResults = false;
 				List<AbilityRequest> allStoredAbilityRequests = actionBuffer.GetAllStoredAbilityRequests();
 				if (phase < AbilityPriority.Combat_Damage)
 				{
