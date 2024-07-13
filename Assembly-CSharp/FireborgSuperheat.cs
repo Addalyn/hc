@@ -1,6 +1,7 @@
 // ROGUES
 // SERVER
 using System.Collections.Generic;
+using System.Linq;
 
 public class FireborgSuperheat : GenericAbility_Container
 {
@@ -29,6 +30,14 @@ public class FireborgSuperheat : GenericAbility_Container
         {
             m_damageAuraAbility = abilityData.GetAbilityOfType<FireborgDamageAura>();
             m_damageAuraAbilityActionType = abilityData.GetActionTypeOfAbility(m_damageAuraAbility);
+        }
+        
+        OnHitEffecField effectOnSelfField = m_cachedOnHitData.m_allyHitEffectFields.FirstOrDefault(f => f.m_identifier == "SelfShield");
+        if (effectOnSelfField != null)
+        {
+            StandardActorEffectData newEffectData = effectOnSelfField.m_effect.m_effectData.GetShallowCopy();
+            newEffectData.m_duration = GetSuperheatDuration(); // override animation duration
+            effectOnSelfField.m_effect.m_effectData = newEffectData;
         }
 #endif
     }
