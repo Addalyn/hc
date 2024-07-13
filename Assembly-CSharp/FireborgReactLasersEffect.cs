@@ -263,8 +263,10 @@ public class FireborgReactLasersEffect : Effect
                         endPos,
                         1,
                         isReal,
-                        out FireborgGroundFireEffect groundFireEffect);
+                        out FireborgGroundFireEffect groundFireEffect,
+                        out List<FireborgGroundFireEffect> oldEffectsForRemoval);
             posHitResults.AddEffect(groundFireEffect);
+            oldEffectsForRemoval.ForEach(posHitResults.AddEffectForRemoval);
         }
 
         OnHitAuthoredData onHitData = isFirst ? m_onHitDataForFirstLaser : m_onHitDataForSecondLaser;

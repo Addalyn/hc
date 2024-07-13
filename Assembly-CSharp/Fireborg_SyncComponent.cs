@@ -262,15 +262,32 @@ public class Fireborg_SyncComponent : NetworkBehaviour
     }
 
     // custom
-    public FireborgGroundFireEffect MakeGroundFireEffect(
+    private FireborgGroundFireEffect MakeGroundFireEffect(
         EffectSource parent,
         ActorData caster,
         List<BoardSquare> affectedSquares,
-        int duration = 1)
+        int duration,
+        out List<FireborgGroundFireEffect> oldEffectsForRemoval)
     {
+        if (duration > 2)
+        {
+            Log.Error($"FireborgGroundFireEffect with duration {duration} is not supported! Duration might be overridden with the next effect created!");
+        }
+        
+        HashSet<BoardSquare> allAffectedSquares = new HashSet<BoardSquare>(affectedSquares);
+        oldEffectsForRemoval = new List<FireborgGroundFireEffect>();
+        foreach (Effect effect in ServerEffectManager.Get().GetWorldEffectsByCaster(caster, typeof(FireborgGroundFireEffect)))
+        {
+            if (effect is FireborgGroundFireEffect oldEffect)
+            {
+                oldEffectsForRemoval.Add(oldEffect);
+                allAffectedSquares.UnionWith(oldEffect.GetSquaresInShape());
+            }
+        }
+        
         return new FireborgGroundFireEffect(
             parent,
-            affectedSquares
+            allAffectedSquares
                 .Select(
                     s => new StandardMultiAreaGroundEffect.GroundAreaInfo(
                         s,
@@ -302,7 +319,7 @@ public class Fireborg_SyncComponent : NetworkBehaviour
     // custom
     // TODO DASH FireborgDash applies all of this on dash phase and
     // can hit other dashes with ground fire if they stop in it.
-    // Currently it works correctly but can break if we ch  ange what current board square means when you are dashing.
+    // Currently it works correctly but can break if we change what current board square means when you are dashing.
     public PositionHitResults MakeGroundFireEffectResults(
         Ability ability,
         ActorData caster,
@@ -310,10 +327,16 @@ public class Fireborg_SyncComponent : NetworkBehaviour
         Vector3 posForHit,
         int duration,
         bool isReal,
-        out FireborgGroundFireEffect groundFireEffect)
+        out FireborgGroundFireEffect groundFireEffect,
+        out List<FireborgGroundFireEffect> oldEffectsForRemoval)
     {
         affectedSquares = affectedSquares.Where(s => s.IsValidForGameplay()).ToList();
-        groundFireEffect = MakeGroundFireEffect(ability.AsEffectSource(), caster, affectedSquares, duration);
+        groundFireEffect = MakeGroundFireEffect(
+            ability.AsEffectSource(),
+            caster,
+            affectedSquares,
+            duration,
+            out oldEffectsForRemoval);
         List<ActorData> hitActors = GetActorsHitByGroundFireThisTurn(isReal).ToList();
         groundFireEffect.AddToActorsHitThisTurn(hitActors);
 

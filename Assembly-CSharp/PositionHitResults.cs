@@ -65,6 +65,15 @@ public class PositionHitResults
 		m_effectsForRemoval.Add(new ServerAbilityUtils.EffectRemovalData(effect, listToRemoveFrom));
 	}
 
+	// custom
+	public void AddEffectForRemoval(Effect effect)
+	{
+		List<Effect> effectListToRemoveFrom = effect.Target == null
+			? ServerEffectManager.Get().GetWorldEffects()
+			: ServerEffectManager.Get().GetActorEffects(effect.Target);
+		AddEffectForRemoval(effect, effectListToRemoveFrom);
+	}
+
 	public void AddBarrierForRemoval(Barrier barrier, bool removeLinkedBarriers)
 	{
 		if (m_barriersForRemoval == null)

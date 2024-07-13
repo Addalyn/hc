@@ -287,8 +287,10 @@ public class FireborgDualCones : GenericAbility_Container
                         posForHit,
                         1,
                         ServerAbilityUtils.CurrentlyGatheringRealResults(),
-                        out FireborgGroundFireEffect effect);
+                        out FireborgGroundFireEffect effect,
+                        out List<FireborgGroundFireEffect> oldEffectsForRemoval);
                     posHitResults.AddEffect(effect);
+                    oldEffectsForRemoval.ForEach(posHitResults.AddEffectForRemoval);
                     positionHitResults.Add(posHitResults);
                 }
             }

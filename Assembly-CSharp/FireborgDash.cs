@@ -262,8 +262,11 @@ public class FireborgDash : GenericAbility_Container
                             Board.Get().GetSquare(targets[0].GridPos).ToVector3(),
                             isSuperheated ? GetGroundFireDurationIfSuperheated() : GetGroundFireDuration(),
                             ServerAbilityUtils.CurrentlyGatheringRealResults(),
-                            out FireborgGroundFireEffect effect));
-                    GetOrAddHitResults(caster, actorHitResults).AddEffect(effect);
+                            out FireborgGroundFireEffect effect,
+                            out List<FireborgGroundFireEffect> oldEffectsForRemoval));
+                    ActorHitResults casterHitResults = GetOrAddHitResults(caster, actorHitResults);
+                    casterHitResults.AddEffect(effect);
+                    oldEffectsForRemoval.ForEach(casterHitResults.AddEffectForRemoval);
                 }
             }
         }

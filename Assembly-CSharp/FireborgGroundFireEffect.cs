@@ -46,6 +46,7 @@ public class FireborgGroundFireEffect : StandardMultiAreaGroundEffect
             }
         }
         
+        // even if we are replacing the old effect, we still need to make sure it doesn't hit once again
         foreach (Effect effect in ServerEffectManager.Get().GetWorldEffectsByCaster(Caster, typeof(FireborgGroundFireEffect)))
         {
             if (effect is FireborgGroundFireEffect fireborgGroundFireEffect)
