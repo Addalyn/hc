@@ -1100,6 +1100,7 @@ public class Ability : MonoBehaviour
 
 	private void Update()
 	{
+#if !SERVER
 		if (Targeter != null && IsAbilitySelected())
 		{
 			// removed in rogues
@@ -1206,6 +1207,7 @@ public class Ability : MonoBehaviour
 				}
 			}
 		}
+#endif
 	}
 
 	public virtual bool CustomCanCastValidation(ActorData caster)
