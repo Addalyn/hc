@@ -11,9 +11,18 @@ public class DinoForceChase : GenericAbility_Container
 
     private AbilityMod_DinoForceChase m_abilityMod;
     private AbilityData.ActionType m_knockbackActionType = AbilityData.ActionType.INVALID_ACTION;
+    
+#if SERVER
+    // custom
+    private Passive_Dino m_passive;
+#endif
 
     protected override void SetupTargetersAndCachedVars()
     {
+#if SERVER
+        // custom
+        m_passive = GetPassiveOfType(typeof(Passive_Dino)) as Passive_Dino;
+#endif
         AbilityData abilityData = GetComponent<AbilityData>();
         DinoTargetedKnockback knockbackAbility = GetAbilityOfType<DinoTargetedKnockback>();
         if (abilityData != null && knockbackAbility != null)
@@ -78,17 +87,9 @@ public class DinoForceChase : GenericAbility_Container
             
             actorHitResult.AddMiscHitEvent(new MiscHitEventData(MiscHitEventType.TargetForceChaseCaster));
 
-            if (hitActor.GetActorStatus().IsMovementDebuffImmune())
+            if (ServerAbilityUtils.CurrentlyGatheringRealResults())
             {
-                actorHitResult.AddTechPointGainOnCaster(GetEnergyPerUnstoppableEnemyHit());
-            }
-            else
-            {
-                actorHitResult.AddMiscHitEvent(
-                    new MiscHitEventData_UpdateFreelancerStat(
-                        (int)FreelancerStats.DinoStats.ForceChaseNumChases,
-                        1,
-                        caster));
+                m_passive.AddActorInForceChase(hitActor);
             }
         }
 

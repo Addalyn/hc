@@ -10,10 +10,12 @@ public class Passive_Dino : Passive
     private Dino_SyncComponent m_syncComp;
     private DinoLayerCones m_primaryAbility;
     private DinoTargetedKnockback m_knockbackAbility;
+    private DinoForceChase m_forceChaseAbility;
     private AbilityData.ActionType m_dashActionType;
 
     private int m_pendingPowerLevel = -1;
     private List<ActorData> m_actorsPendingKnockback;
+    private readonly List<ActorData> m_actorsInForceChase = new List<ActorData>();
     public int m_dashCooldownAdjust;
 
     protected override void OnStartup()
@@ -23,6 +25,7 @@ public class Passive_Dino : Passive
         m_primaryAbility = Owner.GetAbilityData().GetAbilityOfType(typeof(DinoLayerCones)) as DinoLayerCones;
         m_knockbackAbility =
             Owner.GetAbilityData().GetAbilityOfType(typeof(DinoTargetedKnockback)) as DinoTargetedKnockback;
+        m_forceChaseAbility = Owner.GetAbilityData().GetAbilityOfType(typeof(DinoForceChase)) as DinoForceChase;
         m_dashActionType = Owner.GetAbilityData().GetActionTypeOfAbilityOfType(typeof(DinoDashOrShield));
         Owner.OnKnockbackHitExecutedDelegate += OnKnockbackMovementHitExecuted;
     }
@@ -30,6 +33,41 @@ public class Passive_Dino : Passive
     private void OnDestroy()
     {
         Owner.OnKnockbackHitExecutedDelegate -= OnKnockbackMovementHitExecuted;
+    }
+
+    public override void OnAbilitiesDone()
+    {
+        base.OnAbilitiesDone();
+
+        int energyCompensation = 0;
+        foreach (ActorData hitActor in m_actorsInForceChase)
+        {
+            if (hitActor.GetActorStatus().IsMovementDebuffImmune())
+            {
+                energyCompensation += m_forceChaseAbility.GetEnergyPerUnstoppableEnemyHit();
+            }
+            else
+            {
+                Owner.GetFreelancerStats().IncrementValueOfStat(FreelancerStats.DinoStats.ForceChaseNumChases);
+            }
+        }
+        m_actorsInForceChase.Clear();
+
+        if (energyCompensation > 0)
+        {
+            ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(Owner, Owner.GetFreePos()));
+            actorHitResults.AddTechPointGainOnCaster(energyCompensation);
+            MovementResults.SetupAndExecuteAbilityResultsOutsideResolution(
+                Owner,
+                Owner,
+                actorHitResults,
+                m_forceChaseAbility);
+        }
+    }
+
+    public void AddActorInForceChase(ActorData actor)
+    {
+        m_actorsInForceChase.Add(actor);
     }
 
     public List<ActorData> GetActorsPendingKnockback()
