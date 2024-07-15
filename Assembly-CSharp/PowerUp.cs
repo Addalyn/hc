@@ -411,7 +411,7 @@ public class PowerUp : NetworkBehaviour
 	// removed in rogues, empty in reactor
 	public void CheckForPickupOnTurnStart()
 	{
-		// TODO some server code might have been here
+		// TODO POWERUP some server code might have been here
 	}
 
 	public void MarkSequencesForRemoval()

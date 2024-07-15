@@ -2083,6 +2083,7 @@ public class ServerActionBuffer : NetworkBehaviour
 		}
 	}
 
+	// TODO call it?
 	private void ClearRequestsOfDeadActors()
 	{
 		List<AbilityRequest> list = new List<AbilityRequest>();

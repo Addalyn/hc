@@ -101,6 +101,7 @@ public class ActorMovement : MonoBehaviour, IGameEventListener
 #endif
 
 	// rogues?
+	// TODO SAMURAI ?
 #if SERVER
 	public float MoveRangeCompensation
 	{
@@ -372,7 +373,7 @@ public class ActorMovement : MonoBehaviour, IGameEventListener
 #if SERVER
 			if (NetworkServer.active) // server-only
 			{
-				result += MoveRangeCompensation;
+				result += MoveRangeCompensation; // TODO SAMURAI??
 			}
 #endif
 			AbilityData abilityData = m_actor.GetAbilityData();
@@ -1371,6 +1372,7 @@ public class ActorMovement : MonoBehaviour, IGameEventListener
 		UpdateMovementState();
 	}
 
+	// TODO client only?
 	private void UpdateMovementState()
 	{
 		if (m_actor.IsDead())

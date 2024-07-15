@@ -1440,6 +1440,7 @@ public class ServerEffectManager : MonoBehaviour
 	//	}
 	//}
 
+	// TODO call it?
 	public void ExecuteUnexecutedMovementHitsForAllEffects(MovementStage stage, bool asFailsafe)
 	{
 		foreach (List<Effect> collection in m_actorEffects.Values)

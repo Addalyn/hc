@@ -696,7 +696,7 @@ public class GameFlow : NetworkBehaviour
 				ServerEffectManager.Get().OnAbilityPhaseEnd(actionBuffer.AbilityPhase);
 				if (actionBuffer.AbilityPhase == AbilityUtils.GetLowestAbilityPriority())
 				{
-					actionBuffer.AbilityPhase = AbilityPriority.INVALID;
+					actionBuffer.AbilityPhase = AbilityPriority.INVALID; // TODO SenseiAppendStatusEffect seems to expect it to be not INVALID on movement
 					actionBuffer.ActionPhase = ActionBufferPhase.AbilitiesWait;
 					Log.Info($"Going to next action phase {actionBuffer.ActionPhase}");
 					return;

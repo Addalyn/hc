@@ -602,7 +602,7 @@ public class BlasterDashAndBlast : Ability
 	{
 		List<NonActorTargetInfo> nonActorTargetInfo = new List<NonActorTargetInfo>();
 		List<ActorData> hitActors = FindHitActors(targets, caster, nonActorTargetInfo, out float angleNow, out float radiusInSquares);
-		Vector3 loSCheckPos = caster.GetLoSCheckPos();
+		Vector3 loSCheckPos = caster.GetLoSCheckPos(); // TODO supposed to be pos after dash (even if Elle dashes in to somebody), but it's original pos
 		foreach (ActorData target in hitActors)
 		{
 			ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(target, loSCheckPos));

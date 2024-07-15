@@ -507,6 +507,7 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 	}
 
 	// overhauled in rogues -- m_serverLastKnownPosSquare split into m_serverLastKnownPosX & Y
+	// TODO CHASE used for chasing invisibles
 	public BoardSquare ServerLastKnownPosSquare
 	{
 		get
@@ -5016,7 +5017,7 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 #endif
 
 	// added in rogues
-	// TODO check if it is set properly
+	// TODO check if it is set properly!
 #if SERVER
 	public BoardSquare SquareAtResolveStart
 	{
@@ -5083,7 +5084,7 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 #if SERVER
 			if (NetworkServer.active) // server-only
 			{
-				// TODO missing code (just a sync check?)
+				// TODO missing code (just a sync check?) if (m_serverTrueBoardSquare != null && square == null) ClearCurrentBoardSquare() ??
 				if (m_serverTrueBoardSquare != null)
 				{
 					// square == null;  // it's not an assignment

@@ -130,6 +130,7 @@ public class ServerMovementStabilizer
 		}
 	}
 
+	// TODO MOVEMENT unused
 	public void AdjustMovementStartsForMoveAfterEvade(List<MovementRequest> storedMovementRequests)
 	{
 		foreach (MovementRequest movementRequest in storedMovementRequests)
@@ -147,6 +148,9 @@ public class ServerMovementStabilizer
 				.BuildPathTo(currentBoardSquare, movementRequest.m_path.square, 15f, true, null);
 			if (pathToRequestedStart != null)
 			{
+				// TODO SAMURAI
+				// NOTE It doesn't seem this was actually used: https://www.youtube.com/watch?v=to1XIhkmdHw&t=467s
+				// Tol-Ren does not pick up health spoil
 				movementRequest.m_actor.GetActorMovement().MoveRangeCompensation = pathToRequestedStart.FindMoveCostToEnd();
 				BoardSquarePathInfo endpoint = pathToRequestedStart.GetPathEndpoint();
 				if (endpoint.prev != null)

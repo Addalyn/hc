@@ -458,6 +458,7 @@ public class ServerMovementManager : NetworkBehaviour
 		return numTotalResolving <= 0 || (float)numDoneResolving / (float)numTotalResolving >= fractionThreshold;
 	}
 
+	// TODO MOVEMENT unused
 	public void OnFailsafe(bool forSomeClientFailsafe = true)
 	{
 		if (forSomeClientFailsafe)

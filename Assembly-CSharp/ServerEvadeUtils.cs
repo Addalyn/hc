@@ -468,6 +468,7 @@ public static class ServerEvadeUtils
 			return m_request.m_ability.CanChargeThroughInvalidSquaresForDestination();
 		}
 
+		// TODO SAMURAI
 		public override Vector3 GetBestSquareTestVector()
 		{
 			return m_request.m_ability.GetChargeBestSquareTestVector(m_chargeSegments);

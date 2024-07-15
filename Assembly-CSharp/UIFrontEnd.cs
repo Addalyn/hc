@@ -908,6 +908,8 @@ public class UIFrontEnd : MonoBehaviour
 
             if (UICharacterSelectScreenController.Get() != null)
             {
+                // TODO CLIENT uncontrollably switching characters - we can disable gamepad input server-side
+                // CameraControls.CameraRotateClockwiseToggled seems to know to take pauses when button is held 
                 if (ControlpadGameplay.Get().GetAxisValue(ControlpadInputValue.DpadX) > 0f)
                 {
                     CharacterType characterType = UICharacterScreen.GetCurrentSpecificState().CharacterTypeToDisplay;

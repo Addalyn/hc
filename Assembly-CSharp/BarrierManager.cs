@@ -765,6 +765,7 @@ public class BarrierManager : NetworkBehaviour
 	}
 
 	// added in rogues
+	// TODO call it?
 	public void ExecuteUnexecutedMovementHitsForAllBarriers(MovementStage movementStage, bool asFailsafe)
 	{
 		foreach (Barrier barrier in new List<Barrier>(m_barriers))

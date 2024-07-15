@@ -28,6 +28,7 @@ public class ServerResolutionManager : NetworkBehaviour
 	private Dictionary<ActorData, List<ActorData>> m_knockbackedActorToPlayersStillResolvingHits = new Dictionary<ActorData, List<ActorData>>();
 	private List<ResolutionAction> m_currentResolutionActions = new List<ResolutionAction>();
 	private List<ActorAnimation> m_animEntries = new List<ActorAnimation>();
+	// TODO RESOLUTION unused
 	private List<CastAction> m_currentCastActions = new List<CastAction>();
 
 	private const float c_fractionOfClientsDoneBeforeStartingFailsafe = 0.3f;

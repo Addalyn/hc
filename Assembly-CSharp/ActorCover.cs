@@ -241,6 +241,7 @@ public class ActorCover : NetworkBehaviour
 	// tweaked in rogues
 	public float CoverRating(BoardSquare square)
 	{
+		// TODO BOTS enemies can be too far 
 		List<ActorData> allTeamMembers = GameFlowData.Get().GetAllTeamMembers(m_owner.GetEnemyTeam());
 		float num = 0f;
 		foreach (ActorData actorData in allTeamMembers)

@@ -20,7 +20,7 @@ public class MovementRequest : IComparable
 	public bool m_wasEverChase;
 	public ActorData m_preStabilizeChaseTarget;
 	public bool m_chaserInitiatedForceChase;
-	public bool m_clashStabilized;
+	public bool m_clashStabilized; // TODO never set
 
 	public MovementRequest(int x, int y, ActorData actor, BoardSquarePathInfo pathToUse = null)
 	{

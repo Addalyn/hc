@@ -342,6 +342,7 @@ public class AbilityData : NetworkBehaviour
 	}
 #endif
 
+	// TODO ABILITIES check it is used carefully as forced chase cancels queued abilities to free up movement
 	public bool HasQueuedAction(ActionType actionType)  // , checkExecutedForPve in rogues
 	{
 		bool result = false;
@@ -1067,6 +1068,7 @@ public class AbilityData : NetworkBehaviour
 		}
 		if (cancelMovement)
 		{
+			// TODO CLIENT does not clear it from actions to undo, so if you add movement again, it won't be on the top of the stack
 			actorTurnSM.RequestCancelMovement();
 			UISounds.GetUISounds().Play("ui/ingame/v1/move_undo");
 		}
