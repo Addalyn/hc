@@ -288,7 +288,7 @@ public class UIGameSettingsPanel : UIScene
 
         if (UICharacterScreen.Get() != null)
         {
-            UICharacterScreen.Get().DoRefreshFunctions(1);
+            UICharacterScreen.Get().DoRefreshFunctions((ushort)UICharacterScreen.RefreshFunctionType.RefreshSideButtonVisibility);
         }
     }
 

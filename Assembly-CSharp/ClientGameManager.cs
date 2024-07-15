@@ -1490,13 +1490,13 @@ public class ClientGameManager : MonoBehaviour
 		}
 		if (UICharacterScreen.Get() != null)
 		{
-			UICharacterScreen.Get().DoRefreshFunctions(0x80);
+			UICharacterScreen.Get().DoRefreshFunctions((ushort)UICharacterScreen.RefreshFunctionType.RefreshBotSkillPanel);
 		}
 		if ((AppState.GetCurrent() == AppState_CharacterSelect.Get()
 		     || AppState.GetCurrent() == AppState_GroupCharacterSelect.Get())
 		    && UICharacterScreen.Get() != null)
 		{
-			UICharacterScreen.Get().DoRefreshFunctions(0x40);
+			UICharacterScreen.Get().DoRefreshFunctions((ushort)UICharacterScreen.RefreshFunctionType.RefreshCharacterButtons);
 		}
 		if (DiscordClientInterface.IsEnabled && (DiscordClientInterface.IsSdkEnabled || DiscordClientInterface.IsInstalled))
 		{
@@ -1895,7 +1895,7 @@ public class ClientGameManager : MonoBehaviour
 			Log.Info("Assigned to queue {0}", newQueueInfo.GameType);
 			OnQueueEntered();
 		}
-		UICharacterScreen.Get().DoRefreshFunctions(0x80);
+		UICharacterScreen.Get().DoRefreshFunctions((ushort)UICharacterScreen.RefreshFunctionType.RefreshBotSkillPanel);
 		NavigationBar.Get().UpdateStatusMessage();
 		OnQueueAssignmentNotification(notification);
 	}

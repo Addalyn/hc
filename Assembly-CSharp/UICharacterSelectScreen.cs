@@ -18,7 +18,9 @@ public class UICharacterSelectScreen : MonoBehaviour
 
 	public void SelectedGameMode(GameType gameType)
 	{
-		UICharacterScreen.Get().DoRefreshFunctions(288);
+		UICharacterScreen.Get().DoRefreshFunctions(
+			(ushort)UICharacterScreen.RefreshFunctionType.RefreshGameSubTypes
+			| (ushort)UICharacterScreen.RefreshFunctionType.RefreshSelectedGameType);
 	}
 
 	public void Awake()
