@@ -316,7 +316,7 @@ public class AppState_GroupCharacterSelect : AppState
 			if (groupInfo.SelectedQueueType == GameType.Practice || groupInfo.SelectedQueueType == GameType.Solo)
 			{
 				m_readyForSoloGame = true;
-				UICharacterScreen.Get().DoRefreshFunctions(128);
+				UICharacterScreen.Get().DoRefreshFunctions((ushort)UICharacterScreen.RefreshFunctionType.RefreshBotSkillPanel);
 			}
 			clientGameManager.UpdateReadyState(readyState, allyDifficulty, enemyDifficulty, HandlePlayerGroupInfoUpdateResponse);
 		}
@@ -615,7 +615,7 @@ public class AppState_GroupCharacterSelect : AppState
 			m_messageBox.Close();
 			m_messageBox = null;
 		}
-		UICharacterScreen.Get().DoRefreshFunctions(128);
+		UICharacterScreen.Get().DoRefreshFunctions((ushort)UICharacterScreen.RefreshFunctionType.RefreshBotSkillPanel);
 	}
 
 	private void CheckForPreviousGame()

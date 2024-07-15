@@ -1508,7 +1508,7 @@ public class FrontEndNavPanel : MonoBehaviour
 						goto IL_0145;
 					}
 					IL_0145:
-					UICharacterScreen.Get().DoRefreshFunctions(128);
+					UICharacterScreen.Get().DoRefreshFunctions((ushort)UICharacterScreen.RefreshFunctionType.RefreshBotSkillPanel);
 					return;
 				}
 			}
@@ -1685,7 +1685,7 @@ public class FrontEndNavPanel : MonoBehaviour
 		UICharacterSelectWorldObjects.Get().SetVisible(false);
 		return;
 		IL_018a:
-		UICharacterScreen.Get().DoRefreshFunctions(128);
+		UICharacterScreen.Get().DoRefreshFunctions((ushort)UICharacterScreen.RefreshFunctionType.RefreshBotSkillPanel);
 		goto IL_0247;
 	}
 

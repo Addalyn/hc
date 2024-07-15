@@ -100,16 +100,16 @@ public class UICharacterScreen : UIScene
 	public override void Awake()
 	{
 		s_instance = this;
-		RebuildCalls[1] = RefreshSideButtonsVisibility;
-		RebuildCalls[2] = RefreshSideButtonsClickability;
-		RebuildCalls[4] = RefreshSelectedCharacterButton;
-		RebuildCalls[8] = SendRequestToServerForCharacterSelect;
-		RebuildCalls[0x10] = RefreshCharacterButtonsVisibility;
-		RebuildCalls[0x20] = RefreshSelectedGameType;
-		RebuildCalls[0x40] = RefreshCharacterButtons;
-		RebuildCalls[0x80] = RefreshBotSkillPanel;
-		RebuildCalls[0x100] = RefreshGameSubTypes;
-		RebuildCalls[0x200] = RefreshPartyList;
+		RebuildCalls[(int)RefreshFunctionType.RefreshSideButtonVisibility] = RefreshSideButtonsVisibility;
+		RebuildCalls[(int)RefreshFunctionType.RefreshSideButtonClickability] = RefreshSideButtonsClickability;
+		RebuildCalls[(int)RefreshFunctionType.RefreshSelectedCharacterButton] = RefreshSelectedCharacterButton;
+		RebuildCalls[(int)RefreshFunctionType.SendRequestToServerForCharacterSelect] = SendRequestToServerForCharacterSelect;
+		RebuildCalls[(int)RefreshFunctionType.RefreshCharacterButtonVisibility] = RefreshCharacterButtonsVisibility;
+		RebuildCalls[(int)RefreshFunctionType.RefreshSelectedGameType] = RefreshSelectedGameType;
+		RebuildCalls[(int)RefreshFunctionType.RefreshCharacterButtons] = RefreshCharacterButtons;
+		RebuildCalls[(int)RefreshFunctionType.RefreshBotSkillPanel] = RefreshBotSkillPanel;
+		RebuildCalls[(int)RefreshFunctionType.RefreshGameSubTypes] = RefreshGameSubTypes;
+		RebuildCalls[(int)RefreshFunctionType.RefreshPartyList] = RefreshPartyList;
 		SetupButtons();
 		SetupCharacterButtons();
 		SetupCharacterFilterButtons();
@@ -332,19 +332,19 @@ public class UICharacterScreen : UIScene
 			if (characterSelectSceneStateParameters.ClientSelectedCharacter != null)
 			{
 				m_currentState.ClientSelectedCharacter = characterSelectSceneStateParameters.ClientSelectedCharacter;
-				num |= 1;
-				num |= 4;
-				num |= 0x40;
+				num |= (ushort)RefreshFunctionType.RefreshSideButtonVisibility;
+				num |= (ushort)RefreshFunctionType.RefreshSelectedCharacterButton;
+				num |= (ushort)RefreshFunctionType.RefreshCharacterButtons;
 			}
 			if (characterSelectSceneStateParameters.SideButtonsVisible != null)
 			{
 				m_currentState.SideButtonsVisible = characterSelectSceneStateParameters.SideButtonsVisible;
-				num |= 1;
+				num |= (ushort)RefreshFunctionType.RefreshSideButtonVisibility;
 			}
 			if (characterSelectSceneStateParameters.SideButtonsClickable != null)
 			{
 				m_currentState.SideButtonsClickable = characterSelectSceneStateParameters.SideButtonsClickable;
-				num |= 2;
+				num |= (ushort)RefreshFunctionType.RefreshSideButtonClickability;
 			}
 			if (characterSelectSceneStateParameters.ClientSelectedVisualInfo != null)
 			{
@@ -353,88 +353,88 @@ public class UICharacterScreen : UIScene
 			if (characterSelectSceneStateParameters.ClientRequestToServerSelectCharacter != null)
 			{
 				m_currentState.ClientRequestToServerSelectCharacter = characterSelectSceneStateParameters.ClientRequestToServerSelectCharacter;
-				num |= 4;
-				num |= 8;
+				num |= (ushort)RefreshFunctionType.RefreshSelectedCharacterButton;
+				num |= (ushort)RefreshFunctionType.SendRequestToServerForCharacterSelect;
 			}
 			if (characterSelectSceneStateParameters.CharacterSelectButtonsVisible != null)
 			{
 				m_currentState.CharacterSelectButtonsVisible = characterSelectSceneStateParameters.CharacterSelectButtonsVisible;
-				num |= 0x10;
+				num |= (ushort)RefreshFunctionType.RefreshCharacterButtonVisibility;
 			}
 			if (characterSelectSceneStateParameters.ClientRequestedGameType != null)
 			{
 				m_currentState.ClientRequestedGameType = characterSelectSceneStateParameters.ClientRequestedGameType;
-				num |= 0x20;
-				num |= 0x40;
-				num |= 0x80;
-				num |= 0x100;
+				num |= (ushort)RefreshFunctionType.RefreshSelectedGameType;
+				num |= (ushort)RefreshFunctionType.RefreshCharacterButtons;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				num |= (ushort)RefreshFunctionType.RefreshGameSubTypes;
 			}
 			if (characterSelectSceneStateParameters.BotDifficultyView != null)
 			{
 				m_currentState.BotDifficultyView = characterSelectSceneStateParameters.BotDifficultyView;
-				num |= 0x80;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
 			if (characterSelectSceneStateParameters.AllyBotTeammatesSelected != null)
 			{
 				m_currentState.AllyBotTeammatesSelected = characterSelectSceneStateParameters.AllyBotTeammatesSelected;
-				num |= 0x80;
-				num |= 0x100;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				num |= (ushort)RefreshFunctionType.RefreshGameSubTypes;
 			}
 			if (characterSelectSceneStateParameters.AllyBotTeammatesClickable != null)
 			{
 				m_currentState.AllyBotTeammatesClickable = characterSelectSceneStateParameters.AllyBotTeammatesClickable;
-				num |= 0x80;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
 			if (characterSelectSceneStateParameters.BotsCanTauntCheckboxEnabled != null)
 			{
 				m_currentState.BotsCanTauntCheckboxEnabled = characterSelectSceneStateParameters.BotsCanTauntCheckboxEnabled;
-				num |= 0x80;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
 			if (characterSelectSceneStateParameters.SimpleBotSetting != null)
 			{
 				m_currentState.SimpleBotSetting = characterSelectSceneStateParameters.SimpleBotSetting;
-				num |= 0x80;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
 			if (characterSelectSceneStateParameters.ClientRequestedSimpleBotSettingValue != null)
 			{
 				m_currentState.ClientRequestedSimpleBotSettingValue = characterSelectSceneStateParameters.ClientRequestedSimpleBotSettingValue;
-				num |= 0x80;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
 			if (characterSelectSceneStateParameters.ClientRequestAllyBotTeammates != null)
 			{
 				m_currentState.ClientRequestAllyBotTeammates = characterSelectSceneStateParameters.ClientRequestAllyBotTeammates;
-				num |= 0x80;
-				num |= 0x100;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				num |= (ushort)RefreshFunctionType.RefreshGameSubTypes;
 			}
 			if (characterSelectSceneStateParameters.SelectedAllyBotDifficulty != null)
 			{
 				m_currentState.SelectedAllyBotDifficulty = characterSelectSceneStateParameters.SelectedAllyBotDifficulty;
-				num |= 0x80;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
 			if (characterSelectSceneStateParameters.SelectedEnemyBotDifficulty != null)
 			{
 				m_currentState.SelectedEnemyBotDifficulty = characterSelectSceneStateParameters.SelectedEnemyBotDifficulty;
-				num |= 0x80;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
 			if (characterSelectSceneStateParameters.ClientRequestedAllyBotDifficulty != null)
 			{
 				m_currentState.ClientRequestedAllyBotDifficulty = characterSelectSceneStateParameters.ClientRequestedAllyBotDifficulty;
-				num |= 0x80;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
 			if (characterSelectSceneStateParameters.ClientRequestedEnemyBotDifficulty != null)
 			{
 				m_currentState.ClientRequestedEnemyBotDifficulty = characterSelectSceneStateParameters.ClientRequestedEnemyBotDifficulty;
-				num |= 0x80;
+				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
 			if (characterSelectSceneStateParameters.CustomGamePartyListVisible != null)
 			{
 				m_currentState.CustomGamePartyListVisible = characterSelectSceneStateParameters.CustomGamePartyListVisible;
-				num |= 0x200;
+				num |= (ushort)RefreshFunctionType.RefreshPartyList;
 			}
 			if (characterSelectSceneStateParameters.CustomGamePartyListHidden != null)
 			{
 				m_currentState.CustomGamePartyListHidden = characterSelectSceneStateParameters.CustomGamePartyListHidden;
-				num |= 0x200;
+				num |= (ushort)RefreshFunctionType.RefreshPartyList;
 			}
 		}
 		DoRefreshFunctions(num);
@@ -605,7 +605,7 @@ public class UICharacterScreen : UIScene
 			}
 		}
 		UpdateWillFillVisibility();
-		DoRefreshFunctions(0x200);
+		DoRefreshFunctions((ushort)RefreshFunctionType.RefreshPartyList);
 	}
 
 	public void EditedSearchInput(string input)
@@ -1270,7 +1270,7 @@ public class UICharacterScreen : UIScene
 	public void ReceivedGameTypeChangeResponse()
 	{
 		GetCurrentSpecificState().ClientRequestedGameType = null;
-		DoRefreshFunctions(0x20);
+		DoRefreshFunctions((ushort)RefreshFunctionType.RefreshSelectedGameType);
 	}
 
 	private void SetDropdownText(string text)
