@@ -138,34 +138,32 @@ public class UICharacterScreen : UIScene
 	{
 		m_searchInputField.onValueChanged.AddListener(EditedSearchInput);
 		m_filterButtons = new List<UICharacterSelectFactionFilter>();
-		List<CharacterType> list = new List<CharacterType>();
-		list.AddRange((CharacterType[])Enum.GetValues(typeof(CharacterType)));
+		List<CharacterType> filteredCharacters = new List<CharacterType>();
+		filteredCharacters.AddRange((CharacterType[])Enum.GetValues(typeof(CharacterType)));
 		m_filterButtons.Add(m_notOnAFactionFilter);
-		List<FactionGroup> list2 = FactionWideData.Get().FactionGroupsToDisplayFilter();
-		for (int i = 0; i < list2.Count; i++)
+		foreach (FactionGroup groupFilter in FactionWideData.Get().FactionGroupsToDisplayFilter())
 		{
-			FactionGroup groupFilter = list2[i];
-			UICharacterSelectFactionFilter uicharacterSelectFactionFilter = Instantiate(m_factionFilterPrefab);
-			uicharacterSelectFactionFilter.transform.SetParent(m_searchFiltersContainer.transform);
-			uicharacterSelectFactionFilter.transform.localPosition = Vector3.zero;
-			uicharacterSelectFactionFilter.transform.localScale = Vector3.one;
-			uicharacterSelectFactionFilter.Setup(groupFilter, ClickedOnFactionFilter);
-			m_filterButtons.Add(uicharacterSelectFactionFilter);
+			UICharacterSelectFactionFilter filter = Instantiate(m_factionFilterPrefab);
+			filter.transform.SetParent(m_searchFiltersContainer.transform);
+			filter.transform.localPosition = Vector3.zero;
+			filter.transform.localScale = Vector3.one;
+			filter.Setup(groupFilter, ClickedOnFactionFilter);
+			m_filterButtons.Add(filter);
 			if (groupFilter.Characters != null)
 			{
-				list = list.Except(groupFilter.Characters).ToList();
+				filteredCharacters = filteredCharacters.Except(groupFilter.Characters).ToList();
 			}
-			uicharacterSelectFactionFilter.m_btn.spriteController.GetComponent<UITooltipHoverObject>().Setup(TooltipType.Simple, delegate(UITooltipBase tooltip)
+
+			filter.m_btn.spriteController.GetComponent<UITooltipHoverObject>().Setup(TooltipType.Simple, delegate(UITooltipBase tooltip)
 			{
 				(tooltip as UISimpleTooltip).Setup(FactionGroup.GetDisplayName(groupFilter.FactionGroupID));
 				return true;
 			});
 		}
-		m_notOnAFactionFilter.Setup(list, ClickedOnFactionFilter);
+		m_notOnAFactionFilter.Setup(filteredCharacters, ClickedOnFactionFilter);
 		UITooltipObject component = m_notOnAFactionFilter.m_btn.spriteController.GetComponent<UITooltipHoverObject>();
-		TooltipType tooltipType = TooltipType.Simple;
-		
-		component.Setup(tooltipType, delegate(UITooltipBase tooltip)
+
+		component.Setup(TooltipType.Simple, delegate(UITooltipBase tooltip)
 			{
 				(tooltip as UISimpleTooltip).Setup(StringUtil.TR("Wildcard", "Global"));
 				return true;
@@ -174,117 +172,105 @@ public class UICharacterScreen : UIScene
 
 	private void SetupCharacterButtons()
 	{
-		using (List<UICharacterPanelSelectButton>.Enumerator enumerator = CharacterSelectButtons.GetEnumerator())
+		foreach (UICharacterPanelSelectButton characterBtn in CharacterSelectButtons)
 		{
-			while (enumerator.MoveNext())
+			if (!m_SelectWillFillBtns.Contains(characterBtn))
 			{
-				UICharacterPanelSelectButton uicharacterPanelSelectButton = enumerator.Current;
-				if (!m_SelectWillFillBtns.Contains(uicharacterPanelSelectButton))
-				{
-					Destroy(uicharacterPanelSelectButton.gameObject);
-				}
+				Destroy(characterBtn.gameObject);
 			}
 		}
 		CharacterSelectButtons.Clear();
-		bool flag = GameManager.Get() != null && GameManager.Get().GameplayOverrides.EnableHiddenCharacters;
-		CharacterType[] array = (CharacterType[])Enum.GetValues(typeof(CharacterType));
-		List<CharacterType> list = new List<CharacterType>();
-		List<CharacterType> list2 = new List<CharacterType>();
-		List<CharacterType> list3 = new List<CharacterType>();
-		for (int i = 0; i < array.Length; i++)
+		bool enableHiddenCharacters = GameManager.Get() != null && GameManager.Get().GameplayOverrides.EnableHiddenCharacters;
+		List<CharacterType> assassins = new List<CharacterType>();
+		List<CharacterType> tanks = new List<CharacterType>();
+		List<CharacterType> supports = new List<CharacterType>();
+		foreach (CharacterType characterType in (CharacterType[])Enum.GetValues(typeof(CharacterType)))
 		{
 			try
 			{
-				if (array[i] != CharacterType.TestFreelancer1)
+				if (characterType == CharacterType.TestFreelancer1
+				    || characterType == CharacterType.TestFreelancer2
+				    || characterType == CharacterType.None)
 				{
-					if (array[i] != CharacterType.TestFreelancer2)
+					continue;
+				}
+				
+				CharacterResourceLink characterResourceLink =
+					GameWideData.Get().GetCharacterResourceLink(characterType);
+				if (enableHiddenCharacters || !characterResourceLink.m_isHidden)
+				{
+					if (characterResourceLink.m_characterRole == CharacterRole.Assassin)
 					{
-						if (array[i] == CharacterType.None)
-						{
-						}
-						else
-						{
-							CharacterResourceLink characterResourceLink = GameWideData.Get().GetCharacterResourceLink(array[i]);
-							if (!flag)
-							{
-								if (characterResourceLink.m_isHidden)
-								{
-									goto IL_193;
-								}
-							}
-							if (characterResourceLink.m_characterRole == CharacterRole.Assassin)
-							{
-								list.Add(array[i]);
-							}
-							if (characterResourceLink.m_characterRole == CharacterRole.Support)
-							{
-								list3.Add(array[i]);
-							}
-							if (characterResourceLink.m_characterRole == CharacterRole.Tank)
-							{
-								list2.Add(array[i]);
-							}
-						}
+						assassins.Add(characterType);
+					}
+
+					if (characterResourceLink.m_characterRole == CharacterRole.Support)
+					{
+						supports.Add(characterType);
+					}
+
+					if (characterResourceLink.m_characterRole == CharacterRole.Tank)
+					{
+						tanks.Add(characterType);
 					}
 				}
 			}
 			catch
 			{
 			}
-			IL_193:;
 		}
-		list.Sort(CompareCharacterTypeName);
-		list2.Sort(CompareCharacterTypeName);
-		list3.Sort(CompareCharacterTypeName);
-		int num = Mathf.CeilToInt(list.Count / 2f);
-		int num2 = Mathf.CeilToInt(list2.Count / 2f);
-		int num3 = Mathf.CeilToInt(list3.Count / 2f);
-		int num4 = 0;
-		for (int j = 0; j < list.Count; j++)
+		assassins.Sort(CompareCharacterTypeName);
+		tanks.Sort(CompareCharacterTypeName);
+		supports.Sort(CompareCharacterTypeName);
+		int widthAssassins = Mathf.CeilToInt(assassins.Count / 2f);
+		int widthTanks = Mathf.CeilToInt(tanks.Count / 2f);
+		int widthSupports = Mathf.CeilToInt(supports.Count / 2f);
+		int rowIndex = 0;
+		for (int i = 0; i < assassins.Count; i++)
 		{
-			UICharacterPanelSelectButton uicharacterPanelSelectButton2 = Instantiate(m_CharacterButtonSelectPrefab);
-			uicharacterPanelSelectButton2.m_characterType = list[j];
-			if (j - num4 * num >= num)
+			UICharacterPanelSelectButton characterBtn = Instantiate(m_CharacterButtonSelectPrefab);
+			characterBtn.m_characterType = assassins[i];
+			if (i - rowIndex * widthAssassins >= widthAssassins)
 			{
-				num4++;
+				rowIndex++;
 			}
-			UIManager.ReparentTransform(uicharacterPanelSelectButton2.gameObject.transform, m_FirepowerRows[num4].gameObject.transform);
-			CharacterSelectButtons.Add(uicharacterPanelSelectButton2);
+			UIManager.ReparentTransform(characterBtn.gameObject.transform, m_FirepowerRows[rowIndex].gameObject.transform);
+			CharacterSelectButtons.Add(characterBtn);
 		}
-		num4 = 0;
-		for (int k = 0; k < list2.Count; k++)
+		rowIndex = 0;
+		for (int i = 0; i < tanks.Count; i++)
 		{
-			UICharacterPanelSelectButton uicharacterPanelSelectButton3 = Instantiate(m_CharacterButtonSelectPrefab);
-			uicharacterPanelSelectButton3.m_characterType = list2[k];
-			if (k - num4 * num2 >= num2)
+			UICharacterPanelSelectButton characterBtn = Instantiate(m_CharacterButtonSelectPrefab);
+			characterBtn.m_characterType = tanks[i];
+			if (i - rowIndex * widthTanks >= widthTanks)
 			{
-				num4++;
+				rowIndex++;
 			}
-			UIManager.ReparentTransform(uicharacterPanelSelectButton3.gameObject.transform, m_FrontlineRows[num4].gameObject.transform);
-			CharacterSelectButtons.Add(uicharacterPanelSelectButton3);
+			UIManager.ReparentTransform(characterBtn.gameObject.transform, m_FrontlineRows[rowIndex].gameObject.transform);
+			CharacterSelectButtons.Add(characterBtn);
 		}
-		num4 = 0;
-		for (int l = 0; l < list3.Count; l++)
+		rowIndex = 0;
+		for (int i = 0; i < supports.Count; i++)
 		{
-			UICharacterPanelSelectButton uicharacterPanelSelectButton4 = Instantiate(m_CharacterButtonSelectPrefab);
-			uicharacterPanelSelectButton4.m_characterType = list3[l];
-			if (l - num4 * num3 >= num3)
+			UICharacterPanelSelectButton characterBtn = Instantiate(m_CharacterButtonSelectPrefab);
+			characterBtn.m_characterType = supports[i];
+			if (i - rowIndex * widthSupports >= widthSupports)
 			{
-				num4++;
+				rowIndex++;
 			}
-			UIManager.ReparentTransform(uicharacterPanelSelectButton4.gameObject.transform, m_SupportRows[num4].gameObject.transform);
-			CharacterSelectButtons.Add(uicharacterPanelSelectButton4);
+			UIManager.ReparentTransform(characterBtn.gameObject.transform, m_SupportRows[rowIndex].gameObject.transform);
+			CharacterSelectButtons.Add(characterBtn);
 		}
 		if (!m_SelectWillFillBtns.IsNullOrEmpty())
 		{
-			foreach (UICharacterPanelSelectButton item in m_SelectWillFillBtns)
+			foreach (UICharacterPanelSelectButton characterBtn in m_SelectWillFillBtns)
 			{
-				CharacterSelectButtons.Add(item);
+				CharacterSelectButtons.Add(characterBtn);
 			}
 		}
-		foreach (UICharacterPanelSelectButton uicharacterPanelSelectButton5 in CharacterSelectButtons)
+		foreach (UICharacterPanelSelectButton characterBtn in CharacterSelectButtons)
 		{
-			uicharacterPanelSelectButton5.Setup(false);
+			characterBtn.Setup(false);
 		}
 	}
 
@@ -310,149 +296,138 @@ public class UICharacterScreen : UIScene
 
 	public void DoRefreshFunctions(ushort RefreshBits)
 	{
-		using (Dictionary<int, RebuildDelegate>.Enumerator enumerator = RebuildCalls.GetEnumerator())
+		foreach (KeyValuePair<int, RebuildDelegate> keyValuePair in RebuildCalls)
 		{
-			while (enumerator.MoveNext())
+			if ((keyValuePair.Key & RefreshBits) != 0)
 			{
-				KeyValuePair<int, RebuildDelegate> keyValuePair = enumerator.Current;
-				if ((keyValuePair.Key & RefreshBits) != 0)
-				{
-					keyValuePair.Value();
-				}
+				keyValuePair.Value();
 			}
 		}
 	}
 
 	public override void HandleNewSceneStateParameter(SceneStateParameters parameters)
 	{
-		CharacterSelectSceneStateParameters characterSelectSceneStateParameters = parameters as CharacterSelectSceneStateParameters;
-		ushort num = 0;
-		if (characterSelectSceneStateParameters != null)
+		CharacterSelectSceneStateParameters stateParams = parameters as CharacterSelectSceneStateParameters;
+		ushort flags = 0;
+		if (stateParams != null)
 		{
-			if (characterSelectSceneStateParameters.ClientSelectedCharacter != null)
+			if (stateParams.ClientSelectedCharacter != null)
 			{
-				m_currentState.ClientSelectedCharacter = characterSelectSceneStateParameters.ClientSelectedCharacter;
-				num |= (ushort)RefreshFunctionType.RefreshSideButtonVisibility;
-				num |= (ushort)RefreshFunctionType.RefreshSelectedCharacterButton;
-				num |= (ushort)RefreshFunctionType.RefreshCharacterButtons;
+				m_currentState.ClientSelectedCharacter = stateParams.ClientSelectedCharacter;
+				flags |= (ushort)RefreshFunctionType.RefreshSideButtonVisibility;
+				flags |= (ushort)RefreshFunctionType.RefreshSelectedCharacterButton;
+				flags |= (ushort)RefreshFunctionType.RefreshCharacterButtons;
 			}
-			if (characterSelectSceneStateParameters.SideButtonsVisible != null)
+			if (stateParams.SideButtonsVisible != null)
 			{
-				m_currentState.SideButtonsVisible = characterSelectSceneStateParameters.SideButtonsVisible;
-				num |= (ushort)RefreshFunctionType.RefreshSideButtonVisibility;
+				m_currentState.SideButtonsVisible = stateParams.SideButtonsVisible;
+				flags |= (ushort)RefreshFunctionType.RefreshSideButtonVisibility;
 			}
-			if (characterSelectSceneStateParameters.SideButtonsClickable != null)
+			if (stateParams.SideButtonsClickable != null)
 			{
-				m_currentState.SideButtonsClickable = characterSelectSceneStateParameters.SideButtonsClickable;
-				num |= (ushort)RefreshFunctionType.RefreshSideButtonClickability;
+				m_currentState.SideButtonsClickable = stateParams.SideButtonsClickable;
+				flags |= (ushort)RefreshFunctionType.RefreshSideButtonClickability;
 			}
-			if (characterSelectSceneStateParameters.ClientSelectedVisualInfo != null)
+			if (stateParams.ClientSelectedVisualInfo != null)
 			{
-				m_currentState.ClientSelectedVisualInfo = characterSelectSceneStateParameters.ClientSelectedVisualInfo;
+				m_currentState.ClientSelectedVisualInfo = stateParams.ClientSelectedVisualInfo;
 			}
-			if (characterSelectSceneStateParameters.ClientRequestToServerSelectCharacter != null)
+			if (stateParams.ClientRequestToServerSelectCharacter != null)
 			{
-				m_currentState.ClientRequestToServerSelectCharacter = characterSelectSceneStateParameters.ClientRequestToServerSelectCharacter;
-				num |= (ushort)RefreshFunctionType.RefreshSelectedCharacterButton;
-				num |= (ushort)RefreshFunctionType.SendRequestToServerForCharacterSelect;
+				m_currentState.ClientRequestToServerSelectCharacter = stateParams.ClientRequestToServerSelectCharacter;
+				flags |= (ushort)RefreshFunctionType.RefreshSelectedCharacterButton;
+				flags |= (ushort)RefreshFunctionType.SendRequestToServerForCharacterSelect;
 			}
-			if (characterSelectSceneStateParameters.CharacterSelectButtonsVisible != null)
+			if (stateParams.CharacterSelectButtonsVisible != null)
 			{
-				m_currentState.CharacterSelectButtonsVisible = characterSelectSceneStateParameters.CharacterSelectButtonsVisible;
-				num |= (ushort)RefreshFunctionType.RefreshCharacterButtonVisibility;
+				m_currentState.CharacterSelectButtonsVisible = stateParams.CharacterSelectButtonsVisible;
+				flags |= (ushort)RefreshFunctionType.RefreshCharacterButtonVisibility;
 			}
-			if (characterSelectSceneStateParameters.ClientRequestedGameType != null)
+			if (stateParams.ClientRequestedGameType != null)
 			{
-				m_currentState.ClientRequestedGameType = characterSelectSceneStateParameters.ClientRequestedGameType;
-				num |= (ushort)RefreshFunctionType.RefreshSelectedGameType;
-				num |= (ushort)RefreshFunctionType.RefreshCharacterButtons;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
-				num |= (ushort)RefreshFunctionType.RefreshGameSubTypes;
+				m_currentState.ClientRequestedGameType = stateParams.ClientRequestedGameType;
+				flags |= (ushort)RefreshFunctionType.RefreshSelectedGameType;
+				flags |= (ushort)RefreshFunctionType.RefreshCharacterButtons;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				flags |= (ushort)RefreshFunctionType.RefreshGameSubTypes;
 			}
-			if (characterSelectSceneStateParameters.BotDifficultyView != null)
+			if (stateParams.BotDifficultyView != null)
 			{
-				m_currentState.BotDifficultyView = characterSelectSceneStateParameters.BotDifficultyView;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				m_currentState.BotDifficultyView = stateParams.BotDifficultyView;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
-			if (characterSelectSceneStateParameters.AllyBotTeammatesSelected != null)
+			if (stateParams.AllyBotTeammatesSelected != null)
 			{
-				m_currentState.AllyBotTeammatesSelected = characterSelectSceneStateParameters.AllyBotTeammatesSelected;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
-				num |= (ushort)RefreshFunctionType.RefreshGameSubTypes;
+				m_currentState.AllyBotTeammatesSelected = stateParams.AllyBotTeammatesSelected;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				flags |= (ushort)RefreshFunctionType.RefreshGameSubTypes;
 			}
-			if (characterSelectSceneStateParameters.AllyBotTeammatesClickable != null)
+			if (stateParams.AllyBotTeammatesClickable != null)
 			{
-				m_currentState.AllyBotTeammatesClickable = characterSelectSceneStateParameters.AllyBotTeammatesClickable;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				m_currentState.AllyBotTeammatesClickable = stateParams.AllyBotTeammatesClickable;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
-			if (characterSelectSceneStateParameters.BotsCanTauntCheckboxEnabled != null)
+			if (stateParams.BotsCanTauntCheckboxEnabled != null)
 			{
-				m_currentState.BotsCanTauntCheckboxEnabled = characterSelectSceneStateParameters.BotsCanTauntCheckboxEnabled;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				m_currentState.BotsCanTauntCheckboxEnabled = stateParams.BotsCanTauntCheckboxEnabled;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
-			if (characterSelectSceneStateParameters.SimpleBotSetting != null)
+			if (stateParams.SimpleBotSetting != null)
 			{
-				m_currentState.SimpleBotSetting = characterSelectSceneStateParameters.SimpleBotSetting;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				m_currentState.SimpleBotSetting = stateParams.SimpleBotSetting;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
-			if (characterSelectSceneStateParameters.ClientRequestedSimpleBotSettingValue != null)
+			if (stateParams.ClientRequestedSimpleBotSettingValue != null)
 			{
-				m_currentState.ClientRequestedSimpleBotSettingValue = characterSelectSceneStateParameters.ClientRequestedSimpleBotSettingValue;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				m_currentState.ClientRequestedSimpleBotSettingValue = stateParams.ClientRequestedSimpleBotSettingValue;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
-			if (characterSelectSceneStateParameters.ClientRequestAllyBotTeammates != null)
+			if (stateParams.ClientRequestAllyBotTeammates != null)
 			{
-				m_currentState.ClientRequestAllyBotTeammates = characterSelectSceneStateParameters.ClientRequestAllyBotTeammates;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
-				num |= (ushort)RefreshFunctionType.RefreshGameSubTypes;
+				m_currentState.ClientRequestAllyBotTeammates = stateParams.ClientRequestAllyBotTeammates;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				flags |= (ushort)RefreshFunctionType.RefreshGameSubTypes;
 			}
-			if (characterSelectSceneStateParameters.SelectedAllyBotDifficulty != null)
+			if (stateParams.SelectedAllyBotDifficulty != null)
 			{
-				m_currentState.SelectedAllyBotDifficulty = characterSelectSceneStateParameters.SelectedAllyBotDifficulty;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				m_currentState.SelectedAllyBotDifficulty = stateParams.SelectedAllyBotDifficulty;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
-			if (characterSelectSceneStateParameters.SelectedEnemyBotDifficulty != null)
+			if (stateParams.SelectedEnemyBotDifficulty != null)
 			{
-				m_currentState.SelectedEnemyBotDifficulty = characterSelectSceneStateParameters.SelectedEnemyBotDifficulty;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				m_currentState.SelectedEnemyBotDifficulty = stateParams.SelectedEnemyBotDifficulty;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
-			if (characterSelectSceneStateParameters.ClientRequestedAllyBotDifficulty != null)
+			if (stateParams.ClientRequestedAllyBotDifficulty != null)
 			{
-				m_currentState.ClientRequestedAllyBotDifficulty = characterSelectSceneStateParameters.ClientRequestedAllyBotDifficulty;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				m_currentState.ClientRequestedAllyBotDifficulty = stateParams.ClientRequestedAllyBotDifficulty;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
-			if (characterSelectSceneStateParameters.ClientRequestedEnemyBotDifficulty != null)
+			if (stateParams.ClientRequestedEnemyBotDifficulty != null)
 			{
-				m_currentState.ClientRequestedEnemyBotDifficulty = characterSelectSceneStateParameters.ClientRequestedEnemyBotDifficulty;
-				num |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
+				m_currentState.ClientRequestedEnemyBotDifficulty = stateParams.ClientRequestedEnemyBotDifficulty;
+				flags |= (ushort)RefreshFunctionType.RefreshBotSkillPanel;
 			}
-			if (characterSelectSceneStateParameters.CustomGamePartyListVisible != null)
+			if (stateParams.CustomGamePartyListVisible != null)
 			{
-				m_currentState.CustomGamePartyListVisible = characterSelectSceneStateParameters.CustomGamePartyListVisible;
-				num |= (ushort)RefreshFunctionType.RefreshPartyList;
+				m_currentState.CustomGamePartyListVisible = stateParams.CustomGamePartyListVisible;
+				flags |= (ushort)RefreshFunctionType.RefreshPartyList;
 			}
-			if (characterSelectSceneStateParameters.CustomGamePartyListHidden != null)
+			if (stateParams.CustomGamePartyListHidden != null)
 			{
-				m_currentState.CustomGamePartyListHidden = characterSelectSceneStateParameters.CustomGamePartyListHidden;
-				num |= (ushort)RefreshFunctionType.RefreshPartyList;
+				m_currentState.CustomGamePartyListHidden = stateParams.CustomGamePartyListHidden;
+				flags |= (ushort)RefreshFunctionType.RefreshPartyList;
 			}
 		}
-		DoRefreshFunctions(num);
+		DoRefreshFunctions(flags);
 		base.HandleNewSceneStateParameter(parameters);
 	}
 
 	public void UpdateSubTypeMaskChecks(ushort subTypeMask)
 	{
-		for (int i = 0; i < m_gameSubTypeBtns.Count; i++)
+		foreach (GameSubTypeState gameSubTypeBtn in m_gameSubTypeBtns)
 		{
-			if ((m_gameSubTypeBtns[i].SubTypeBit & subTypeMask) != 0)
-			{
-				m_gameSubTypeBtns[i].btn.SetOn(true);
-			}
-			else
-			{
-				m_gameSubTypeBtns[i].btn.SetOn(false);
-			}
+			gameSubTypeBtn.btn.SetOn((gameSubTypeBtn.SubTypeBit & subTypeMask) != 0);
 		}
 	}
 
@@ -470,11 +445,11 @@ public class UICharacterScreen : UIScene
 				}
 				else
 				{
-					for (int i = 0; i < m_gameSubTypeBtns.Count; i++)
+					foreach (GameSubTypeState subTypeBtn in m_gameSubTypeBtns)
 					{
-						if (m_gameSubTypeBtns[i].btn.IsChecked())
+						if (subTypeBtn.btn.IsChecked())
 						{
-							newMask = (ushort)(m_gameSubTypeBtns[i].SubTypeBit | newMask);
+							newMask = (ushort)(subTypeBtn.SubTypeBit | newMask);
 						}
 					}
 				}
@@ -502,10 +477,7 @@ public class UICharacterScreen : UIScene
 			{
 				using (Dictionary<ushort, GameSubType>.Enumerator enumerator2 = gameTypeSubTypes2.GetEnumerator())
 				{
-					if (!enumerator2.MoveNext())
-					{
-					}
-					else
+					if (enumerator2.MoveNext())
 					{
 						KeyValuePair<ushort, GameSubType> keyValuePair2 = enumerator2.Current;
 						newMask = keyValuePair2.Key;
@@ -2408,17 +2380,14 @@ public class UICharacterScreen : UIScene
 		{
 			get
 			{
-				if (AppState.GetCurrent() == AppState_CharacterSelect.Get())
+				if (AppState.GetCurrent() == AppState_CharacterSelect.Get()
+				    && SelectedCharacterFromGameInfo.IsValidForHumanPreGameSelection())
 				{
-					if (SelectedCharacterFromGameInfo.IsValidForHumanPreGameSelection())
-					{
-						return SelectedCharacterFromGameInfo;
-					}
+					return SelectedCharacterFromGameInfo;
 				}
 				if (ClientRequestToServerSelectCharacter != null)
 				{
-					CharacterType? clientRequestToServerSelectCharacter = ClientRequestToServerSelectCharacter;
-					return clientRequestToServerSelectCharacter.Value;
+					return ClientRequestToServerSelectCharacter.Value;
 				}
 				if (SelectedCharacterInGroup.IsValidForHumanPreGameSelection())
 				{
@@ -2426,8 +2395,7 @@ public class UICharacterScreen : UIScene
 				}
 				if (ClientSelectedCharacter != null)
 				{
-					CharacterType? clientSelectedCharacter = ClientSelectedCharacter;
-					return clientSelectedCharacter.Value;
+					return ClientSelectedCharacter.Value;
 				}
 				return SelectedCharacterFromPlayerData;
 			}
