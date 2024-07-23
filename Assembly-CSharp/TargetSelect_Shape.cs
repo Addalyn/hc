@@ -357,7 +357,7 @@ public class TargetSelect_Shape : GenericAbility_TargetSelectBase
                 endPos,
                 0f,
                 0f,
-                0.5f * m_moveLineWidth,
+                0.5f * GetMoveLineWidth(), // m_moveLineWidth in rogues
                 IgnoreLos(),
                 caster,
                 relevantTeams,
