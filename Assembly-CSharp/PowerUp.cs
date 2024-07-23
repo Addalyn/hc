@@ -569,7 +569,12 @@ public class PowerUp : NetworkBehaviour
 #if SERVER
 	public bool CanBePickedUpByActor(ActorData taker)
 	{
-		return !(taker == null) && !taker.IsDead() && (!(SpawnPointManager.Get() != null) || SpawnPointManager.Get().m_respawnActorsCanCollectPowerUps || !taker.IgnoreForAbilityHits) && m_fate == PowerupFate.Unclaimed && TeamAllowedForPickUp(taker.GetTeam()) && !taker.GetActorStatus().HasStatus(StatusType.CantCollectPowerups, true);
+		return taker != null
+		       && !taker.IsDead()
+		       && (SpawnPointManager.Get() == null || SpawnPointManager.Get().m_respawnActorsCanCollectPowerUps || !taker.IgnoreForAbilityHits)
+		       && m_fate == PowerupFate.Unclaimed
+		       && TeamAllowedForPickUp(taker.GetTeam())
+		       && !taker.GetActorStatus().HasStatus(StatusType.CantCollectPowerups, true);
 	}
 #endif
 
@@ -701,28 +706,33 @@ public class PowerUp : NetworkBehaviour
 		{
 			return;
 		}
-		MovementInstance movementInstance = null;
+		MovementInstance pickupMovementInstance = null;
 		float currentShortestMoveCost = 0f;
 		BoardSquarePathInfo triggeringPathSegment = null;
-		foreach (MovementInstance movementInstance2 in movement.m_movementInstances)
+		foreach (MovementInstance movementInstance in movement.m_movementInstances)
 		{
-			if (CanBePickedUpByActor(movementInstance2.m_mover))
+			if (!CanBePickedUpByActor(movementInstance.m_mover))
 			{
-				for (BoardSquarePathInfo boardSquarePathInfo = movementInstance2.m_path; boardSquarePathInfo != null; boardSquarePathInfo = boardSquarePathInfo.next)
+				continue;
+			}
+			for (BoardSquarePathInfo step = movementInstance.m_path; step != null; step = step.next)
+			{
+				if ((movementInstance.m_groundBased || step.IsPathEndpoint())
+				    && !step.IsPathStartPoint()
+				    && !step.m_moverClashesHere
+				    && step.square == m_boardSquare
+				    && MovementUtils.IsBetterMovementPathForGameplayThan(movementInstance, step.moveCost, pickupMovementInstance, currentShortestMoveCost))
 				{
-					if ((movementInstance2.m_groundBased || boardSquarePathInfo.IsPathEndpoint()) && !boardSquarePathInfo.IsPathStartPoint() && !boardSquarePathInfo.m_moverClashesHere && boardSquarePathInfo.square == m_boardSquare && MovementUtils.IsBetterMovementPathForGameplayThan(movementInstance2, boardSquarePathInfo.moveCost, movementInstance, currentShortestMoveCost))
-					{
-						movementInstance = movementInstance2;
-						currentShortestMoveCost = boardSquarePathInfo.moveCost;
-						triggeringPathSegment = boardSquarePathInfo;
-						break;
-					}
+					pickupMovementInstance = movementInstance;
+					currentShortestMoveCost = step.moveCost;
+					triggeringPathSegment = step;
+					break;
 				}
 			}
 		}
-		if (movementInstance != null)
+		if (pickupMovementInstance != null)
 		{
-			ActorData mover = movementInstance.m_mover;
+			ActorData mover = pickupMovementInstance.m_mover;
 			if (m_ability is PowerUp_Standard_Ability)
 			{
 				MovementResults item = BuildPickUpMovementResults(mover, triggeringPathSegment, movement.m_movementStage);
