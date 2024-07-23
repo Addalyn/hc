@@ -382,7 +382,7 @@ public class IceborgDamageArea : GenericAbility_Container
 		BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
 		m_syncComp.Networkm_damageAreaCenterX = (short)targetSquare.x;
 		m_syncComp.Networkm_damageAreaCenterY = (short)targetSquare.y;
-		m_syncComp.Networkm_damageAreaFreePos = targets[0].FreePos;
+		m_syncComp.Networkm_damageAreaFreePos = AreaEffectUtils.GetCenterOfShape(GetGroundFieldData().shape, targets[0].FreePos, targetSquare);
 	}
 
 	// custom
