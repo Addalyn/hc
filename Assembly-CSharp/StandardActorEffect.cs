@@ -634,8 +634,9 @@ public class StandardActorEffect : Effect
 							m_statusAdded.RemoveAt(i);
 						}
 					}
+					m_invisibilityBroken = true; // custom - do not consider invis broken if it's already removed
 				}
-				m_invisibilityBroken = true;
+				// m_invisibilityBroken = true; // rogues
 				m_invisibilityRemoved = true;
 			}
 			else if (m_data.m_invisBreakMode == StandardActorEffectData.InvisibilityBreakMode.SuppressOnly && Target.GetAbilityData() != null)
