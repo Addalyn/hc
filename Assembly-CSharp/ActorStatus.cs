@@ -569,51 +569,56 @@ public class ActorStatus : NetworkBehaviour
 		if (NetworkServer.active && gained)
 		{
 			List<Effect> actorEffects = ServerEffectManager.Get().GetActorEffects(m_actorData);
-			List<Effect> list = new List<Effect>();
-			if (status == StatusType.BuffImmune)
+			List<Effect> effectsToRemove = new List<Effect>();
+			switch (status)
 			{
-				using (List<Effect>.Enumerator enumerator = actorEffects.GetEnumerator())
+				case StatusType.BuffImmune:
 				{
-					while (enumerator.MoveNext())
+					foreach (Effect effect in actorEffects)
 					{
-						Effect effect = enumerator.Current;
-						if (effect.IsBuff() && effect.CanBeDispelledByStatusImmunity() && !list.Contains(effect))
+						if (effect.IsBuff()
+						    && effect.CanBeDispelledByStatusImmunity()
+						    && !effectsToRemove.Contains(effect))
 						{
-							list.Add(effect);
+							effectsToRemove.Add(effect);
 						}
 					}
-					goto IL_126;
+
+					break;
 				}
-			}
-			if (status == StatusType.DebuffImmune)
-			{
-				using (List<Effect>.Enumerator enumerator = actorEffects.GetEnumerator())
+				case StatusType.DebuffImmune:
 				{
-					while (enumerator.MoveNext())
+					foreach (Effect effect in actorEffects)
 					{
-						Effect effect2 = enumerator.Current;
-						if (effect2.IsDebuff() && effect2.CanBeDispelledByStatusImmunity() && !list.Contains(effect2))
+						if (effect.IsDebuff()
+						    && effect.CanBeDispelledByStatusImmunity()
+						    && !effectsToRemove.Contains(effect))
 						{
-							list.Add(effect2);
+							effectsToRemove.Add(effect);
 						}
 					}
-					goto IL_126;
+
+					break;
 				}
-			}
-			if (status == StatusType.MovementDebuffImmunity || status == StatusType.Unstoppable)
-			{
-				foreach (Effect effect3 in actorEffects)
+				case StatusType.MovementDebuffImmunity:
+				case StatusType.Unstoppable:
 				{
-					if (effect3.HasDispellableMovementDebuff() && effect3.CanBeDispelledByStatusImmunity() && !list.Contains(effect3))
+					foreach (Effect effect in actorEffects)
 					{
-						list.Add(effect3);
+						if (effect.HasDispellableMovementDebuff()
+						    && effect.CanBeDispelledByStatusImmunity()
+						    && !effectsToRemove.Contains(effect))
+						{
+							effectsToRemove.Add(effect);
+						}
 					}
+
+					break;
 				}
 			}
-			IL_126:
-			if (list.Count > 0)
+			if (effectsToRemove.Count > 0)
 			{
-				ServerEffectManager.Get().RemoveEffects(list, actorEffects);
+				ServerEffectManager.Get().RemoveEffects(effectsToRemove, actorEffects);
 			}
 		}
 #endif
