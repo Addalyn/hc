@@ -692,34 +692,32 @@ public class StandardActorEffect : Effect
 
 	public override bool HasDispellableMovementDebuff()
 	{
-		bool flag = false;
-		int num = 0;
-		while (num < m_data.m_statMods.Length && !flag)
+		foreach (AbilityStatMod abilityStatMod in m_data.m_statMods)
 		{
-			AbilityStatMod abilityStatMod = m_data.m_statMods[num];
-			if (abilityStatMod.stat == StatType.Movement_Horizontal)
+			if (abilityStatMod.stat != StatType.Movement_Horizontal)
 			{
-				if (abilityStatMod.modType == ModType.Multiplier)
-				{
-					flag = (abilityStatMod.modValue < 1f);
-				}
-				else
-				{
-					flag = (abilityStatMod.modValue < 0f);
-				}
+				continue;
 			}
-			num++;
+			
+			bool isDebuff = abilityStatMod.modType == ModType.Multiplier
+				? abilityStatMod.modValue < 1f
+				: abilityStatMod.modValue < 0f;
+
+			if (isDebuff)
+			{
+				return true;
+			}
 		}
-		int num2 = 0;
-		while (num2 < m_data.m_statusChanges.Length && !flag)
+		
+		foreach (StatusType statusChange in m_data.m_statusChanges)
 		{
-			if (ActorStatus.IsDispellableMovementDebuff(m_data.m_statusChanges[num2]))
+			if (ActorStatus.IsDispellableMovementDebuff(statusChange))
 			{
-				flag = true;
+				return true;
 			}
-			num2++;
 		}
-		return flag;
+		
+		return false;
 	}
 
 	public void OverrideCanBeDispelledByStatusImmunity(bool canBeDispelled)
