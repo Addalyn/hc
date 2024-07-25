@@ -108,6 +108,13 @@ public class ScampDelayedAoeEffect : StandardActorEffect
             effectResults.StoreActorHit(actorHitResults);
         }
 
+        if (!endedSequence)
+        {
+            ActorHitResults casterHitResults = new ActorHitResults(new ActorHitParameters(Caster, Caster.GetFreePos()));
+            EndAllEffectSequences(casterHitResults);
+            effectResults.StoreActorHit(casterHitResults);
+        }
+
         effectResults.StoreNonActorTargetInfo(nonActorTargetInfo);
     }
 
