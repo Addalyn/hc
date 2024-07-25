@@ -6,7 +6,6 @@ using UnityEngine;
 
 #if SERVER
 // custom
-// TODO SCAMP affected by energized - should it be?
 public class ScampOrbEffect : Effect
 {
     private readonly int m_orbEnergyGainOnTrigger;
@@ -37,7 +36,6 @@ public class ScampOrbEffect : Effect
     
     public override ServerClientUtils.SequenceStartData GetEffectStartSeqData()
     {
-        // TODO SCAMP RemoveAtEndOfTurn = false?
         return new ServerClientUtils.SequenceStartData(
             m_orbPersistentSeqPrefab,
             TargetSquare,
