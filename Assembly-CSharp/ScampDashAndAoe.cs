@@ -228,5 +228,22 @@ public class ScampDashAndAoe : GenericAbility_Container
 		}
 		return base.GetModifiedMoveStartSquare(caster, targets);
 	}
+	
+	// custom
+	public override void OnDodgedDamage(ActorData caster, int damageDodged)
+	{
+		caster.GetFreelancerStats().AddToValueOfStat(FreelancerStats.ScampStats.DashDamageDoneAndAvoided, damageDodged);
+	}
+	
+	// custom
+	public override void OnExecutedActorHit_Ability(ActorData caster, ActorData target, ActorHitResults results)
+	{
+		if (results.FinalDamage > 0)
+		{
+			caster.GetFreelancerStats().AddToValueOfStat(
+				FreelancerStats.ScampStats.DashDamageDoneAndAvoided,
+				results.FinalDamage);
+		}
+	}
 #endif
 }

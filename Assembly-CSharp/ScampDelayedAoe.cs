@@ -170,5 +170,16 @@ public class ScampDelayedAoe : GenericAbility_Container
 	{
 		return (GetTargetSelectComp() as TargetSelect_AoeRadius)?.m_radius ?? 0;
 	}
+	
+	// custom
+	public override void OnExecutedActorHit_Effect(ActorData caster, ActorData target, ActorHitResults results)
+	{
+		if (results.FinalDamage > 0)
+		{
+			caster.GetFreelancerStats().AddToValueOfStat(
+				FreelancerStats.ScampStats.DelayedAoeDamageDone,
+				results.FinalDamage);
+		}
+	}
 #endif
 }

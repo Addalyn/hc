@@ -345,6 +345,12 @@ public class ScampSuitToggle : Ability
 				actorHitResults.AddEffectForRemoval(orbEffect);
 			}
 		}
+
+		actorHitResults.AddMiscHitEvent(
+			new MiscHitEventData_UpdateFreelancerStat(
+				(int)FreelancerStats.ScampStats.UltShieldGenerated,
+				absorb,
+				caster));
 		
 		abilityResults.StoreActorHit(actorHitResults);
 	}

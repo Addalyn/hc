@@ -233,5 +233,16 @@ public class ScampAoeTether : Ability
 			abilityResults.StoreActorHit(actorHitResults);
 		}
 	}
+	
+	// custom
+	public override void OnExecutedActorHit_Effect(ActorData caster, ActorData target, ActorHitResults results)
+	{
+		if (caster.GetTeam() != target.GetTeam()
+		    && results.HasKnockback
+		    && !target.GetActorStatus().HasStatus(StatusType.Unstoppable))
+		{
+			caster.GetFreelancerStats().IncrementValueOfStat(FreelancerStats.ScampStats.TetherNumKnockbacks);
+		}
+	}
 #endif
 }

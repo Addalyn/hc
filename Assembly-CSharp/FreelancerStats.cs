@@ -192,10 +192,10 @@ public class FreelancerStats : NetworkBehaviour
 	// removed in rogues
 	public enum ScampStats
 	{
-		DashDamageDoneAndAvoided,
-		TetherNumKnockbacks,
-		DelayedAoeDamageDone,
-		UltShieldGenerated
+		DashDamageDoneAndAvoided, // How much damage you dodged and dealt with [ABILITY_1]
+		TetherNumKnockbacks, // Number of enemies knocked back with [ABILITY_2]
+		DelayedAoeDamageDone, // How much damage you dealt to enemies with [ABILITY_3].
+		UltShieldGenerated // How many shields you generated with [ABILITY_4].
 	}
 
 	public enum ScoundrelStats
