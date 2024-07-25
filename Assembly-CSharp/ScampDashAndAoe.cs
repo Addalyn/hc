@@ -50,7 +50,7 @@ public class ScampDashAndAoe : GenericAbility_Container
 	{
 		m_syncComp = GetComponent<Scamp_SyncComponent>();
 #if SERVER
-		m_passive = GetPassiveOfType(typeof(Passive_Dino)) as Passive_Scamp; // custom
+		m_passive = GetPassiveOfType<Passive_Scamp>(); // custom
 #endif
 		base.SetupTargetersAndCachedVars();
 		m_cachedShieldDownOnHitData = m_abilityMod != null
