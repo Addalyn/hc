@@ -710,7 +710,6 @@ public class StandardActorEffect : Effect
 		}
 		
 		foreach (StatusType statusChange in m_data.m_statusChanges)
-		// TODO STATUSES Why don't we check m_statusAdded instead? Do we need to dispel if we've never added a movement debuff?
 		{
 			if (ActorStatus.IsDispellableMovementDebuff(statusChange))
 			{

@@ -50,9 +50,6 @@ public class SenseiAppendStatusEffect : StandardActorEffect
 		m_hitOnEnemySequencePrefab = hitOnEnemySequencePrefab;
 		
 		OverrideCanBeDispelledByStatusImmunity(false); // custom
-		// TODO SENSEI This is not quite right. If target gets unstoppable (not as status on cast)
-		// and does not transfer the effect, they will be slowed the following turn
-		// (with the slow mod on SenseiAppendStatus).
 	}
 
 	public override List<ServerClientUtils.SequenceStartData> GetEffectStartSeqDataList()
