@@ -1,5 +1,6 @@
 // ROGUES
 // SERVER
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -234,7 +235,10 @@ public class ScampSuitToggle : Ability
 	{
 		base.Run(targets, caster, additionalData);
 
-		m_syncComp.Networkm_suitActive = true;
+		if (!m_syncComp.m_suitWasActiveOnTurnStart)
+		{
+			m_passive.SetShieldActive(true);
+		}
 	}
 
 	// custom
@@ -279,17 +283,37 @@ public class ScampSuitToggle : Ability
 	public override void GatherAbilityResults(List<AbilityTarget> targets, ActorData caster, ref AbilityResults abilityResults)
 	{
 		ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(caster, caster.GetFreePos()));
-		
-		StandardActorEffectData effectData = m_passive.m_shieldEffectData.GetShallowCopy();
 
 		int absorb = Mathf.RoundToInt(ActorData.ReservedTechPoints * GetEnergyToShieldMult()); // all TP were reserved for cast
-		absorb = Mathf.Clamp(absorb, 1, m_passive.GetMaxSuitShield() - (int)m_syncComp.m_suitShieldingOnTurnStart); // TODO SCAMP or does it clamp on turn end?
-		effectData.m_absorbAmount = absorb;
-		actorHitResults.AddStandardEffectInfo(new StandardEffectInfo
+		absorb = Mathf.Clamp(absorb, 1, m_passive.GetMaxSuitShield());
+
+		int totalAbsorb = (int)m_syncComp.m_suitShieldingOnTurnStart + absorb;
+		int permanentAbsorb = Math.Min(totalAbsorb, m_passive.GetMaxSuitShield());
+		int temporaryAbsorb = totalAbsorb - permanentAbsorb;
+
+		foreach (StandardActorEffect oldEffect in m_passive.GetShieldEffects())
 		{
-			m_applyEffect = true,
-			m_effectData = effectData
-		});
+			actorHitResults.AddEffectForRemoval(oldEffect);
+		}
+
+		StandardActorEffectData effectData = m_passive.m_shieldEffectData.GetShallowCopy();
+		effectData.m_absorbAmount = permanentAbsorb;
+		actorHitResults.AddStandardEffectInfo(
+			new StandardEffectInfo
+			{
+				m_applyEffect = true,
+				m_effectData = effectData
+			});
+
+		if (temporaryAbsorb > 0)
+		{
+			actorHitResults.AddEffect(
+				GenericAbility_Container.CreateShieldEffect(
+					this,
+					caster,
+					temporaryAbsorb,
+					1));
+		}
 
 		if (!m_syncComp.m_suitWasActiveOnTurnStart)
 		{

@@ -184,10 +184,8 @@ public class Passive_Scamp : Passive
 		{
 			DestroyShield(effects);
 			m_syncComp.CallRpcPlayShieldRemoveAnim();
-			m_syncComp.CallRpcResetTargetersForSuitMode(false);
-			m_syncComp.Networkm_suitActive = false;
 			m_syncComp.Networkm_lastSuitLostTurn = (uint)GameFlowData.Get().CurrentTurn;
-			m_syncComp.CallRpcSetAnimParamForSuit(false);
+			SetShieldActive(false);
 
 			if (m_clearEnergyOnSuitRemoval)
 			{
@@ -219,11 +217,17 @@ public class Passive_Scamp : Passive
 			Owner,
 			actorHitResults,
 			m_ultimateAbility);
-		m_syncComp.CallRpcResetTargetersForSuitMode(true);
-		m_syncComp.Networkm_suitActive = true;
-		m_syncComp.CallRpcSetAnimParamForSuit(true);
+		SetShieldActive(true);
 	}
-	
+
+	// custom
+	public void SetShieldActive(bool isActive)
+	{
+		m_syncComp.CallRpcResetTargetersForSuitMode(isActive);
+		m_syncComp.Networkm_suitActive = isActive;
+		m_syncComp.CallRpcSetAnimParamForSuit(isActive);
+	}
+
 	// custom
 	private void DestroyShield(List<StandardActorEffect> effects)
 	{
@@ -380,7 +384,7 @@ public class Passive_Scamp : Passive
 	}
 
 	// custom
-	private List<StandardActorEffect> GetShieldEffects()
+	public List<StandardActorEffect> GetShieldEffects()
 	{
 		return ServerEffectManager
 			.Get()
