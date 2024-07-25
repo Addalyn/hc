@@ -60,7 +60,7 @@ public class ActorHitResults
 	//private List<EffectTriggerTemplate> m_effectTriggerTemplates;  // rogues?
 
 	[JsonProperty] // custom attribute
-	private List<ServerAbilityUtils.EffectRemovalData> m_effectsForRemoval;
+	internal List<ServerAbilityUtils.EffectRemovalData> m_effectsForRemoval; // private in rogues
 	[JsonProperty] // custom attribute
 	private List<ServerAbilityUtils.EffectRefreshData> m_effectsForRefresh;
 	[JsonProperty] // custom attribute

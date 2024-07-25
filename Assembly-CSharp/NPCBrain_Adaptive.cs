@@ -535,10 +535,11 @@ public class NPCBrain_Adaptive : NPCBrain
 			PotentialChoice choice = m_potentialChoices.TryGetValue(j);
 			if (choice != null)
 			{
-				Log.Info("{0} best target for ability {1} - {2} - Reasoning:\n{3}Final score: {4}",
+				Log.Info("{0} best target for ability {1} - {2} <{3}> - Reasoning:\n{4}Final score: {5}",
 					actorData.DisplayName,
 					j,
 					abilityName,
+					string.Join(" ", choice.targetList.Select(t => $"GridPos:{t.GridPos} FreePos:{t.FreePos} AimDir:{t.AimDirection}").ToArray()),
 					choice.reasoning,
 					choice.score);
 			}
@@ -652,8 +653,20 @@ public class NPCBrain_Adaptive : NPCBrain
 				else
 				{
 					// can't win being predictable
-					float f = (bestPrimaryChoice.damageTotal - 30.0f) / 50;
+					float f = Mathf.Max(0f, (bestPrimaryChoice.damageTotal - 30.0f) / 50);
 					castFreeAction = Random.Range(0.0f, 1.0f) < Mathf.Clamp(f*f, 0.0f, 0.95f);
+				}
+			}
+			else if (ability is ScampAoeTether)
+			{
+				if (bestPrimaryActionType == AbilityData.ActionType.ABILITY_1)
+				{
+					castFreeAction = potentialChoice.Value.numEnemyTargetsHit > 0;
+				}
+				else
+				{
+					float f = Mathf.Max(0f, (potentialChoice.Value.numEnemyTargetsHit - .5f) / 1.5f);
+					castFreeAction = Random.Range(0.0f, 1.0f) < Mathf.Clamp(f, 0.0f, 0.95f);
 				}
 			}
 			// end custom
@@ -1760,6 +1773,9 @@ public class NPCBrain_Adaptive : NPCBrain
 				break;
 			case AbilityUtil_Targeter_RampartKnockbackBarrier targeterRampartKnockbackBarrier: // custom TODO BOTS Rampart wall
 				potentialTargets = GeneratePotentialAbilityTargetLocations(8f, includeEnemies, includeFriendlies, includeSelf);
+				break;
+			case AbilityUtil_Targeter_ScampDualLasers  targeterScampDualLasers: // custom TODO BOTS Scamp could play around cover better
+				potentialTargets = GeneratePotentialAbilityTargetLocations(targeterScampDualLasers.m_maxMeetingDistFromCaster * Board.Get().squareSize, includeEnemies, includeFriendlies, includeSelf);
 				break;
 			default:
 			{
@@ -3136,6 +3152,13 @@ public class NPCBrain_Adaptive : NPCBrain
 						absorb /= 2f;
 						potentialChoice.score += absorb;
 					}
+					
+					// custom - infinite duration shields
+					if (effectData.m_duration <= 0)
+					{
+						potentialChoice.score += absorb;
+					}
+					// end custom
 
 					potentialChoice.score += (1f - actorToHitResult.Key.GetHitPointPercent()) * 0.1f;
 					float shieldScore = potentialChoice.score - score;
@@ -3197,6 +3220,21 @@ public class NPCBrain_Adaptive : NPCBrain
 					}
 				}
 			}
+			
+			// custom
+			if (!actorToHitResult.Value.m_effectsForRemoval.IsNullOrEmpty())
+			{
+				foreach (ServerAbilityUtils.EffectRemovalData effectRemovalData in actorToHitResult.Value.m_effectsForRemoval)
+				{
+					float absorb = effectRemovalData.m_effectToRemove.Absorbtion.m_absorbRemaining;
+					if (absorb > 0)
+					{
+						potentialChoice.score -= absorb;
+						potentialChoice.reasoning += $"Removing {absorb} score for losing shield effect.\n";
+					}
+				}
+			}
+			// end custom
 		}
 	}
 

@@ -284,7 +284,7 @@ public class ScampSuitToggle : Ability
 	{
 		ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(caster, caster.GetFreePos()));
 
-		int absorb = Mathf.RoundToInt(ActorData.ReservedTechPoints * GetEnergyToShieldMult()); // all TP were reserved for cast
+		int absorb = Mathf.RoundToInt((ActorData.TechPoints + ActorData.ReservedTechPoints) * GetEnergyToShieldMult()); // all TP were reserved for cast but not for bot aiming
 		absorb = Mathf.Clamp(absorb, 1, m_passive.GetMaxSuitShield());
 
 		int totalAbsorb = (int)m_syncComp.m_suitShieldingOnTurnStart + absorb;
