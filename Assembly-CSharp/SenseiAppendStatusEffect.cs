@@ -48,8 +48,6 @@ public class SenseiAppendStatusEffect : StandardActorEffect
 		m_requireDamageToTransfer = requireDamageToTransfer;
 		m_hitOnAllySequencePrefab = hitOnAllySequencePrefab;
 		m_hitOnEnemySequencePrefab = hitOnEnemySequencePrefab;
-		
-		OverrideCanBeDispelledByStatusImmunity(false); // custom
 	}
 
 	public override List<ServerClientUtils.SequenceStartData> GetEffectStartSeqDataList()
