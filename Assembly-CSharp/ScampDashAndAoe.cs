@@ -1,5 +1,6 @@
 // ROGUES
 // SERVER
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -196,7 +197,7 @@ public class ScampDashAndAoe : GenericAbility_Container
 		ActorHitResults casterHitResults = GetOrAddHitResults(caster, actorHitResults);
 		if (IsInSuit() && GetShieldCost() > 0)
 		{
-			casterHitResults.AddBaseDamage(GetShieldCost()); // TODO SCAMP wording feels weird. What if you don't have enough shields? Does it cap?
+			casterHitResults.AddBaseDamage((int)Math.Min(GetShieldCost(), m_syncComp.m_suitShieldingOnTurnStart));
 		}
 
 		if (caster.HitPoints < GetShieldDownNoCooldownHealthThresh())
