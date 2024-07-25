@@ -231,17 +231,6 @@ public class ScampSuitToggle : Ability
 
 #if SERVER
 	// custom
-	public override void Run(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
-	{
-		base.Run(targets, caster, additionalData);
-
-		if (!m_syncComp.m_suitWasActiveOnTurnStart)
-		{
-			m_passive.SetShieldActive(true);
-		}
-	}
-
-	// custom
 	public override List<ServerClientUtils.SequenceStartData> GetAbilityRunSequenceStartDataList(
 		List<AbilityTarget> targets,
 		ActorData caster,

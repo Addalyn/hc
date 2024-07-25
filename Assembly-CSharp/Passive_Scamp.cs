@@ -129,6 +129,17 @@ public class Passive_Scamp : Passive
 	}
 
 	// custom
+	public override void OnAbilityPhaseEnd(AbilityPriority phase)
+	{
+		base.OnAbilityPhaseEnd(phase);
+		
+		if (!m_syncComp.m_suitWasActiveOnTurnStart && GetShieldEffects().Count > 0)
+		{
+			SetShieldActive(true); // trying to time suit up animation
+		}
+	}
+
+	// custom
 	public override void OnActorRespawn()
 	{
 		base.OnActorRespawn();
