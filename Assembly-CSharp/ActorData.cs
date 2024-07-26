@@ -7290,7 +7290,8 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 			// TODO LOW It doesn't look like this is how it was handled in the original server,
 			//  but otherwise position is updated on the client too late
 			//  (e.g. player gets hit, plays damage animation while standing on wrong square, and then teleports)
-			if (ServerLastKnownPosSquare != null)
+			if (ServerLastKnownPosSquare != null
+			    && (!ServerActionBuffer.Get().ActorIsEvading(this) || ServerActionBuffer.Get().AbilityPhase != AbilityPriority.Evasion))
 			{
 				Log.Info($"ServerLastKnownPosSquare {DisplayName} {callerStr}" +
 				         $"{oldSquare?.GetGridPos().ToString() ?? "null"} -> {square?.GetGridPos().ToString() ?? "null"}"); // custom debug
