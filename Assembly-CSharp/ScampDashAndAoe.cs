@@ -184,6 +184,14 @@ public class ScampDashAndAoe : GenericAbility_Container
 	
 #if SERVER
 	// custom
+	public override void Run(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		base.Run(targets, caster, additionalData);
+
+		m_passive.OnDash();
+	}
+
+	// custom
 	protected override void ProcessGatheredHits(
 		List<AbilityTarget> targets,
 		ActorData caster,

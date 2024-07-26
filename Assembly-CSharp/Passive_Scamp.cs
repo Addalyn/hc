@@ -1,5 +1,6 @@
 // ROGUES
 // SERVER
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -39,9 +40,16 @@ public class Passive_Scamp : Passive
 	private AbilityData.ActionType m_ultimateAbilityActionType;
 	private ScampAoeTether m_tetherAbility;
 	private AbilityData.ActionType m_tetherAbilityActionType;
+	private ScampDashAndAoe m_dashAbility;
+	private AbilityData.ActionType m_dashAbilityActionType;
 	private Scamp_SyncComponent m_syncComp;
 	private bool m_pendingShield;
 	private int m_pendingCdrOnTether;
+	private int m_furyBallNextDashTurn;
+	private int m_onFootNextDashTurn;
+	
+	public int FuryBallDashCooldownRemaining => Math.Max(0, m_furyBallNextDashTurn - GameFlowData.Get().CurrentTurn);
+	public int OnFootDashCooldownRemaining => Math.Max(0, m_onFootNextDashTurn - GameFlowData.Get().CurrentTurn);
 
 	private static readonly List<Int2> s_orbLocations = new List<Int2>
 	{
@@ -79,10 +87,12 @@ public class Passive_Scamp : Passive
 		base.OnStartup();
 
 		AbilityData abilityData = Owner.GetAbilityData();
-		m_ultimateAbility = abilityData.GetAbilityOfType(typeof(ScampSuitToggle)) as ScampSuitToggle;
+		m_ultimateAbility = abilityData.GetAbilityOfType<ScampSuitToggle>();
 		m_ultimateAbilityActionType = abilityData.GetActionTypeOfAbility(m_ultimateAbility);
-		m_tetherAbility = abilityData.GetAbilityOfType(typeof(ScampAoeTether)) as ScampAoeTether;
+		m_tetherAbility = abilityData.GetAbilityOfType<ScampAoeTether>();
 		m_tetherAbilityActionType = abilityData.GetActionTypeOfAbility(m_tetherAbility);
+		m_dashAbility = abilityData.GetAbilityOfType<ScampDashAndAoe>();
+		m_dashAbilityActionType = abilityData.GetActionTypeOfAbility(m_dashAbility);
 		m_syncComp = Owner.GetComponent<Scamp_SyncComponent>();
 	}
 	
@@ -159,8 +169,11 @@ public class Passive_Scamp : Passive
 		{
 			Owner.SetTechPoints(0);
 		}
+		
+		Owner.GetAbilityData().OverrideCooldown(m_dashAbilityActionType, FuryBallDashCooldownRemaining);
 	}
 
+	// custom
 	public override void OnResolveStart(bool hasAbilities, bool hasMovement)
 	{
 		base.OnResolveStart(hasAbilities, hasMovement);
@@ -223,6 +236,10 @@ public class Passive_Scamp : Passive
 			m_applyEffect = true,
 			m_effectData = m_shieldEffectData
 		});
+		actorHitResults.AddMiscHitEvent(
+			new MiscHitEventData_OverrideCooldown(
+				m_dashAbilityActionType,
+				FuryBallDashCooldownRemaining - 1));
 		MovementResults.SetupAndExecuteAbilityResultsOutsideResolution(
 			Owner,
 			Owner,
@@ -256,6 +273,10 @@ public class Passive_Scamp : Passive
 			new MiscHitEventData_OverrideCooldown(
 				m_ultimateAbilityActionType,
 				m_ultimateAbility.GetCooldownOverrideOnSuitDestroy()));
+		actorHitResults.AddMiscHitEvent(
+			new MiscHitEventData_OverrideCooldown(
+				m_dashAbilityActionType,
+				OnFootDashCooldownRemaining - 1));
 		actorHitResults.AddStandardEffectInfo(m_ultimateAbility.GetEffectForSuitLost());
 		
 		SequenceSource seqSource = new SequenceSource(null, null);
@@ -348,7 +369,6 @@ public class Passive_Scamp : Passive
 			ServerResolutionManager.Get().SendNonResolutionActionToClients(movementResults);
 		}
 	}
-
 	
 	// custom
 	private List<BoardSquare> GetSquaresToSpawnOrbsOn()
@@ -421,6 +441,33 @@ public class Passive_Scamp : Passive
 	public void OnTetherBroken()
 	{
 		m_pendingCdrOnTether = 0;
+	}
+	
+	// custom
+	public override void OnAddToCooldownAttemptOnHit(
+		AbilityData.ActionType actionType,
+		int cooldownChangeDesired,
+		int finalCooldown)
+	{
+		if (actionType == m_dashAbilityActionType && cooldownChangeDesired < 0)
+		{
+			m_furyBallNextDashTurn += cooldownChangeDesired;
+			m_onFootNextDashTurn += cooldownChangeDesired;
+		}
+	}
+	
+	// custom
+	public void OnDash()
+	{
+		int nextDashTurn = GameFlowData.Get().CurrentTurn + m_dashAbility.GetModdedCooldown() + 1;
+		if (m_syncComp != null && m_syncComp.m_suitWasActiveOnTurnStart)
+		{
+			m_furyBallNextDashTurn = nextDashTurn;
+		}
+		else
+		{
+			m_onFootNextDashTurn = nextDashTurn;
+		}
 	}
 #endif
 }

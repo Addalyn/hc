@@ -311,6 +311,10 @@ public class ScampSuitToggle : Ability
 				new MiscHitEventData_OverrideCooldown(
 					m_actionType,
 					GetCooldownCreateSuit()));
+			actorHitResults.AddMiscHitEvent(
+				new MiscHitEventData_OverrideCooldown(
+					m_dashAbilityActionType,
+					m_passive.FuryBallDashCooldownRemaining - 1));
 			if (m_dashAbility.GetCdrOnSuitApply() > 0)
 			{
 				actorHitResults.AddMiscHitEvent(
