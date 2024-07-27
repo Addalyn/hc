@@ -143,7 +143,9 @@ public class Passive_Scamp : Passive
 	{
 		base.OnAbilityPhaseEnd(phase);
 		
-		if (!m_syncComp.m_suitWasActiveOnTurnStart && GetShieldEffects().Count > 0)
+		if (phase == AbilityPriority.Prep_Defense
+		    && !m_syncComp.m_suitWasActiveOnTurnStart
+		    && ServerActionBuffer.Get().HasStoredAbilityRequestOfType(Owner, typeof(ScampSuitToggle)))
 		{
 			SetShieldActive(true); // trying to time suit up animation
 		}
@@ -424,7 +426,7 @@ public class Passive_Scamp : Passive
 		return ServerEffectManager
 			.Get()
 			.GetEffectsOnTargetByCaster(Owner, Owner, typeof(StandardActorEffect))
-			.Where(e => e.Parent.Ability == m_ultimateAbility)
+			.Where(e => e.Parent.Ability == m_ultimateAbility && e.Absorbtion.m_absorbAmount > 0)
 			.Select(e => e as StandardActorEffect)
 			.ToList();
 	}
