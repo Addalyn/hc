@@ -271,20 +271,15 @@ public class ScampSuitToggle : Ability
 	// custom
 	public override void GatherAbilityResults(List<AbilityTarget> targets, ActorData caster, ref AbilityResults abilityResults)
 	{
-		ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(caster, caster.GetFreePos()));
+		ActorHitParameters actorHitParameters = new ActorHitParameters(caster, caster.GetFreePos());
+		ActorHitResults actorHitResults = new ActorHitResults(actorHitParameters);
 
 		int absorb = Mathf.RoundToInt((ActorData.TechPoints + ActorData.ReservedTechPoints) * GetEnergyToShieldMult()); // all TP were reserved for cast but not for bot aiming
 		absorb = Mathf.Clamp(absorb, 1, m_passive.GetMaxSuitShield());
 
-		int totalAbsorb = (int)m_syncComp.m_suitShieldingOnTurnStart + absorb;
-		int permanentAbsorb = Math.Min(totalAbsorb, m_passive.GetMaxSuitShield());
-		int temporaryAbsorb = totalAbsorb - permanentAbsorb;
-
-		foreach (StandardActorEffect oldEffect in m_passive.GetShieldEffects())
-		{
-			actorHitResults.AddEffectForRemoval(oldEffect);
-		}
-
+		int permanentAbsorb = Math.Min(absorb, m_passive.GetMaxSuitShield() - (int)m_syncComp.m_suitShieldingOnTurnStart);
+		int temporaryAbsorb = Math.Max(absorb - permanentAbsorb, 0);
+		
 		StandardActorEffectData effectData = m_passive.m_shieldEffectData.GetShallowCopy();
 		effectData.m_absorbAmount = permanentAbsorb;
 		actorHitResults.AddStandardEffectInfo(

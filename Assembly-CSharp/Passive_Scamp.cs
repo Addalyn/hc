@@ -230,12 +230,16 @@ public class Passive_Scamp : Passive
 	// custom
 	private void CreateShield()
 	{
-		ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(Owner, Owner.GetFreePos()));
-		actorHitResults.AddStandardEffectInfo(new StandardEffectInfo
-		{
-			m_applyEffect = true,
-			m_effectData = m_shieldEffectData
-		});
+		ActorHitParameters actorHitParameters = new ActorHitParameters(Owner, Owner.GetFreePos());
+		ActorHitResults actorHitResults = new ActorHitResults(actorHitParameters);
+		StandardActorEffect shieldEffect = new StandardActorEffect(
+			m_ultimateAbility.AsEffectSource(),
+			Owner.GetCurrentBoardSquare(),
+			Owner,
+			Owner,
+			m_shieldEffectData);
+		shieldEffect.SetIgnoredForStatistics(true);
+		actorHitResults.AddEffect(shieldEffect);
 		actorHitResults.AddMiscHitEvent(
 			new MiscHitEventData_OverrideCooldown(
 				m_dashAbilityActionType,
