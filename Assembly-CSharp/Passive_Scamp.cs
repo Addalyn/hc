@@ -109,6 +109,12 @@ public class Passive_Scamp : Passive
 		
 		m_syncComp.Networkm_suitWasActiveOnTurnStart = m_syncComp.m_suitActive;
 		m_syncComp.Networkm_suitShieldingOnTurnStart = (uint)GetCurrentAbsorb();
+		
+		if (!m_syncComp.m_suitActive && Owner.HitPoints < m_dashAbility.GetShieldDownNoCooldownHealthThresh())
+		{
+			m_onFootNextDashTurn = currentTurn;
+			Owner.GetAbilityData().OverrideCooldown(m_dashAbilityActionType, OnFootDashCooldownRemaining);
+		}
 	}
 
 	// custom

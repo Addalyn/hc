@@ -208,11 +208,6 @@ public class ScampDashAndAoe : GenericAbility_Container
 			casterHitResults.AddBaseDamage((int)Math.Min(GetShieldCost(), m_syncComp.m_suitShieldingOnTurnStart));
 		}
 
-		if (caster.HitPoints < GetShieldDownNoCooldownHealthThresh())
-		{
-			casterHitResults.AddMiscHitEvent(new MiscHitEventData_AddToCasterCooldown(GetActionTypeOfAbility(this), -10));
-		}
-
 		if (GetExtraEnergyForDashOnOrb() > 0)
 		{
 			BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
