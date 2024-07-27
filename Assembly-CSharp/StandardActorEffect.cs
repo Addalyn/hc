@@ -146,7 +146,9 @@ public class StandardActorEffect : Effect
 			ServerCombatManager.Get().TechPointLoss(Parent, Caster, Target, Mathf.Abs(m_data.m_techPointChangeOnStart), ServerCombatManager.TechPointChangeType.Effect);
 		}
 		AddMods();
-		if (Caster != null && Caster.GetActorStats() != null)
+		if (Caster != null
+		    && Caster.GetActorStats() != null
+		    && !IgnoredForStatistics) // custom
 		{
 			int maxAbsorbAmount = GetMaxAbsorbAmount();
 			GameplayMetricHelper.CollectPotentialAbsorbDealt(Caster, maxAbsorbAmount, Parent.Ability);
@@ -200,7 +202,10 @@ public class StandardActorEffect : Effect
 			if (CanAbsorb())
 			{
 				ServerEffectManager.Get().UpdateAbsorbPoints(this);
-				GameplayMetricHelper.CollectPotentialAbsorbDealt(Caster, GetMaxAbsorbAmount(), Parent.Ability);
+				if (!IgnoredForStatistics) // custom, unconditional in rogues
+				{
+					GameplayMetricHelper.CollectPotentialAbsorbDealt(Caster, GetMaxAbsorbAmount(), Parent.Ability);
+				}
 			}
 		}
 		m_absorbToAddOnTurnStart = 0;

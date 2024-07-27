@@ -945,7 +945,24 @@ public class ServerEffectManager : MonoBehaviour
 			{
 				yTimeRemaining = 10000;
 			}
-			return xTimeRemaining.CompareTo(yTimeRemaining);
+
+			int timeRemainingCompare = xTimeRemaining.CompareTo(yTimeRemaining);
+			
+			// custom
+			if (timeRemainingCompare == 0)
+			{
+				if (!x.IgnoredForStatistics && y.IgnoredForStatistics)
+				{
+					return -1;
+				}
+				if (x.IgnoredForStatistics && !y.IgnoredForStatistics)
+				{
+					return 1;
+				}
+			}
+			// end custom
+			
+			return timeRemainingCompare;
 		});
 		foreach (Effect absorbingEffect in absorbingEffects)
 		{

@@ -32,6 +32,9 @@ public class Effect
 	protected List<MovementResults> m_knockbackResults;
 
 	protected List<MovementResults> m_normalMovementResults;
+	
+	private bool m_ignoredForStatistics; // custom
+	public bool IgnoredForStatistics => m_ignoredForStatistics;
 
 	public Effect(EffectSource parent, BoardSquare targetSquare, ActorData target, ActorData caster)
 	{
@@ -162,6 +165,12 @@ public class Effect
 
 	public virtual void GatherResultsInResponseToOutgoingActorHit(ActorHitResults outgoingHit, ref List<AbilityResults_Reaction> reactions, bool isReal)
 	{
+	}
+	
+	// custom
+	public void SetIgnoredForStatistics(bool isIgnored)
+	{
+		m_ignoredForStatistics = isIgnored;
 	}
 
 	public void GatherResultsInResponseToEvades(MovementCollection collection)
@@ -921,8 +930,11 @@ public class Effect
 		}
 		if (num > 0)
 		{
-			GameplayMetricHelper.CollectAbsorbDealt(Caster, num, Parent.Ability);
-			GameplayMetricHelper.CollectAbsorbReceived(Target, num);
+			if (!IgnoredForStatistics) // custom, unconditional in rogues
+			{
+				GameplayMetricHelper.CollectAbsorbDealt(Caster, num, Parent.Ability);
+				GameplayMetricHelper.CollectAbsorbReceived(Target, num);
+			}
 			OnAbsorbedDamage(num);
 		}
 	}
@@ -935,7 +947,11 @@ public class Effect
 			int amount = num - m_absorbtion.m_absorbRemaining;
 			m_absorbtion.m_absorbRemaining = num;
 			ServerEffectManager.Get().UpdateAbsorbPoints(this);
-			GameplayMetricHelper.CollectPotentialAbsorbDealt(Caster, amount, Parent.Ability);
+
+			if (!IgnoredForStatistics) // custom, unconditional in rogues
+			{
+				GameplayMetricHelper.CollectPotentialAbsorbDealt(Caster, amount, Parent.Ability);
+			}
 		}
 	}
 
