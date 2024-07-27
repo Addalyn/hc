@@ -44,6 +44,7 @@ public class Passive_Scamp : Passive
 	private AbilityData.ActionType m_dashAbilityActionType;
 	private Scamp_SyncComponent m_syncComp;
 	private bool m_pendingShield;
+	private bool m_pendingSuitGainEffect;
 	private int m_pendingCdrOnTether;
 	private int m_furyBallNextDashTurn = 2;
 	private int m_onFootNextDashTurn = 2;
@@ -105,6 +106,16 @@ public class Passive_Scamp : Passive
 		if (currentTurn == 1)
 		{
 			CreateShield();
+		}
+		else if (m_syncComp.m_lastSuitLostTurn == currentTurn - 1)
+		{
+			ApplyEffectForSuitLost();
+		}
+
+		if (m_pendingSuitGainEffect)
+		{
+			ApplyEffectForSuitGained();
+			m_pendingSuitGainEffect = false;
 		}
 		
 		m_syncComp.Networkm_suitWasActiveOnTurnStart = m_syncComp.m_suitActive;
@@ -289,7 +300,6 @@ public class Passive_Scamp : Passive
 			new MiscHitEventData_OverrideCooldown(
 				m_dashAbilityActionType,
 				OnFootDashCooldownRemaining - 1));
-		actorHitResults.AddStandardEffectInfo(m_ultimateAbility.GetEffectForSuitLost());
 		
 		SequenceSource seqSource = new SequenceSource(null, null);
 		MovementResults movementResults = new MovementResults(MovementStage.INVALID);
@@ -344,6 +354,35 @@ public class Passive_Scamp : Passive
 		}
 	}
 	
+	// custom
+	private void ApplyEffectForSuitLost()
+	{
+		ApplyEffectForSuit(m_ultimateAbility.GetEffectForSuitLost());
+	}
+	
+	// custom
+	private void ApplyEffectForSuitGained()
+	{
+		ApplyEffectForSuit(m_ultimateAbility.GetEffectForSuitGained());
+	}
+
+	// custom
+	private void ApplyEffectForSuit(StandardEffectInfo effect)
+	{
+		if (!effect.m_applyEffect || Owner.IsDead())
+		{
+			return;
+		}
+		
+		ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(Owner, Owner.GetFreePos()));
+		actorHitResults.AddStandardEffectInfo(effect);
+		MovementResults.SetupAndExecuteAbilityResultsOutsideResolution(
+			Owner,
+			Owner,
+			actorHitResults,
+			m_ultimateAbility);
+	}
+
 	// custom
 	private void DestroyOrbs()
 	{
@@ -479,6 +518,15 @@ public class Passive_Scamp : Passive
 		else
 		{
 			m_onFootNextDashTurn = nextDashTurn;
+		}
+	}
+	
+	// custom
+	public void OnSuitToggle()
+	{
+		if (!m_syncComp.m_suitWasActiveOnTurnStart)
+		{
+			m_pendingSuitGainEffect = true;
 		}
 	}
 #endif

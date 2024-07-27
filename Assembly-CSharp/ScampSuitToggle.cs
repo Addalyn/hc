@@ -268,6 +268,13 @@ public class ScampSuitToggle : Ability
 		return list;
 	}
 
+	public override void Run(List<AbilityTarget> targets, ActorData caster, ServerAbilityUtils.AbilityRunData additionalData)
+	{
+		base.Run(targets, caster, additionalData);
+
+		m_passive.OnSuitToggle();
+	}
+
 	// custom
 	public override void GatherAbilityResults(List<AbilityTarget> targets, ActorData caster, ref AbilityResults abilityResults)
 	{
@@ -301,7 +308,6 @@ public class ScampSuitToggle : Ability
 
 		if (!m_syncComp.m_suitWasActiveOnTurnStart)
 		{
-			actorHitResults.AddStandardEffectInfo(GetEffectForSuitGained());
 			actorHitResults.AddMiscHitEvent(
 				new MiscHitEventData_OverrideCooldown(
 					m_actionType,
