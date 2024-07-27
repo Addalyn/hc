@@ -45,8 +45,8 @@ public class Passive_Scamp : Passive
 	private Scamp_SyncComponent m_syncComp;
 	private bool m_pendingShield;
 	private int m_pendingCdrOnTether;
-	private int m_furyBallNextDashTurn;
-	private int m_onFootNextDashTurn;
+	private int m_furyBallNextDashTurn = 2;
+	private int m_onFootNextDashTurn = 2;
 	
 	public int FuryBallDashCooldownRemaining => Math.Max(0, m_furyBallNextDashTurn - GameFlowData.Get().CurrentTurn);
 	public int OnFootDashCooldownRemaining => Math.Max(0, m_onFootNextDashTurn - GameFlowData.Get().CurrentTurn);
