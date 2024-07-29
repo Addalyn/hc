@@ -75,9 +75,9 @@ public class ScampDashAndAoe : GenericAbility_Container
 
 	public int GetShieldDownCooldown()
 	{
-		int result;
-		result = m_abilityMod != null ? m_abilityMod.m_shieldDownCooldownMod.GetModifiedValue(m_shieldDownCooldown) : m_shieldDownCooldown;
-		return result;
+		return m_abilityMod != null
+			? m_abilityMod.m_shieldDownCooldownMod.GetModifiedValue(m_shieldDownCooldown)
+			: m_shieldDownCooldown;
 	}
 
 	public int GetCdrOnSuitApply()
