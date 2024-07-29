@@ -227,11 +227,11 @@ public class ScampDashAndAoe : GenericAbility_Container
 
 		if (GetExtraEnergyForDashOnOrb() > 0)
 		{
-			ActorHitResults casterHitResults = GetOrAddHitResults(caster, actorHitResults);
 			BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
 			if (m_passive.GetOrbs().Any(e => e.TargetSquare == targetSquare))
 			{
-				casterHitResults.AddTechPointGain(GetExtraEnergyForDashOnOrb());
+				GetOrAddHitResults(caster, actorHitResults)
+					.AddTechPointGain(GetExtraEnergyForDashOnOrb());
 			}
 		}
 	}
