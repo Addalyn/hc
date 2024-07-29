@@ -56,7 +56,7 @@ public class Passive_Dino : Passive
         if (energyCompensation > 0)
         {
             ActorHitResults actorHitResults = new ActorHitResults(new ActorHitParameters(Owner, Owner.GetFreePos()));
-            actorHitResults.AddTechPointGainOnCaster(energyCompensation);
+            actorHitResults.AddDirectTechPointGainOnCaster(energyCompensation);
             MovementResults.SetupAndExecuteAbilityResultsOutsideResolution(
                 Owner,
                 Owner,
