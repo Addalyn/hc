@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using AbilityContextNamespace;
-using UnityEngine;
 
 #if SERVER
 // custom
@@ -84,6 +82,7 @@ public class IceborgNovaCoreEffect : StandardActorEffect
             ActorHitResults actorHitResults = new ActorHitResults(hitParameters);
             actorHitResults.TriggeringHit = incomingHit;
             GenericAbility_Container.ApplyActorHitData(Caster, hitActor, actorHitResults, m_syncComp.m_delayedAoeOnHitData);
+            actorHitResults.SetIgnoreTechpointInteractionForHit(true);
             actorHitResults.AddTechPointGainOnCaster(m_syncComp.m_delayedAoeEnergyPerEnemyHit + energyPerExplosion);
             energyPerExplosion = 0;
             actorHitResults.CanBeReactedTo = false;
