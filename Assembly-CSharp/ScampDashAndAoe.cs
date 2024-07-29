@@ -75,6 +75,12 @@ public class ScampDashAndAoe : GenericAbility_Container
 
 	public int GetShieldDownCooldown()
 	{
+#if !PURE_REACTOR
+		if (ActorData.HitPoints < GetShieldDownNoCooldownHealthThresh())
+		{
+			return 0;
+		}
+#endif
 		return m_abilityMod != null
 			? m_abilityMod.m_shieldDownCooldownMod.GetModifiedValue(m_shieldDownCooldown)
 			: m_shieldDownCooldown;
