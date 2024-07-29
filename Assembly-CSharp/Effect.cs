@@ -915,28 +915,35 @@ public class Effect
 
 	public void AbsorbDamage(ref int damage)
 	{
-		int num;
+		int damageAbsorbed = ReduceAbsorptionRemaining(ref damage); // inlined in rogues
+		if (damageAbsorbed > 0)
+		{
+			if (!IgnoredForStatistics) // custom, unconditional in rogues
+			{
+				GameplayMetricHelper.CollectAbsorbDealt(Caster, damageAbsorbed, Parent.Ability);
+				GameplayMetricHelper.CollectAbsorbReceived(Target, damageAbsorbed);
+			}
+			OnAbsorbedDamage(damageAbsorbed);
+		}
+	}
+
+	public int ReduceAbsorptionRemaining(ref int damage)
+	{
+		int damageAbsorbed;
 		if (damage > m_absorbtion.m_absorbRemaining)
 		{
-			num = m_absorbtion.m_absorbRemaining;
+			damageAbsorbed = m_absorbtion.m_absorbRemaining;
 			damage -= m_absorbtion.m_absorbRemaining;
 			m_absorbtion.m_absorbRemaining = 0;
 		}
 		else
 		{
-			num = damage;
-			m_absorbtion.m_absorbRemaining = m_absorbtion.m_absorbRemaining - damage;
+			damageAbsorbed = damage;
+			m_absorbtion.m_absorbRemaining -= damage;
 			damage = 0;
 		}
-		if (num > 0)
-		{
-			if (!IgnoredForStatistics) // custom, unconditional in rogues
-			{
-				GameplayMetricHelper.CollectAbsorbDealt(Caster, num, Parent.Ability);
-				GameplayMetricHelper.CollectAbsorbReceived(Target, num);
-			}
-			OnAbsorbedDamage(num);
-		}
+
+		return damageAbsorbed;
 	}
 
 	public void RefillAbsorb(int restoreAmount)

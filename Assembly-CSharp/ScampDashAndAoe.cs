@@ -194,6 +194,23 @@ public class ScampDashAndAoe : GenericAbility_Container
 	{
 		base.Run(targets, caster, additionalData);
 
+		if (IsInSuit() && GetShieldCost() > 0)
+		{
+			int shieldCost = (int)Math.Min(GetShieldCost(), m_syncComp.m_suitShieldingOnTurnStart);
+			List<StandardActorEffect> shieldEffects = m_passive.GetShieldEffects();
+			if (!shieldEffects.IsNullOrEmpty())
+			{
+				foreach (StandardActorEffect shieldEffect in shieldEffects)
+				{
+					shieldEffect.ReduceAbsorptionRemaining(ref shieldCost);
+					ServerEffectManager.Get().UpdateAbsorbPoints(shieldEffect);
+					if (shieldCost <= 0)
+					{
+						break;
+					}
+				}
+			}
+		}
 		m_passive.OnDash();
 	}
 
@@ -208,14 +225,9 @@ public class ScampDashAndAoe : GenericAbility_Container
 	{
 		base.ProcessGatheredHits(targets, caster, abilityResults, actorHitResults, positionHitResults, nonActorTargetInfo);
 
-		ActorHitResults casterHitResults = GetOrAddHitResults(caster, actorHitResults);
-		if (IsInSuit() && GetShieldCost() > 0)
-		{
-			casterHitResults.AddBaseDamage((int)Math.Min(GetShieldCost(), m_syncComp.m_suitShieldingOnTurnStart));
-		}
-
 		if (GetExtraEnergyForDashOnOrb() > 0)
 		{
+			ActorHitResults casterHitResults = GetOrAddHitResults(caster, actorHitResults);
 			BoardSquare targetSquare = Board.Get().GetSquare(targets[0].GridPos);
 			if (m_passive.GetOrbs().Any(e => e.TargetSquare == targetSquare))
 			{
