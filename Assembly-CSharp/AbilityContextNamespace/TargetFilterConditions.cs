@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System;
 using System.Collections.Generic;
 
@@ -38,7 +40,10 @@ namespace AbilityContextNamespace
                         desc = string.Concat(
                             desc,
                             indent,
+                            // reactor
                             InEditorDescHelper.ContextVarName(numCompareCondition.m_contextName, !numCompareCondition.m_nonActorSpecificContext),
+                            // rogues
+                            // InEditorDescHelper.ContextVarName(numCompareCondition.m_contextName),
                             " is ",
                             numCompareCondition.m_compareOp,
                             " ",
