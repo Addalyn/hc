@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -51,16 +53,19 @@ namespace AbilityContextNamespace
             return m_vec3Vars[key];
         }
 
+        // removed in rogues
         public bool TryGetInt(int key, out int value)
         {
             return m_intVars.TryGetValue(key, out value);
         }
 
+        // removed in rogues
         public bool TryGetFloat(int key, out float value)
         {
             return m_floatVars.TryGetValue(key, out value);
         }
 
+        // removed in rogues
         public bool TryGetVector(int key, out Vector3 value)
         {
             return m_vec3Vars.TryGetValue(key, out value);
@@ -95,6 +100,35 @@ namespace AbilityContextNamespace
         {
             return m_vec3Vars.ContainsKey(key);
         }
+        
+#if SERVER
+        // added in rogues
+        public ContextVars Clone()
+        {
+            ContextVars contextVars = new ContextVars();
+            contextVars.Merge(this);
+            return contextVars;
+        }
+
+        // added in rogues
+        public void Merge(ContextVars other)
+        {
+            foreach (KeyValuePair<int, int> keyValuePair in other.m_intVars)
+            {
+                SetValue(keyValuePair.Key, keyValuePair.Value);
+            }
+
+            foreach (KeyValuePair<int, float> keyValuePair in other.m_floatVars)
+            {
+                SetValue(keyValuePair.Key, keyValuePair.Value);
+            }
+
+            foreach (KeyValuePair<int, Vector3> keyValuePair in other.m_vec3Vars)
+            {
+                SetValue(keyValuePair.Key, keyValuePair.Value);
+            }
+        }
+#endif
 
         public static string GetContextUsageStr(string contextName, string usage, bool actorContext = true)
         {
