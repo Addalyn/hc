@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System;
 
 namespace AbilityContextNamespace
