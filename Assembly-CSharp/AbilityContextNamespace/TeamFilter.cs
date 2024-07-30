@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 namespace AbilityContextNamespace
 {
     public enum TeamFilter
@@ -7,5 +9,6 @@ namespace AbilityContextNamespace
         AllyIncludingSelf,
         AllyExcludingSelf,
         SelfOnly
+        // EnemyExcludingTarget // rogues
     }
 }
