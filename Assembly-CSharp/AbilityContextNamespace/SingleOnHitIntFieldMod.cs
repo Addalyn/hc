@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,12 +13,12 @@ namespace AbilityContextNamespace
         public bool m_useConditionOverride;
         public TargetFilterConditions m_conditionOverride;
         [Header("-- Base value and its limits")]
-        public AbilityModPropertyInt m_baseValueMod;
-        public AbilityModPropertyInt m_minValueMod;
-        public AbilityModPropertyInt m_maxValueMod;
+        public AbilityModPropertyInt m_baseValueMod; // removed in rogues
+        public AbilityModPropertyInt m_minValueMod; // AbilityModPropertyFloat in rogues
+        public AbilityModPropertyInt m_maxValueMod; // AbilityModPropertyFloat in rogues
         [Header("-- Limits on Base Add Total")]
-        public AbilityModPropertyInt m_baseAddTotalMinValueMod;
-        public AbilityModPropertyInt m_baseAddTotalMaxValueMod;
+        public AbilityModPropertyInt m_baseAddTotalMinValueMod; // AbilityModPropertyFloat in rogues
+        public AbilityModPropertyInt m_baseAddTotalMaxValueMod; // AbilityModPropertyFloat in rogues
         [Header("-- Whether to override base add modifiers")]
         public bool m_useBaseAddModifierOverrides;
         public List<NumericContextOperand> m_baseAddModifierOverrides;
@@ -29,7 +31,7 @@ namespace AbilityContextNamespace
                 copy.m_conditions = m_conditionOverride.GetCopy();
             }
 
-            copy.m_baseValue = m_baseValueMod.GetModifiedValue(baseIntField.m_baseValue);
+            copy.m_baseValue = m_baseValueMod.GetModifiedValue(baseIntField.m_baseValue); // removed in rogues
             copy.m_minValue = m_minValueMod.GetModifiedValue(baseIntField.m_minValue);
             copy.m_maxValue = m_maxValueMod.GetModifiedValue(baseIntField.m_maxValue);
             copy.m_baseAddTotalMinValue = m_baseAddTotalMinValueMod.GetModifiedValue(baseIntField.m_baseAddTotalMinValue);
@@ -57,7 +59,7 @@ namespace AbilityContextNamespace
                     desc += m_conditionOverride.GetInEditorDesc("    ");
                 }
 
-                desc += AbilityModHelper.GetModPropertyDesc(m_baseValueMod, "[BaseValue]", true, baseIntField.m_baseValue);
+                desc += AbilityModHelper.GetModPropertyDesc(m_baseValueMod, "[BaseValue]", true, baseIntField.m_baseValue); // removed in rogues
                 desc += AbilityModHelper.GetModPropertyDesc(m_minValueMod, "[MinValue]", true, baseIntField.m_minValue);
                 desc += AbilityModHelper.GetModPropertyDesc(m_maxValueMod, "[MaxValue]", true, baseIntField.m_maxValue);
                 desc += AbilityModHelper.GetModPropertyDesc(m_baseAddTotalMinValueMod, "[BaseAddTotalMinValue]", true, baseIntField.m_baseAddTotalMinValue);
@@ -86,7 +88,7 @@ namespace AbilityContextNamespace
                 return;
             }
 
-            AbilityMod.AddToken(tokens, m_baseValueMod, name + "_Base", string.Empty, baseIntField.m_baseValue);
+            AbilityMod.AddToken(tokens, m_baseValueMod, name + "_Base", string.Empty, baseIntField.m_baseValue); // removed in rogues
             AbilityMod.AddToken(tokens, m_minValueMod, name + "_Min", string.Empty, baseIntField.m_minValue);
             AbilityMod.AddToken(tokens, m_maxValueMod, name + "_Max", string.Empty, baseIntField.m_maxValue);
             AbilityMod.AddToken(tokens, m_baseAddTotalMinValueMod, name + "_BaseAddTotalMin", string.Empty, baseIntField.m_baseAddTotalMinValue);
