@@ -4,55 +4,50 @@ using UnityEngine;
 
 namespace AbilityContextNamespace
 {
-	[Serializable]
-	public class IntFieldListModData
-	{
-		[Header("-- Evaluated before original's int fields (first match would be used)")]
-		public List<OnHitIntField> m_prependIntFields;
+    [Serializable]
+    public class IntFieldListModData
+    {
+        [Header("-- Evaluated before original's int fields (first match would be used)")]
+        public List<OnHitIntField> m_prependIntFields;
+        [Header("-- Overrides to existing int fields")]
+        public List<IntFieldOverride> m_overrides;
 
-		[Header("-- Overrides to existing int fields")]
-		public List<IntFieldOverride> m_overrides;
+        public List<OnHitIntField> GetModdedIntFieldList(List<OnHitIntField> input)
+        {
+            List<OnHitIntField> list = new List<OnHitIntField>();
+            foreach (OnHitIntField onHitIntField in m_prependIntFields)
+            {
+                list.Add(onHitIntField.GetCopy());
+            }
 
-		public List<OnHitIntField> GetModdedIntFieldList(List<OnHitIntField> input)
-		{
-			List<OnHitIntField> list = new List<OnHitIntField>();
-			for (int i = 0; i < m_prependIntFields.Count; i++)
-			{
-				list.Add(m_prependIntFields[i].GetCopy());
-			}
-			for (int j = 0; j < input.Count; j++)
-			{
-				OnHitIntField onHitIntField = input[j];
-				string identifier = onHitIntField.GetIdentifier();
-				SingleOnHitIntFieldMod singleOnHitIntFieldMod = this.GetOverrideEntry(identifier);
-				if (singleOnHitIntFieldMod != null)
-				{
-					OnHitIntField item = singleOnHitIntFieldMod.GetModdedIntField(onHitIntField);
-					list.Add(item);
-				}
-				else
-				{
-					list.Add(onHitIntField.GetCopy());
-				}
-			}
-			return list;
-		}
+            foreach (OnHitIntField onHitIntField in input)
+            {
+                SingleOnHitIntFieldMod overrideEntry = GetOverrideEntry(onHitIntField.GetIdentifier());
+                list.Add(
+                    overrideEntry != null
+                        ? overrideEntry.GetModdedIntField(onHitIntField)
+                        : onHitIntField.GetCopy());
+            }
 
-		private SingleOnHitIntFieldMod GetOverrideEntry(string identifier)
-		{
-			if (string.IsNullOrEmpty(identifier))
-			{
-				return null;
-			}
-			for (int i = 0; i < m_overrides.Count; i++)
-			{
-				string text = m_overrides[i].GetIdentifier();
-				if (text.Equals(identifier, StringComparison.OrdinalIgnoreCase))
-				{
-					return m_overrides[i].m_fieldOverride;
-				}
-			}
-			return null;
-		}
-	}
+            return list;
+        }
+
+        private SingleOnHitIntFieldMod GetOverrideEntry(string identifier)
+        {
+            if (string.IsNullOrEmpty(identifier))
+            {
+                return null;
+            }
+
+            foreach (IntFieldOverride onHitIntField in m_overrides)
+            {
+                if (onHitIntField.GetIdentifier().Equals(identifier, StringComparison.OrdinalIgnoreCase))
+                {
+                    return onHitIntField.m_fieldOverride;
+                }
+            }
+
+            return null;
+        }
+    }
 }
