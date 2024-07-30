@@ -1,16 +1,18 @@
 ﻿// ROGUES
 // SERVER
+#if SERVER
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using ArtemisServer.BridgeServer;
-using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 using Random = UnityEngine.Random;
+#endif
+using UnityEngine;
 //using System.Net;
 //using System.Threading.Tasks;
 //using CoOp;

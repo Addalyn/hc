@@ -1,6 +1,10 @@
+// SERVER
+// ROGUES
 using System.Collections.Generic;
 using UnityEngine;
 
+#if SERVER
+// custom
 public class ScampAoeTetherEffect: StandardActorEffect
 {
     private readonly float m_tetherBreakDistanceOverride; // TODO SCAMP unused, always -1
@@ -106,3 +110,4 @@ public class ScampAoeTetherEffect: StandardActorEffect
 		return Target;
 	}
 }
+#endif

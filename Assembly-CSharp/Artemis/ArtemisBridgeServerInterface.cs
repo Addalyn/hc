@@ -1,9 +1,11 @@
-﻿using System;
+﻿#if SERVER
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEngine;
 using WebSocketSharp;
 
+// custom
 namespace ArtemisServer.BridgeServer
 {
     public class ArtemisBridgeServerInterface : ArtemisClientBase
@@ -361,3 +363,4 @@ namespace ArtemisServer.BridgeServer
         }
     }
 }
+#endif

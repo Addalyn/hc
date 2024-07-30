@@ -158,7 +158,7 @@ public class NPCBrain_Tutorial : NPCBrain
 		    && actorTurnSM != null
 		    && targetSquare != null)
 		{
-			BoardSquare closestMoveableSquareTo = actorMovement.GetClosestMoveableSquareTo(targetSquare, true, false);
+			BoardSquare closestMoveableSquareTo = actorMovement.GetClosestMoveableSquareTo(targetSquare, true);
 			if (closestMoveableSquareTo != null
 			    && closestMoveableSquareTo != actorData.GetCurrentBoardSquare())
 			{

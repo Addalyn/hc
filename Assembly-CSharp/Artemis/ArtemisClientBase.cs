@@ -1,3 +1,4 @@
+#if SERVER
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +9,7 @@ using Debug = UnityEngine.Debug;
 
 namespace ArtemisServer.BridgeServer
 {
-    // based on InsightClient
+    // custom, based on InsightClient
     public abstract class ArtemisClientBase : MonoBehaviour
     {
         public enum CallbackStatus
@@ -259,3 +260,4 @@ namespace ArtemisServer.BridgeServer
         }
     }
 }
+#endif

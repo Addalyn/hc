@@ -16,7 +16,9 @@ public class ObjectivePoints : NetworkBehaviour
 		MatchEnd
 	}
 	
+#if SERVER
 	private const int c_MaxIdleTurns = 5; // custom
+#endif
 
 	[HideInInspector]
 	public bool m_skipEndOfGameCheck;
@@ -453,6 +455,7 @@ public class ObjectivePoints : NetworkBehaviour
 			else if (team == Team.TeamB)
 			{
 				// NOTE CHANGE bugfix?
+				// TODO LOW check
 #if PURE_REACTOR
 				victoryConditionString = !m_teamAVictoryCondition.m_conditionString.IsNullOrEmpty()
 					? StringUtil.TR(m_teamAVictoryCondition.m_conditionString)
@@ -604,8 +607,9 @@ public class ObjectivePoints : NetworkBehaviour
 				m_respawningPlayers.Add(actor);
 			}
 			// end removed in rogues
-
+#if SERVER
 			Log.Info($"Objectives [{m_objectives.Count}]");
+#endif
 			foreach (MatchObjective objective in m_objectives)
 			{
 				objective.Server_OnActorDeath(actor);
@@ -661,21 +665,22 @@ public class ObjectivePoints : NetworkBehaviour
 			Debug.LogWarning("[Server] function 'System.Void ObjectivePoints::CheckForEndOfGame()' called on client");
 			return;
 		}
-		Log.Info($"CheckForEndOfGame m_matchState: {m_matchState}, m_skipEndOfGameCheck: {m_skipEndOfGameCheck}");
+		Log.Info($"CheckForEndOfGame m_matchState: {m_matchState}, m_skipEndOfGameCheck: {m_skipEndOfGameCheck}"); // custom log
 		if (m_matchState == MatchState.InMatch
 			&& !m_skipEndOfGameCheck
 			&& !GameManager.Get().GameConfig.HasGameOption(GameOptionFlag.SkipEndOfGameCheck)  // removed in rogues
 			&& (DebugParameters.Get() == null || !DebugParameters.Get().GetParameterAsBool("DisableGameEndCheck")))  // removed in rogues
 		{
-			Log.Info($"CheckForEndOfGame checking conditions");
+			Log.Info($"CheckForEndOfGame checking conditions"); // custom log
 			bool isOvertime = m_timeLimitTurns == 0 || GameFlowData.Get().CurrentTurn >= m_timeLimitTurns;
 			int teamAPoints = m_points[0];
 			int teamBPoints = m_points[1];
 			bool hasTeamAWon = m_teamAVictoryCondition.ArePointConditionsMet(teamAPoints, teamBPoints, isOvertime, Team.TeamA);
 			bool hasTeamBWon = m_teamBVictoryCondition.ArePointConditionsMet(teamBPoints, teamAPoints, isOvertime, Team.TeamB);
 			Log.Info($"CheckForEndOfGame turn {GameFlowData.Get().CurrentTurn}/{m_timeLimitTurns}" + (isOvertime ? "[overtime]" : "") + ", " +
-			         $"teamAPoints {teamAPoints}, teamBPoints {teamBPoints}, hasTeamAWon {hasTeamAWon}, hasTeamBWon {hasTeamBWon}");
+			         $"teamAPoints {teamAPoints}, teamBPoints {teamBPoints}, hasTeamAWon {hasTeamAWon}, hasTeamBWon {hasTeamBWon}"); // custom log
 			bool isGameOver;
+#if SERVER
 			// custom
 			if (ServerActionBuffer.Get().LastTurnWithActions + c_MaxIdleTurns <= GameFlowData.Get().CurrentTurn)
 			{
@@ -701,7 +706,9 @@ public class ObjectivePoints : NetworkBehaviour
 				         $"{HydrogenConfig.Get().PendingReconnectMaxTurnsTotal} turns total");
 			}
 			// end custom
-			else if (hasTeamAWon && hasTeamBWon || !hasTeamAWon && !hasTeamBWon && m_timeLimitTurns > 0)
+			else
+#endif
+			if (hasTeamAWon && hasTeamBWon || !hasTeamAWon && !hasTeamBWon && m_timeLimitTurns > 0)
 			{
 				if (m_allowTies)
 				{
@@ -715,10 +722,10 @@ public class ObjectivePoints : NetworkBehaviour
 					if (isOvertime)
 					{
 						m_inSuddenDeath = true;
-						Log.Info($"CheckForEndOfGame sudden death");
+						Log.Info($"CheckForEndOfGame sudden death"); // custom log
 						if (m_disablePowerupsAfterTimeLimit)
 						{
-							Log.Info($"CheckForEndOfGame disabling powerups");
+							Log.Info($"CheckForEndOfGame disabling powerups"); // custom log
 							PowerUpManager.Get().SetSpawningEnabled(false);
 						}
 					}
@@ -764,8 +771,10 @@ public class ObjectivePoints : NetworkBehaviour
 			Debug.LogWarning("[Server] function 'System.Void ObjectivePoints::DebugEndGame(PlayerData,GameResult,System.Int32,System.Int32,System.Boolean,System.Boolean,System.Boolean)' called on client");
 			return;
 		}
+#if SERVER
 		// NOTE CUSTOM
 		EndGame();
+#endif
 	}
 
 	[Server]
@@ -818,7 +827,7 @@ public class ObjectivePoints : NetworkBehaviour
 
 	public void AdjustPoints(int adjustAmount, Team teamToAdjust)
 	{
-		Log.Info($"ObjectivePoints::AdjustPoints: {teamToAdjust} - {adjustAmount}");
+		Log.Info($"ObjectivePoints::AdjustPoints: {teamToAdjust} - {adjustAmount}"); // custom log
 		if (adjustAmount != 0)
 		{
 			if (teamToAdjust == Team.TeamA)

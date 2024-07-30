@@ -325,7 +325,9 @@ public class Ability : MonoBehaviour
 	public void InitializeAbility()
 	{
 		// added in rogues
+#if SERVER
 		m_effectSource = new EffectSource(this); // , null in rogues
+#endif
 
 		RebuildTooltipForUI();
 		ResetNameplateTargetingNumbers();
@@ -419,6 +421,7 @@ public class Ability : MonoBehaviour
 			list.Add(new TooltipTokenInt("MaxStocks", "Max Stocks/Charges", m_maxStocks));
 		}
 #else
+		// TODO LOW check
 		// NOTE CHANGE (rogues) were base cost and base stocks in reactor
 		if (GetModdedCost() > 0)
 		{

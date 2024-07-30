@@ -1345,8 +1345,8 @@ public static class AreaEffectUtils
 				// 	DynamicMissionGeoManager.Get().AddDestructibleGeoHits(nonActorTargetInfo, posInsideChecker_Box);
 				// }
 			}
-		}
 #endif
+		}
 
 		if (startRadiusInSquares > 0f)
 		{
@@ -3085,8 +3085,9 @@ public static class AreaEffectUtils
 		}
 		return 0;
 	}
-
-	// added in rogues
+#endif
+	
+	// added in rogues, inlined in reactor
 	public static float GetWidthForShape(AbilityAreaShape shape)
 	{
 		switch (shape)
@@ -3117,7 +3118,6 @@ public static class AreaEffectUtils
 				return 0f;
 		}
 	}
-#endif
 	
 	public static Vector3 GetCenterOfShape(AbilityAreaShape shape, Vector3 freePos, BoardSquare centerSquare)
 	{

@@ -106,7 +106,9 @@ public class NPCBrain_Adaptive : NPCBrain
 			nPCBrain_Adaptive.m_sendReasoningToTeamChat = true;
 		}
 		// rogues
+#if SERVER
 		nPCBrain_Adaptive.m_movementType = m_movementType;
+#endif
 		// nPCBrain_Adaptive.m_sendReasoningToTeamChat = true;
 		
 		return nPCBrain_Adaptive;

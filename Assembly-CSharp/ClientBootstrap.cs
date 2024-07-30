@@ -26,7 +26,9 @@ public class ClientBootstrap : MonoBehaviour
 		m_commandLine = Environment.GetCommandLineArgs();
 		m_asyncPump = new AsyncPump();
 		SynchronizationContext.SetSynchronizationContext(m_asyncPump);
+#if SERVER
 		InitializeServerConfig(); // added in rogues
+#endif
 		ParseCommandLine();
 		HydrogenConfig hydrogenConfig = HydrogenConfig.Get();
 		hydrogenConfig.ProcessType = ProcessType.AtlasReactor;  // ProcessType.AtlasRogues in rogues
@@ -66,13 +68,13 @@ public class ClientBootstrap : MonoBehaviour
 		//Log.Notice("Process: AtlasRogues-{0}", hydrogenConfig.ProcessCode);
 
 		//hydrogenConfig.DevMode = false;  // added in rogues
-		hydrogenConfig.ServerMode = false;
 		if (hydrogenConfig.Language == null)
 		{
 			hydrogenConfig.Language = "en";
 		}
 		LocalizationManager.SetBootupLanguage(hydrogenConfig.Language);
 		hydrogenConfig.Language = LocalizationManager.CurrentLanguageCode;  // removed in rogues
+		hydrogenConfig.ServerMode = false;
 		SslValidator.AcceptableSslPolicyErrors = hydrogenConfig.AcceptableSslPolicyErrors;
 		Instance = this;
 	}
@@ -119,7 +121,9 @@ public class ClientBootstrap : MonoBehaviour
 		AppState_GameLoading.Create();
 		AppState_GroupCharacterSelect.Create();
 		AppState_RankModeDraft.Create(); // removed in rogues
-		//AppState_LandingPage.Create(); // duplicate removed in rogues
+#if PURE_REACTOR
+		AppState_LandingPage.Create(); // duplicate removed in rogues
+#endif
 		if (GetComponent<ClientIdleTimer>() == null)
 		{
 			gameObject.AddComponent<ClientIdleTimer>();
@@ -140,14 +144,14 @@ public class ClientBootstrap : MonoBehaviour
 		{
 			AppState_Startup.Get().Enter();
 		}
-		if (LoadTest && AppState.GetCurrent() == AppState_LandingPage.Get())
+		if (LoadTest
+		    && AppState.GetCurrent() == AppState_LandingPage.Get()
+		    && UIFrontEnd.Get() != null)
 		{
-			if (UIFrontEnd.Get() != null)  // broken code in rogues
-			{
-				AppState_LandingPage.Get().OnQuickPlayClicked();
-				ClientGameManager.Get().GroupInfo.SelectedQueueType = GameType.PvP;
-				AppState_GroupCharacterSelect.Get().UpdateReadyState(true);
-			}
+			// broken code in rogues
+			AppState_LandingPage.Get().OnQuickPlayClicked();
+			ClientGameManager.Get().GroupInfo.SelectedQueueType = GameType.PvP;
+			AppState_GroupCharacterSelect.Get().UpdateReadyState(true);
 		}
 		if (m_fileLog != null)
 		{
@@ -279,6 +283,7 @@ public class ClientBootstrap : MonoBehaviour
 	}
 
 	// added in rogues
+#if SERVER
 	private void InitializeServerConfig()
 	{
 		string text = "unknown";
@@ -302,6 +307,7 @@ public class ClientBootstrap : MonoBehaviour
 			});
 		}
 	}
+#endif
 
 	private void OnApplicationQuit()
 	{

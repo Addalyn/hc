@@ -1,5 +1,6 @@
 // ROGUES
 // SERVER
+#if SERVER
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,6 @@ using Malee;
 using UnityEngine;
 
 // added in rogues
-#if SERVER
 public class NPCBrainSelector : MonoBehaviour
 {
 	private ActorData m_actorData;

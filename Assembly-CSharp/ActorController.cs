@@ -558,6 +558,7 @@ public class ActorController : NetworkBehaviour
 	// was empty in reactor
 	protected void CmdSelectAbilityRequest(int actionTypeInt)
 	{
+#if SERVER
 		//if (taunt)
 		//{
 		//	m_actor.GetActorTurnSM().Networkm_tauntRequestedForNextAbility = actionTypeInt;
@@ -565,6 +566,7 @@ public class ActorController : NetworkBehaviour
 		GetComponent<AbilityData>().SelectAbilityFromActionType((AbilityData.ActionType)actionTypeInt);
 		GetComponent<ServerActorController>().ProcessSelectAbilityRequest();
 		ServerActionBuffer.Get().MarkAction(); // custom
+#endif
 	}
 
 	public void SendQueueSimpleActionRequest(AbilityData.ActionType actionType)
