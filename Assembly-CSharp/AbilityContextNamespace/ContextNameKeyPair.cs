@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 namespace AbilityContextNamespace
 {
     public class ContextNameKeyPair
