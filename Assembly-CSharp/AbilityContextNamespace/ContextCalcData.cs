@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -25,11 +27,15 @@ namespace AbilityContextNamespace
             {
                 m_actorToHitContext.Add(actor, new ActorHitContext());
                 m_actorToHitContext[actor].m_hitOrigin = hitOrigin;
+                // m_actorToHitContext[actor].m_ordinal = m_actorToHitContext.Count; // rogues
                 m_actorToHitContext[actor].m_ignoreMinCoverDist = ignoreMinCoverDist;
             }
             else if (Application.isEditor)
             {
+                // reactor
                 Log.Warning("TargetSelect context: trying to add actor more than once");
+                // rogues
+                // Log.Warning("PveAbilityTargetSelect: trying to add actor more than once");
             }
         }
 
