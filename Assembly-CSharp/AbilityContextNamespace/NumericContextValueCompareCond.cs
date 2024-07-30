@@ -1,3 +1,5 @@
+// ROGUES
+// SERVER
 using System;
 
 namespace AbilityContextNamespace
@@ -6,10 +8,10 @@ namespace AbilityContextNamespace
     public class NumericContextValueCompareCond
     {
         public string m_contextName;
-        public bool m_nonActorSpecificContext;
+        public bool m_nonActorSpecificContext; // removed in rogues
         public ContextCompareOp m_compareOp;
         public float m_testValue;
-        public bool m_ignoreIfNoContext;
+        public bool m_ignoreIfNoContext; // removed in rogues
         private int m_contextKey;
 
         public int GetContextKey()
