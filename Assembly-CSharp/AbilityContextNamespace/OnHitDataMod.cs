@@ -26,7 +26,8 @@ namespace AbilityContextNamespace
 
         public string GetInEditorDesc(string header, OnHitAuthoredData baseOnHitData)
         {
-            string desc = GetIntFieldModDesc(m_enemyIntFieldMods, baseOnHitData?.m_enemyHitIntFields, "Enemy Int Field Mods");
+            string desc = string.Empty;
+            desc += GetIntFieldModDesc(m_enemyIntFieldMods, baseOnHitData?.m_enemyHitIntFields, "Enemy Int Field Mods");
             desc += GetEffectFieldModDesc(m_enemyEffectMods, baseOnHitData?.m_enemyHitEffectFields, "Enemy Effect Field Mods");
             desc += GetIntFieldModDesc(m_allyIntFieldMods, baseOnHitData?.m_allyHitIntFields, "Ally Int Field Mods");
             desc += GetEffectFieldModDesc(m_allyEffectMods, baseOnHitData?.m_allyHitEffectFields, "Ally Effect Field Mods");
