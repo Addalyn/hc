@@ -88,7 +88,7 @@ public class ClientCrashReportDetector : MonoBehaviour
                 ClientGameManager.Get().SendStatusReport(
                     new ClientStatusReport
                     {
-                        Status = ClientStatusReport.ClientStatusReportType._001D,
+                        Status = ClientStatusReport.ClientStatusReportType.Crash,
                         StatusDetails = m_crashDumpDirectoryPath,
                         DeviceIdentifier = SystemInfo.deviceUniqueIdentifier
                     });
@@ -121,7 +121,7 @@ public class ClientCrashReportDetector : MonoBehaviour
             ClientGameManager.Get().SendStatusReport(
                 new ClientStatusReport
                 {
-                    Status = ClientStatusReport.ClientStatusReportType._0012,
+                    Status = ClientStatusReport.ClientStatusReportType.CrashUserMessage,
                     StatusDetails = m_crashDumpDirectoryPath,
                     DeviceIdentifier = SystemInfo.deviceUniqueIdentifier,
                     UserMessage = m_crashDialog.m_descriptionBoxInputField.text

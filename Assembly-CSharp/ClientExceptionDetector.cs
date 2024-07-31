@@ -448,7 +448,7 @@ public class ClientExceptionDetector : MonoBehaviour
 	private void HandleExceptionDialogOKButton(UIDialogBox boxReference)
 	{
 		ClientStatusReport clientStatusReport = new ClientStatusReport();
-		clientStatusReport.Status = ClientStatusReport.ClientStatusReportType._0015;
+		clientStatusReport.Status = ClientStatusReport.ClientStatusReportType.ExceptionUserMessage;
 		clientStatusReport.StatusDetails = m_exceptionLogString;
 		clientStatusReport.UserMessage = ((UIReportBugDialogBox)boxReference).m_descriptionBoxInputField.text;
 		clientStatusReport.DeviceIdentifier = SystemInfo.deviceUniqueIdentifier;
