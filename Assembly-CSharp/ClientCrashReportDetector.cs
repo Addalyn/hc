@@ -6,222 +6,189 @@ using UnityEngine;
 
 public class ClientCrashReportDetector : MonoBehaviour
 {
-	private ClientCrashReportThreadedJob m_threadedJob;
+    private ClientCrashReportThreadedJob m_threadedJob;
+    private string m_crashDumpDirectoryPath;
+    private static ClientCrashReportDetector s_instance;
+    internal UIReportBugDialogBox m_crashDialog;
 
-	private string m_crashDumpDirectoryPath;
+    internal static ClientCrashReportDetector Get()
+    {
+        return s_instance;
+    }
 
-	private static ClientCrashReportDetector s_instance;
+    private void Start()
+    {
+        s_instance = this;
+        try
+        {
+            DirectoryInfo parent = Directory.GetParent(Application.dataPath);
+            string path = parent?.FullName ?? string.Empty;
+            string[] directories = Directory.GetDirectories(path);
 
-	internal UIReportBugDialogBox m_crashDialog;
+            foreach (string dir in directories)
+            {
+                if (Directory.GetFiles(dir, "crash.dmp").Length > 0)
+                {
+                    m_crashDumpDirectoryPath = dir;
+                    break;
+                }
 
-	internal static ClientCrashReportDetector Get()
-	{
-		return ClientCrashReportDetector.s_instance;
-	}
+                if (m_crashDumpDirectoryPath != null)
+                {
+                    break;
+                }
+            }
 
-	private void Start()
-	{
-		ClientCrashReportDetector.s_instance = this;
-		try
-		{
-			DirectoryInfo parent = Directory.GetParent(Application.dataPath);
-			string path = parent?.FullName ?? string.Empty;
-			string[] directories = Directory.GetDirectories(path);
-			int i = 0;
-			while (i < directories.Length)
-			{
-				string text2 = directories[i];
-				if (Directory.GetFiles(text2, "crash.dmp").Length > 0)
-				{
-					this.m_crashDumpDirectoryPath = text2;
-				}
-				else
-				{
-					if (this.m_crashDumpDirectoryPath == null)
-					{
-						i++;
-						continue;
-					}
-				}
-				break;
-			}
-			if (this.m_crashDumpDirectoryPath != null)
-			{
-				Log.Warning("Detected crash dump directory: " + this.m_crashDumpDirectoryPath, new object[0]);
-				if (UIDialogPopupManager.Ready)
-				{
-					this.CreateFirstDialog();
-				}
-				else
-				{
-					UIDialogPopupManager.OnReady += this.HandleUIDialogPopupManagerReady;
-				}
-			}
-			return;
+            if (m_crashDumpDirectoryPath != null)
+            {
+                Log.Warning("Detected crash dump directory: " + m_crashDumpDirectoryPath);
+                if (UIDialogPopupManager.Ready)
+                {
+                    CreateFirstDialog();
+                }
+                else
+                {
+                    UIDialogPopupManager.OnReady += HandleUIDialogPopupManagerReady;
+                }
+            }
+        }
+        catch (Exception exception)
+        {
+            Log.Exception(exception);
+        }
+    }
 
-		}
-		catch (Exception exception)
-		{
-			Log.Exception(exception);
-		}
-	}
+    private void Update()
+    {
+        if (m_threadedJob != null)
+        {
+            m_threadedJob.Update();
+        }
+    }
 
-	private void Update()
-	{
-		if (this.m_threadedJob != null)
-		{
-			this.m_threadedJob.Update();
-		}
-	}
+    private void HandleUIDialogPopupManagerReady()
+    {
+        CreateFirstDialog();
+    }
 
-	private void HandleUIDialogPopupManagerReady()
-	{
-		this.CreateFirstDialog();
-	}
+    private void CreateFirstDialog()
+    {
+        if (ClientMinSpecDetector.BelowMinSpecDetected)
+        {
+            UIDialogPopupManager.OpenOneButtonDialog(
+                StringUtil.TR("RecoveredFromCrash", "Global"),
+                StringUtil.TR("BelowMinimumSpec", "Global"),
+                StringUtil.TR("Ok", "Global"));
+            DeleteCrashDumpDirectory();
+        }
+        else
+        {
+            if (ClientGameManager.Get() != null && ClientGameManager.Get().IsConnectedToLobbyServer)
+            {
+                ClientGameManager.Get().SendStatusReport(
+                    new ClientStatusReport
+                    {
+                        Status = ClientStatusReport.ClientStatusReportType._001D,
+                        StatusDetails = m_crashDumpDirectoryPath,
+                        DeviceIdentifier = SystemInfo.deviceUniqueIdentifier
+                    });
+                m_crashDialog = UIDialogPopupManager.OpenReportBugDialog(
+                    StringUtil.TR("RecoveredFromCrash", "Global"),
+                    StringUtil.TR("UploadCrashReport", "Global"),
+                    StringUtil.TR("Ok", "Global"),
+                    StringUtil.TR("Cancel", "Global"),
+                    HandleDialogOKButton,
+                    HandleDialogCancelButton);
+            }
 
-	private void CreateFirstDialog()
-	{
-		if (ClientMinSpecDetector.BelowMinSpecDetected)
-		{
-			UIDialogPopupManager.OpenOneButtonDialog(StringUtil.TR("RecoveredFromCrash", "Global"), StringUtil.TR("BelowMinimumSpec", "Global"), StringUtil.TR("Ok", "Global"), null, -1, false);
-			this.DeleteCrashDumpDirectory();
-		}
-		else
-		{
-			if (ClientGameManager.Get() != null)
-			{
-				if (ClientGameManager.Get().IsConnectedToLobbyServer)
-				{
-					ClientStatusReport clientStatusReport = new ClientStatusReport();
-					clientStatusReport.Status = ClientStatusReport.ClientStatusReportType._001D;
-					clientStatusReport.StatusDetails = this.m_crashDumpDirectoryPath;
-					clientStatusReport.DeviceIdentifier = SystemInfo.deviceUniqueIdentifier;
-					ClientGameManager.Get().SendStatusReport(clientStatusReport);
-					this.m_crashDialog = UIDialogPopupManager.OpenReportBugDialog(StringUtil.TR("RecoveredFromCrash", "Global"), StringUtil.TR("UploadCrashReport", "Global"), StringUtil.TR("Ok", "Global"), StringUtil.TR("Cancel", "Global"), new UIDialogBox.DialogButtonCallback(this.HandleDialogOKButton), new UIDialogBox.DialogButtonCallback(this.HandleDialogCancelButton));
-				}
-			}
-			if (this.m_threadedJob == null)
-			{
-				string crashDumpDirectoryPath = this.m_crashDumpDirectoryPath;
-				BugReportType bugReportType = BugReportType.Crash;
-				string format = "SessionToken: {0}";
-				object arg;
-				if (ClientGameManager.Get() != null)
-				{
-					if (ClientGameManager.Get().SessionInfo != null)
-					{
-						arg = ClientGameManager.Get().SessionInfo.SessionToken.ToString();
-						goto IL_1AB;
-					}
-				}
-				arg = "unknown";
-				IL_1AB:
-				this.m_threadedJob = new ClientCrashReportThreadedJob(crashDumpDirectoryPath, bugReportType, string.Format(format, arg), null);
-			}
-		}
-	}
+            if (m_threadedJob == null)
+            {
+                string sessionToken = ClientGameManager.Get() != null && ClientGameManager.Get().SessionInfo != null
+                    ? ClientGameManager.Get().SessionInfo.SessionToken.ToString()
+                    : "unknown";
+                m_threadedJob = new ClientCrashReportThreadedJob(
+                    m_crashDumpDirectoryPath,
+                    BugReportType.Crash,
+                    $"SessionToken: {sessionToken}");
+            }
+        }
+    }
 
-	private void HandleDialogOKButton(UIDialogBox boxReference)
-	{
-		if (ClientGameManager.Get() != null && ClientGameManager.Get().IsConnectedToLobbyServer)
-		{
-			ClientStatusReport clientStatusReport = new ClientStatusReport();
-			clientStatusReport.Status = ClientStatusReport.ClientStatusReportType._0012;
-			clientStatusReport.StatusDetails = this.m_crashDumpDirectoryPath;
-			clientStatusReport.DeviceIdentifier = SystemInfo.deviceUniqueIdentifier;
-			clientStatusReport.UserMessage = this.m_crashDialog.m_descriptionBoxInputField.text;
-			ClientGameManager.Get().SendStatusReport(clientStatusReport);
-		}
-		this.m_crashDialog = null;
-	}
+    private void HandleDialogOKButton(UIDialogBox boxReference)
+    {
+        if (ClientGameManager.Get() != null && ClientGameManager.Get().IsConnectedToLobbyServer)
+        {
+            ClientGameManager.Get().SendStatusReport(
+                new ClientStatusReport
+                {
+                    Status = ClientStatusReport.ClientStatusReportType._0012,
+                    StatusDetails = m_crashDumpDirectoryPath,
+                    DeviceIdentifier = SystemInfo.deviceUniqueIdentifier,
+                    UserMessage = m_crashDialog.m_descriptionBoxInputField.text
+                });
+        }
 
-	private void HandleDialogCancelButton(UIDialogBox boxReference)
-	{
-		this.DeleteCrashDumpDirectory();
-		this.m_crashDialog = null;
-	}
+        m_crashDialog = null;
+    }
 
-	private void DeleteCrashDumpDirectory()
-	{
-		if (Directory.Exists(this.m_crashDumpDirectoryPath))
-		{
-			try
-			{
-				Directory.Delete(this.m_crashDumpDirectoryPath, true);
-			}
-			catch (Exception exception)
-			{
-				Log.Exception(exception);
-			}
-		}
-	}
+    private void HandleDialogCancelButton(UIDialogBox boxReference)
+    {
+        DeleteCrashDumpDirectory();
+        m_crashDialog = null;
+    }
 
-	private void OnDestroy()
-	{
-		if (this.m_threadedJob != null)
-		{
-			this.m_threadedJob.Cancel();
-		}
-		ClientCrashReportDetector.s_instance = null;
-	}
+    private void DeleteCrashDumpDirectory()
+    {
+        if (Directory.Exists(m_crashDumpDirectoryPath))
+        {
+            try
+            {
+                Directory.Delete(m_crashDumpDirectoryPath, true);
+            }
+            catch (Exception exception)
+            {
+                Log.Exception(exception);
+            }
+        }
+    }
 
-	internal void UploadArchive(string crashServerAndArchiveURL, byte[] crashReportBytes, Action<bool> endEvent)
-	{
-		base.StartCoroutine(this.UploadArchiveCoroutine(crashServerAndArchiveURL, crashReportBytes, endEvent));
-	}
+    private void OnDestroy()
+    {
+        if (m_threadedJob != null)
+        {
+            m_threadedJob.Cancel();
+        }
 
-	private IEnumerator UploadArchiveCoroutine(string crashServerAndArchiveURL, byte[] crashReportBytes, Action<bool> endEvent)
-	{
-		bool flag = false;
-		WWW client;
-		Log.Info("Attempting to start WWW to post {0} crash report bytes to URL {1}", new object[]
-		{
-			crashReportBytes.Length,
-			crashServerAndArchiveURL
-		});
-		client = new WWW(crashServerAndArchiveURL, crashReportBytes);
-			
-		try
-		{
-			yield return client;
-			flag = true;
-			if (string.IsNullOrEmpty(client.error))
-			{
-				string message = "\nResponse from Crash Service received was {0}";
-				object[] array = new object[1];
-				int num2 = 0;
-				object obj;
-				if (client.text == null)
-				{
-					obj = "NULL";
-				}
-				else
-				{
-					obj = client.text;
-				}
-				array[num2] = obj;
-				Log.Info(message, array);
-				endEvent(true);
-			}
-			else
-			{
-				Log.Error("\nError from Crash Service received was {0}", new object[]
-				{
-					client.error
-				});
-				endEvent(false);
-			}
-		}
-		finally
-		{
-			if (flag)
-			{
-			}
-			else if (client != null)
-			{
-				((IDisposable)client).Dispose();
-			}
-		}
-		yield break;
-	}
+        s_instance = null;
+    }
+
+    internal void UploadArchive(string crashServerAndArchiveURL, byte[] crashReportBytes, Action<bool> endEvent)
+    {
+        StartCoroutine(UploadArchiveCoroutine(crashServerAndArchiveURL, crashReportBytes, endEvent));
+    }
+
+    private IEnumerator UploadArchiveCoroutine(
+        string crashServerAndArchiveURL,
+        byte[] crashReportBytes,
+        Action<bool> endEvent)
+    {
+        Log.Info(
+            "Attempting to start WWW to post {0} crash report bytes to URL {1}",
+            crashReportBytes.Length,
+            crashServerAndArchiveURL);
+        using (WWW client = new WWW(crashServerAndArchiveURL, crashReportBytes))
+        {
+            yield return client;
+            if (string.IsNullOrEmpty(client.error))
+            {
+                Log.Info("\nResponse from Crash Service received was {0}", client.text ?? "NULL");
+                endEvent(true);
+            }
+            else
+            {
+                Log.Error("\nError from Crash Service received was {0}", client.error);
+                endEvent(false);
+            }
+        }
+    }
 }
