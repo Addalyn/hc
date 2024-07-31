@@ -84,10 +84,12 @@ public class BattleMonkBuffCharge_Prep : Ability
 			m_cachedAbsorbOnSelf = selfBuffEffect.m_effectData.m_absorbAmount;
 		}
 		
-		// reactor & rogues
-		// StandardEffectInfo allyBuffEffect = GetSelfBuffEffect();
-		// custom 
-		StandardEffectInfo allyBuffEffect = GetAllyBuffEffect();
+		// The effects are always the same in the mods that are available in game
+#if PURE_REACTOR
+		StandardEffectInfo allyBuffEffect = GetSelfBuffEffect(); // reactor & rogues
+#else
+		StandardEffectInfo allyBuffEffect = GetAllyBuffEffect(); // custom 
+#endif
 		
 		if (allyBuffEffect.m_applyEffect)
 		{

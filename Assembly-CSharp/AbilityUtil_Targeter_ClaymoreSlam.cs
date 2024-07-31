@@ -112,10 +112,11 @@ public class AbilityUtil_Targeter_ClaymoreSlam : AbilityUtil_Targeter
 			m_coneBackwardOffsetInSquares,
 			m_penetrateLos,
 			targetingActor,
-			// reactor
-			// targetingActor.GetEnemyTeam(),
-			// rogues
-			targetingActor.GetOtherTeams(),
+#if PURE_REACTOR
+			targetingActor.GetEnemyTeam(), // reactor
+#else
+			targetingActor.GetOtherTeams(), // rogues
+#endif
 			null);
 		TargeterUtils.RemoveActorsInvisibleToClient(ref actors);
 		foreach (ActorData actor in actors)

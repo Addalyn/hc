@@ -835,11 +835,6 @@ public class BarrierManager : NetworkBehaviour
 	[ClientRpc]
 	private void RpcUpdateBarriers()
 	{
-		ClientUpdateBarriers();
-	}
-
-	private void ClientUpdateBarriers()
-	{
 		if (NetworkServer.active)
 		{
 			return;

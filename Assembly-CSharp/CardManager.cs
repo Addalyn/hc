@@ -35,6 +35,7 @@ public class CardManager : NetworkBehaviour
 	}
 
 	// rogues
+#if SERVER
 	public static bool CardsDisabled()
 	{
 		// custom
@@ -42,6 +43,7 @@ public class CardManager : NetworkBehaviour
 		// rogues
 		// return true;
 	}
+#endif
 
 	// empty in reactor
 	public void SetDeckAndGiveCards(ActorData actor, CharacterCardInfo cardInfo, bool isDebugRequest = false)  // isDebugRequest removed in rogues

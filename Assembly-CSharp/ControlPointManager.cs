@@ -9,8 +9,10 @@ using UnityEngine.Networking;
 // TODO LOW all member variables removed in rogues, some code might have been removed as well
 public class ControlPointManager : MonoBehaviour
 {
+#if SERVER
 	// added in rogues
 	private static ControlPointManager s_instance;
+#endif
 
 	[Separator("For Randomly Activating Control Point On Start", true)]
 	// removed in rogues

@@ -141,7 +141,7 @@ public class ObjectivePoints : NetworkBehaviour
 		{
 			m_clientNumDeathInTurn.Add(0);
 		}
-		if (m_points != null && m_points.Count >= 2) // no check in reactor
+		if (m_points != null && m_points.Count >= 2) // NOTE CHANGE null & range check added in rogues
 		{
 			m_displayedPoints[0] = m_points[0];
 			m_displayedPoints[1] = m_points[1];
@@ -206,7 +206,7 @@ public class ObjectivePoints : NetworkBehaviour
 		}
 #endif
 
-		if (GameFlowData.Get().IsInDecisionState() && m_points != null && m_points.Count > 0) // no m_points validity check in reactor
+		if (GameFlowData.Get().IsInDecisionState() && m_points != null && m_points.Count > 0) // NOTE CHANGE null & range check added in rogues
 		{
 			if (m_displayedPoints[0] != m_points[0])
 			{
@@ -228,7 +228,7 @@ public class ObjectivePoints : NetworkBehaviour
 			//m_attemptedToSpawnUI = true;
 			RectTransform rectTransform = Instantiate(m_gameModePanelPrefab);
 			m_objectivePointsPanel = rectTransform.GetComponent<UIObjectivePointsPanel>();
-			if (m_objectivePointsPanel != null) // not checking in reactor
+			if (m_objectivePointsPanel != null)  // NOTE CHANGE null check added in rogues
 			{
 				m_objectivePointsPanel.transform.SetParent(HUD_UI.Get().m_mainScreenPanel.m_gameSpecificRectDisplay.transform);
 				m_objectivePointsPanel.transform.localPosition = new Vector3(
@@ -239,14 +239,14 @@ public class ObjectivePoints : NetworkBehaviour
 				m_objectivePointsPanel.transform.localScale = Vector3.one;
 			}
 			// added in rogues
-			else
-			{
-				//rectTransform.transform.SetParent(HUD_UI.Get().m_mainScreenPanel.m_gameSpecificRectDisplay.transform);
-				//rectTransform.transform.localPosition = Vector3.zero;
-				//rectTransform.offsetMax = Vector2.zero;
-				//rectTransform.offsetMin = Vector2.zero;
-				//rectTransform.transform.localScale = Vector3.one;
-			}
+			// else
+			// {
+			// 	rectTransform.transform.SetParent(HUD_UI.Get().m_mainScreenPanel.m_gameSpecificRectDisplay.transform);
+			// 	rectTransform.transform.localPosition = Vector3.zero;
+			// 	rectTransform.offsetMax = Vector2.zero;
+			// 	rectTransform.offsetMin = Vector2.zero;
+			// 	rectTransform.transform.localScale = Vector3.one;
+			// }
 		}
 	}
 
@@ -292,7 +292,7 @@ public class ObjectivePoints : NetworkBehaviour
 
 	public void OnTurnTick()
 	{
-		if (m_points != null && m_points.Count >= 2) // no check in reactor
+		if (m_points != null && m_points.Count >= 2)  // NOTE CHANGE null & range check added in rogues
 		{
 			m_displayedPoints[0] = m_points[0];
 			m_displayedPoints[1] = m_points[1];

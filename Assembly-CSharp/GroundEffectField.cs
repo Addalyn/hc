@@ -84,11 +84,11 @@ public class GroundEffectField
 
 	public void ReportAbilityTooltipNumbers(ref List<AbilityTooltipNumber> numbers, AbilityTooltipSubject enemySubject, AbilityTooltipSubject allySubject)
 	{
-		if (effectOnEnemies != null)  // check added in rogues
+		if (effectOnEnemies != null)  // NOTE CHANGE null check added in rogues
 		{
 			effectOnEnemies.ReportAbilityTooltipNumbers(ref numbers, enemySubject);
 		}
-		if (effectOnAllies != null)  // check added in rogues
+		if (effectOnAllies != null)  // NOTE CHANGE null check added in rogues
 		{
 			effectOnAllies.ReportAbilityTooltipNumbers(ref numbers, allySubject);
 		}

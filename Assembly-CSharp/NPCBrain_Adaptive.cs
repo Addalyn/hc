@@ -52,7 +52,11 @@ public class NPCBrain_Adaptive : NPCBrain
 	[HideInInspector]
 	public bool m_playerEncountered;
 	
-	protected static bool s_gatherRealResults = false; // private & true in reactor
+#if SERVER
+	protected static bool s_gatherRealResults = false; // custom, breaks ability states otherwise
+#else
+	private static bool s_gatherRealResults = true; // reactor & rogues
+#endif
 	
 #if SERVER	
 	// added in rogues

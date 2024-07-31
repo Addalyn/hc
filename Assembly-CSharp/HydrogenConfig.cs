@@ -124,6 +124,7 @@ public class HydrogenConfig : JsonConfig
 
 	public string ProcessName => $"{ProcessType.ToString()}-{ProcessCode}";
 	
+#if SERVER
 	// TODO LOW use CommonServerConfig? It is not loaded now
 	// custom
 	public string PublicAddress = "127.0.0.1";
@@ -137,7 +138,7 @@ public class HydrogenConfig : JsonConfig
 	
 	public string ReplayUploadUrl;
 	public Dictionary<string, string> ReplayUploadHeaders;
-	// end custom
+#endif
 
 	public HydrogenConfig()
 	{

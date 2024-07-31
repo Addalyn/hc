@@ -19,8 +19,7 @@ public class GameplayResponseForActor
 	//public float m_maxDamageCoeff;
 	//public float m_minHealCoeff;
 	//public float m_maxHealCoeff;
-
-	[Header("-- direct values, used if not using multipliers")]  // added in rogues
+	//[Header("-- direct values, used if not using multipliers")]
 	public int m_healing;
 	public int m_damage;
 	public int m_techPoints;
@@ -131,6 +130,8 @@ public class GameplayResponseForActor
 	public bool HasResponse()
 	{
 		return m_effect.m_applyEffect
+		    // reactor
+		    || m_credits != 0
 			// rogues
 			//|| this.m_minDamageCoeff > 0f
 			//|| this.m_minHealCoeff > 0f

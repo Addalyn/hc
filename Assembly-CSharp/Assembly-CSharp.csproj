@@ -59,6 +59,10 @@
     <DefineConstants>TRACE;DEBUG;SERVER SERVER2</DefineConstants>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Vanilla Client|AnyCPU' ">
+    <DefineConstants>PURE_REACTOR</DefineConstants>
+    <OutputPath>bin\Vanilla Client\</OutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Ability.cs" />
     <Compile Include="AbilityAreaShape.cs" />

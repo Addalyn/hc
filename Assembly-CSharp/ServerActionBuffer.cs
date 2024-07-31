@@ -8,9 +8,9 @@ using UnityEngine;
 using UnityEngine.Networking;
 
 // was empty in reactor
-#if SERVER
 public class ServerActionBuffer : NetworkBehaviour
 {
+#if SERVER
 	private static ServerActionBuffer s_instance;
 
 	private SharedActionBuffer m_sharedActionBuffer;
@@ -2485,6 +2485,11 @@ public class ServerActionBuffer : NetworkBehaviour
 			}
 		}
 	}
+#endif
+	// removed in rogues
+	private void UNetVersion()
+	{
+	}
 
 	// removed in rogues
 	public override bool OnSerialize(NetworkWriter writer, bool forceAll)
@@ -2498,4 +2503,3 @@ public class ServerActionBuffer : NetworkBehaviour
 	{
 	}
 }
-#endif

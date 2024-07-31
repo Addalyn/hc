@@ -407,10 +407,13 @@ public class ClericAreaBuff : Ability
 		int cost = 0;
 		if (m_syncComp != null)
 		{
+#if PURE_REACTOR
+			// reactor
+			cost = m_syncComp.m_turnsAreaBuffActive * m_extraTpCostPerTurnActive;
+#else
 			// custom
 			cost = m_syncComp.m_turnsAreaBuffActive * GetExtraTpCostPerTurnActive();
-			// reactor
-			// cost = m_syncComp.m_turnsAreaBuffActive * m_extraTpCostPerTurnActive;
+#endif
 		}
 		return base.GetModdedCost() + cost;
 	}

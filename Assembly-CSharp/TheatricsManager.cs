@@ -34,11 +34,12 @@ public class TheatricsManager : NetworkBehaviour, IGameEventListener
 	private int m_numConnectionIdsAddedForPhase;
 	private float m_phaseStartTime;
 	private AbilityPriority m_lastPhaseEnded = AbilityPriority.INVALID;
-
+	
+#if SERVER
 	// added in rogues
 	private float m_timeToTimeoutPhase = float.MaxValue;
-	// added in rogues
 	private Dictionary<long, int> m_connectionIdsToNumPhaseTimeouts = new Dictionary<long, int>();
+#endif
 
 	private static TheatricsManager s_instance;
 

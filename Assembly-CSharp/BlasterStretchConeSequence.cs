@@ -181,7 +181,23 @@ public class BlasterStretchConeSequence : Sequence
 		startPos.y = Board.Get().BaselineHeight + BoardSquare.s_LoSHeightOffset;
 		float laserRangeInSquares = maxDist / Board.Get().squareSize;
 		int maxTargets = m_projectilesStopOnEnemy ? 1 : 4;
-		AreaEffectUtils.GetActorsInLaser(startPos, forward, laserRangeInSquares, 0.1f, Caster, Caster.GetOtherTeams(), false, maxTargets, false, true, out Vector3 laserEndPos, null);  // Caster.GetEnemyTeamAsList() in reactor
+		AreaEffectUtils.GetActorsInLaser(
+			startPos,
+			forward,
+			laserRangeInSquares,
+			0.1f,
+			Caster,
+#if PURE_REACTOR
+			Caster.GetEnemyTeamAsList(), // reactor
+#else
+			Caster.GetOtherTeams(), // rogues
+#endif
+			false,
+			maxTargets,
+			false,
+			true,
+			out Vector3 laserEndPos,
+			null);
 		return (startPos - laserEndPos).magnitude;
 	}
 

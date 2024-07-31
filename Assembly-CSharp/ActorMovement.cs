@@ -1485,7 +1485,7 @@ public class ActorMovement : MonoBehaviour, IGameEventListener
 		CameraManager.Get().OnActorMoved(m_actor);
 		ClientClashManager.Get().OnActorMoved_ClientClashManager(m_actor, m_gameplayPath);
 		ClientResolutionManager.Get().OnActorMoved_ClientResolutionManager(m_actor, m_gameplayPath);
-		if (m_actor != null && m_actor.GetActorModelData() != null && m_aestheticPath != null) // m_aestheticPath check added in rogues
+		if (m_actor != null && m_actor.GetActorModelData() != null && m_aestheticPath != null) // NOTE CHANGE m_aestheticPath check added in rogues
 		{
 			m_actor.GetActorModelData().OnMovementAnimatorUpdate(m_aestheticPath.connectionType);
 		}

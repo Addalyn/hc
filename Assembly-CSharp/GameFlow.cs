@@ -206,11 +206,15 @@ public class GameFlow : NetworkBehaviour
 
 	private void OnLoadedLevel()
 	{
+#if SERVER
 		// TODO HACK custom check
 		if (HighlightUtils.Get())
 		{
 			HighlightUtils.Get().HideCursor = false;
 		}
+#else
+		HighlightUtils.Get().HideCursor = false;
+#endif
 	}
 
 	private void OnDestroy()
@@ -240,7 +244,7 @@ public class GameFlow : NetworkBehaviour
 		{
 			case GameState.BothTeams_Decision:
 				AudioManager.PostEvent("sw_game_state", AudioManager.EventAction.SetSwitch, "game_state_decision");
-				if (AudioManager.GetMixerSnapshotManager())  // check added in rogues
+				if (AudioManager.GetMixerSnapshotManager())  // NOTE CHANGE null check added in rogues
 				{
 					AudioManager.GetMixerSnapshotManager().SetMix_DecisionCam();
 				}
@@ -254,7 +258,7 @@ public class GameFlow : NetworkBehaviour
 			case GameState.BothTeams_Resolve:
 				AudioManager.PostEvent("sw_game_state", AudioManager.EventAction.SetSwitch, "game_state_resolve");
 				AudioManager.PostEvent("ui_resolution_cam_start");
-				if (AudioManager.GetMixerSnapshotManager())  // check added in rogues
+				if (AudioManager.GetMixerSnapshotManager())  // NOTE CHANGE null check added in rogues
 				{
 					AudioManager.GetMixerSnapshotManager().SetMix_ResolveCam();
 				}
@@ -1942,10 +1946,9 @@ public class GameFlow : NetworkBehaviour
 	}
 #endif
 
-	// rogues
-	//private void MirrorProcessed()
-	//{
-	//}
+	private void UNetVersion() // MirrorProcessed in rogues
+	{
+	}
 
 	protected static void InvokeRpcRpcDisplayConsoleText(NetworkBehaviour obj, NetworkReader reader)
 	{

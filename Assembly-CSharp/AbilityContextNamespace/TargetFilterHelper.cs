@@ -76,7 +76,7 @@ namespace AbilityContextNamespace
 
                 int contextKey = condition.GetContextKey();
 
-                ContextVars contextVars = actorHitContext?.m_contextVars; // no null check in reactor
+                ContextVars contextVars = actorHitContext?.m_contextVars; // NOTE CHANGE null check added in rogues
                 
                 // reactor
                 if (condition.m_nonActorSpecificContext)
@@ -92,8 +92,7 @@ namespace AbilityContextNamespace
                 float actualValue = 0f;
                 bool isValuePresent = false;
                 
-                // no null check in reactor
-                if (contextVars == null)
+                if (contextVars == null) // NOTE CHANGE null check added in rogues
                 {
                     continue;
                 }

@@ -63,7 +63,7 @@ public static class GameplayUtils
 
 	public static void SetActiveIfNeeded(this GameObject obj, bool desiredActive)
 	{
-		if (obj != null // added in rogues
+		if (obj != null // NOTE CHANGE null check added in rogues
 		    && obj.activeSelf != desiredActive)
 		{
 			obj.SetActive(desiredActive);

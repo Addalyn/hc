@@ -1,6 +1,7 @@
 ﻿// ROGUES
 // SERVER
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -525,13 +526,12 @@ public class TricksterAfterImageNetworkBehaviour : NetworkBehaviour
 		((TricksterAfterImageNetworkBehaviour)obj).m_afterImages.HandleMsg(reader);
 	}
 
-	// added in rogues
-	// public int Networkm_maxAfterImageCount
-	// {
-	// 	get => m_maxAfterImageCount;
-	// 	[param: In]
-	// 	set => base.SetSyncVar<int>(value, ref m_maxAfterImageCount, 1UL);
-	// }
+    public int Networkm_maxAfterImageCount
+    {
+        get => m_maxAfterImageCount;
+        [param: In]
+        set => SetSyncVar(value, ref m_maxAfterImageCount, 2u); // 1UL in rogues
+    }
 
 	protected static void InvokeRpcRpcTurnToPosition(NetworkBehaviour obj, NetworkReader reader)
 	{

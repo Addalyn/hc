@@ -43,9 +43,10 @@ public class SparkEnergized : Ability
 	private StandardEffectInfo m_cachedBothTetherAllyEffect;
 	// removed in rogues
 	private StandardEffectInfo m_cachedBothTetherEnemyEffect;
-
+#if SERVER
 	// added in rogues
 	private List<ActorData> m_lastHitActors = new List<ActorData>();
+#endif
 
 	private void Start()
 	{

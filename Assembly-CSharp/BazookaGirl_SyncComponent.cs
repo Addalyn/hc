@@ -8,7 +8,9 @@ public class BazookaGirl_SyncComponent : NetworkBehaviour
 	public int m_basicAttackLastCastTurn = -1;
 	[SyncVar]
 	public int m_basicAttackConsecutiveTurns;
+#if SERVER
 	public int m_lastCinematicRequested; // custom
+#endif
 
 	public int Networkm_basicAttackLastCastTurn
 	{

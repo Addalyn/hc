@@ -201,11 +201,7 @@ public class Exo_SyncComponent : NetworkBehaviour
 	// }
 
 	// reactor
-	private void UNetVersion()
-	{
-	}
-	// rogues
-	private void MirrorProcessed()
+	private void UNetVersion() // MirrorProcessed in rogues
 	{
 	}
 

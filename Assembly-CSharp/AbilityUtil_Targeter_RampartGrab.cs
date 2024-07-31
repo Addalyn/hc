@@ -79,10 +79,11 @@ public class AbilityUtil_Targeter_RampartGrab : AbilityUtil_Targeter
 		{
 			VectorUtils.LaserCoords laserCoords = default(VectorUtils.LaserCoords);
 			laserCoords.start = targetingActor.GetLoSCheckPos();
-			// reactor
-			// List<Team> otherTeams = targetingActor.GetEnemyTeamAsList();
-			// rogues
-			List<Team> otherTeams = targetingActor.GetOtherTeams();
+#if PURE_REACTOR
+			List<Team> otherTeams = targetingActor.GetEnemyTeamAsList(); // reactor
+#else
+			List<Team> otherTeams = targetingActor.GetOtherTeams(); // rogues
+#endif
 			List<ActorData> actorsInLaser = AreaEffectUtils.GetActorsInLaser(laserCoords.start, targets[currentTargetIndex - 1].AimDirection, m_laserRange, m_laserWidth, targetingActor, otherTeams, m_penetrateLos, m_maxTargets, false, false, out laserCoords.end, null);
 			int arrowIndex = 0;
 			EnableAllMovementArrows();

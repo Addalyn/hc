@@ -1117,8 +1117,11 @@ public class Ability : MonoBehaviour
 			}
 			if (GameFlowData.Get().activeOwnedActorData == null)
 			{
-				// NOTE CHANGE custom fallback
-				Team teamViewing = GameFlowData.Get().LocalPlayerData?.GetTeamViewing() ?? Team.Invalid;
+#if PURE_REACTOR
+				Team teamViewing = GameFlowData.Get().LocalPlayerData.GetTeamViewing(); // reactor
+#else // NOTE CHANGE custom fallback
+				Team teamViewing = GameFlowData.Get().LocalPlayerData?.GetTeamViewing() ?? Team.Invalid; // rogues
+#endif
 				if (teamViewing == Team.Invalid || teamViewing == ActorData.GetTeam())
 				{
 					flag3 = true;

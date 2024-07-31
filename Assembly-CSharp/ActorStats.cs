@@ -325,8 +325,12 @@ public class ActorStats : NetworkBehaviour
 			case StatType.MaxTechPoints:
 				if (NetworkServer.active)
 				{
-					// NOTE CHANGE
-					component.OnMaxTechPointsChanged((int)oldStatValue);  // was bugged in reactor: OnMaxHitPointsChanged was called. Fixed in rogues
+#if PURE_REACTOR
+					component.OnMaxHitPointsChanged((int)oldStatValue); // reactor
+#else
+					// NOTE CHANGE bugged in reactor, fixed in rogues
+					component.OnMaxTechPointsChanged((int)oldStatValue);  // rogues 
+#endif
 				}
 				break;
 			case StatType.Movement_Horizontal:

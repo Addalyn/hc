@@ -186,6 +186,10 @@ public class SatelliteController : NetworkBehaviour
 		return m_serializeHelper.End(initialState, base.syncVarDirtyBits);
 	}
 
+	private void UNetVersion()
+	{
+	}
+
 	// added in rogues
 #if SERVER
 	public SatelliteController()

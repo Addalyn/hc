@@ -1599,7 +1599,9 @@ public class ActorTurnSM : NetworkBehaviour
 
 				// reactor
 				bool isWaypoint = 
+#if !PURE_REACTOR
 					Options_UI.Get() == null || InputManager.Get() == null || // custom
+#endif
 					Options_UI.Get().GetShiftClickForMovementWaypoints() == InputManager.Get().IsKeyBindingHeld(KeyPreference.MovementWaypointModifier)
 					&& FirstTurnMovement.CanWaypoint();
 				// rogues
@@ -2156,6 +2158,11 @@ public class ActorTurnSM : NetworkBehaviour
 	//		base.SetSyncVar<int>(value, ref m_tauntRequestedForNextAbility, 1024UL);
 	//	}
 	//}
+
+	// removed in rogues
+	private void UNetVersion()
+	{
+	}
 
 	protected static void InvokeCmdCmdGUITurnMessage(NetworkBehaviour obj, NetworkReader reader)
 	{

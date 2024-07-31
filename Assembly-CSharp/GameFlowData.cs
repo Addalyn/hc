@@ -1074,7 +1074,7 @@ public class GameFlowData : NetworkBehaviour, IGameEventListener
 		}
 	}
 
-	public List<ActorData> GetAllActorsOnTeam(Team team)  // private in reactor
+	private List<ActorData> GetAllActorsOnTeam(Team team)  // public in rogues
 	{
 		switch (team)
 		{

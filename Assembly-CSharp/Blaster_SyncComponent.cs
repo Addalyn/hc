@@ -262,7 +262,7 @@ public class Blaster_SyncComponent : NetworkBehaviour
 		    && GameFlowData.Get() != null
 		    && GameFlowData.Get().gameState == GameState.BothTeams_Decision
 		    && m_canActivateDelayedLaser
-		    && m_delayedLaserAbility != null)  // check added in rogues
+		    && m_delayedLaserAbility != null)  // NOTE CHANGE null check added in rogues
 		{
 			bool visible = activeOwnedActorData.GetTeam() == m_actorData.GetTeam();
 			Vector3 dir = m_delayedLaserAimDir;
@@ -283,14 +283,14 @@ public class Blaster_SyncComponent : NetworkBehaviour
 			Vector3 dirNormal = endPos - startPos;
 			dirNormal.y = 0f;
 			float magnitude = dirNormal.magnitude;
-			if (m_laserRangeMarkerForAlly != null)  // check added in rogues
+			if (m_laserRangeMarkerForAlly != null)  // NOTE CHANGE null check added in rogues
 			{
 				m_laserRangeMarkerForAlly.SetPose(startPos, dir);
 				m_laserRangeMarkerForAlly.AdjustSize(m_delayedLaserAbility.GetWidth(), magnitude / Board.Get().squareSize);
 				m_laserRangeMarkerForAlly.SetVisible(visible);
 			}
 		}
-		else if (m_laserRangeMarkerForAlly != null)  // check added in rogues
+		else if (m_laserRangeMarkerForAlly != null)  // NOTE CHANGE null check added in rogues
 		{
 			m_laserRangeMarkerForAlly.SetVisible(false);
 		}

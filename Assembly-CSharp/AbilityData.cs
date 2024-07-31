@@ -253,14 +253,8 @@ public class AbilityData : NetworkBehaviour
 		return m_abilitiesList;
 	}
 
-	// reactor?
+	// removed (renamed) in rogues
 	public Ability GetAbilityAtIndex(int index)
-	{
-		return GetCharacterMainAbilityAtIndex(index);
-	}
-
-	// rogues
-	public Ability GetCharacterMainAbilityAtIndex(int index)
 	{
 		switch (index)
 		{
@@ -279,6 +273,14 @@ public class AbilityData : NetworkBehaviour
 		}
 	}
 
+#if SERVER
+	// added (renamed) in rogues
+	public Ability GetCharacterMainAbilityAtIndex(int index)
+	{
+		return GetAbilityAtIndex(index);
+	}
+#endif
+	
 	public ActorData SoftTargetedActor
 	{
 		get
@@ -2760,7 +2762,6 @@ public class AbilityData : NetworkBehaviour
 		}
 
 		ActorData actor = m_actor;
-		ActorTurnSM component = GetComponent<ActorTurnSM>();
 		bool flag = !IsActionInCooldown(abilityAction) || abilityOfActionType.GetModdedMaxStocks() > 0;
 		if (!flag
 			&& actor != null
@@ -2773,14 +2774,12 @@ public class AbilityData : NetworkBehaviour
 		bool flag4 = ValidateAbilityIsCastableDisregardingMovement(abilityOfActionType);
 		bool flag5 = SinglePlayerManager.IsActionAllowed(actor, abilityAction);
 
-		// reactor
-		bool flagY = true;
-		bool flagZ = true;
 		// rogues
-		//bool flagY = component.HasRemainingAbilityUse(abilityOfActionType.m_quickAction);
-		//bool flagZ = abilityOfActionType.IsFreeAction();
+		// ActorTurnSM component = GetComponent<ActorTurnSM>();
+		// bool flagY = component.HasRemainingAbilityUse(abilityOfActionType.m_quickAction);
+		// bool flagZ = abilityOfActionType.IsFreeAction();
 
-		return flag && flag2 && flag3 && flag4 && flag5 && (flagY || flagZ);
+		return flag && flag2 && flag3 && flag4 && flag5; // && (flagY || flagZ); in rogues
 	}
 
 	public BoardSquare GetAutoSelectTarget()

@@ -321,7 +321,7 @@ public class PlayerData : NetworkBehaviour
 			default:
 				UIScreenManager.Get().ClearAllPanels();
 				UIScreenManager.Get().TryLoadAndSetupInGameUI();
-				if (HUD_UI.Get().m_textConsole != null) // check added in rogues
+				if (HUD_UI.Get().m_textConsole != null) // NOTE CHANGE null check added in rogues
 				{
 					// reactor
 					UIManager.SetGameObjectActive(HUD_UI.Get().m_textConsole, true);

@@ -90,7 +90,7 @@ public class Samurai_SyncComponent : NetworkBehaviour
 		return false;
 	}
 
-	public int GetExtraDamageFromQueuedSelfBuff()  // private in reactor
+	public int GetExtraDamageFromQueuedSelfBuff()  // NOTE CHANGE private in reactor
 	{
 		return m_abilityData != null
 		       && m_selfBuffAbility != null

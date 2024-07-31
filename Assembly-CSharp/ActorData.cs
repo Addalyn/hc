@@ -379,12 +379,12 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 
 	//private SyncListInt m_lineOfSightVisibleExceptionActorIndexes = new SyncListInt();  // rogues?
 
+#if SERVER
 	// added in rogues
-	private BoardSquare m_squareAtPhaseStart;  // rogues?
-	// added in rogues
-	private BoardSquare m_squareAtResolveStart;  // rogues?
-	// added in rogues
-	private BoardSquare m_squareRequestedForMovementMetrics;  // rogues?
+	private BoardSquare m_squareAtPhaseStart;
+	private BoardSquare m_squareAtResolveStart;
+	private BoardSquare m_squareRequestedForMovementMetrics;
+#endif
 
 	private SerializeHelper m_serializeHelper;
 	private uint m_debugSerializeSizeBeforeVisualInfo;
@@ -990,8 +990,10 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 		}
 	}
 	
+#if SERVER
 	// custom
 	public ActorTeamSensitiveData TeamSensitiveData_hostile => m_teamSensitiveData_hostile;
+#endif
 
 	public BoardSquare MoveFromBoardSquare
 	{
@@ -3393,8 +3395,11 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 		}
 		if (GameFlow.Get().playerDetails.TryGetValue(PlayerData.GetPlayer(), out PlayerDetails value))
 		{
-			// NOTE CHANGE rogues: did not check IsLoadTestBot in reactor
-			return value.IsHumanControlled && !value.IsLoadTestBot;
+#if PURE_REACTOR
+            return value.IsHumanControlled; // reactor
+#else // NOTE CHANGE rogues: did not check IsLoadTestBot in reactor
+			return value.IsHumanControlled && !value.IsLoadTestBot; // rogues
+#endif
 		}
 		return false;
 	}

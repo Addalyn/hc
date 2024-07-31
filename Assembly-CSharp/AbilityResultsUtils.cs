@@ -694,13 +694,11 @@ public static class AbilityResultsUtils
 		stream.Serialize(ref effectGUID);
 		stream.Serialize(ref casterActorIndex);
 
-		// rogues
-		//bool isStandalone = reader.ReadBoolean();
 		// reactor
 		sbyte sourceAbilityActionType = -1;
 		stream.Serialize(ref sourceAbilityActionType);
-
-        ActorData effectCaster = GameFlowData.Get().FindActorByActorIndex((int)casterActorIndex);
+		// rogues
+		//bool isStandalone = reader.ReadBoolean();
 
 		// rogues
 		//ClientEffectResults clientEffectResults = null;
@@ -721,6 +719,8 @@ public static class AbilityResultsUtils
 		List<ServerClientUtils.SequenceStartData> seqStartDataList = DeSerializeSequenceStartDataListFromStream(ref stream);
 		Dictionary<ActorData, ClientActorHitResults> actorToHitResults = DeSerializeActorHitResultsDictionaryFromStream(ref stream);
 		Dictionary<Vector3, ClientPositionHitResults> posToHitResults = DeSerializePositionHitResultsDictionaryFromStream(ref stream);
+
+		ActorData effectCaster = GameFlowData.Get().FindActorByActorIndex(casterActorIndex);
 		
 		// reactor
 		return new ClientEffectResults(
@@ -765,7 +765,11 @@ public static class AbilityResultsUtils
 		stream.Serialize(ref casterIndex);
 		Dictionary<ActorData, ClientActorHitResults> actorToHitResults = DeSerializeActorHitResultsDictionaryFromStream(ref stream);
 		Dictionary<Vector3, ClientPositionHitResults> posToHitResults = DeSerializePositionHitResultsDictionaryFromStream(ref stream);
-		ActorData barrierCaster = (casterIndex < 0) ? null : GameFlowData.Get().FindActorByActorIndex(casterIndex); // check added in rogues
+	#if PURE_REACTOR
+		ActorData barrierCaster = GameFlowData.Get().FindActorByActorIndex(casterIndex);
+	#else
+		ActorData barrierCaster = casterIndex >= 0 ? GameFlowData.Get().FindActorByActorIndex(casterIndex) : null; // check added in rogues
+	#endif
 		return new ClientBarrierResults(barrierGUID, barrierCaster, actorToHitResults, posToHitResults);
 	}
 

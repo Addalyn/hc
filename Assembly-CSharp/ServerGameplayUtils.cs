@@ -5,9 +5,9 @@ using System.Linq;
 using UnityEngine;
 
 // was empty in reactor
-#if SERVER
 public static class ServerGameplayUtils
 {
+#if SERVER
 	public static void SetServerLastKnownPositionsForMovement(
 		MovementCollection stabilizedMovement,
 		out List<ActorData> actorsThatWillBeSeenButArentMoving_normal,
@@ -1166,5 +1166,5 @@ public static class ServerGameplayUtils
 			}
 		}
 	}
-}
 #endif
+}

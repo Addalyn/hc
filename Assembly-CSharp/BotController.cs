@@ -20,7 +20,10 @@ public class BotController : MonoBehaviour
 	public Stack<NPCBrain> previousBrainStack;
 	// rogues
 	// public Stack<NPCBrain> m_brainStack = new Stack<NPCBrain>();
+	
+#if SERVER
 	public Stack<NPCBrain> m_brainStack => previousBrainStack;  // custom for rogues
+#endif
 
 	private int m_aiStartedForTurn;
 	

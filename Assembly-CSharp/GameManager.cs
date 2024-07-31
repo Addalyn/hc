@@ -543,7 +543,7 @@ public class GameManager : MonoBehaviour
 		return gameType != GameType.Tutorial
 		       && gameType != GameType.Practice
 		       && gameType != GameType.Custom
-		       // added in rogues
+		       // NOTE CHANGE added in rogues
 		       && gameType != GameType.None;
 	}
 

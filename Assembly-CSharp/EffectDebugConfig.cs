@@ -6,6 +6,10 @@ public static class EffectDebugConfig
 
 	public static bool TracingAddAndRemove()
 	{
-		return true;
+#if SERVER
+		return true; // custom
+#else
+        return false; // reactor
+#endif
 	}
 }

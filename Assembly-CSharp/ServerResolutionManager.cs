@@ -975,10 +975,9 @@ public class ServerResolutionManager : NetworkBehaviour
 	}
 #endif
 
-	// rogues
-	//private void MirrorProcessed()
-	//{
-	//}
+	private void UNetVersion() // MirrorProcessed in rogues
+	{
+	}
 
 	// removed in rogues
 	public override bool OnSerialize(NetworkWriter writer, bool forceAll)

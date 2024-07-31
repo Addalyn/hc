@@ -33,9 +33,10 @@ public class Passive_Martyr : Passive
 	[Tooltip("All abilities get the crystal bonus even if SpendCrystals isn't used this turn")]
 	public bool m_automaticCrystalBonus = true;
 
+	private Martyr_SyncComponent m_syncComponent;
+	
 #if SERVER
 	// added in rogues
-	private Martyr_SyncComponent m_syncComponent;
 	private AbilityData m_abilityData;
 	private MartyrSpendCrystals m_spendCrystalAbility;
 	private AbilityData.ActionType m_spendCrystalActionType;

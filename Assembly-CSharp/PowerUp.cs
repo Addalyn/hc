@@ -87,7 +87,7 @@ public class PowerUp : NetworkBehaviour
 	public bool m_restrictPickupByTeam;
 	public PowerUpCategory m_chatterCategory;
 
-	[Tooltip("Treats the target as 'ally' for power up ability")]
+	[Tooltip("Treats the target as 'ally' for power up ability")] // added in rogues
 	[SyncVar]
 	private Team m_pickupTeam = Team.Objects;  // public in rogues
 	[SyncVar(hook = "HookSetGuid")]

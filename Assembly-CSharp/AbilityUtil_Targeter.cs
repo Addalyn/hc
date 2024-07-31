@@ -779,8 +779,7 @@ public class AbilityUtil_Targeter
 		}
 	}
 
-	// TODO LOW check access level change: was protected in reactor
-	public int AddMovementArrowWithPrevious(ActorData mover, BoardSquarePathInfo path, TargeterMovementType movementType, int arrowIndex, bool isChasing = false)  // public in rogues
+	protected int AddMovementArrowWithPrevious(ActorData mover, BoardSquarePathInfo path, TargeterMovementType movementType, int arrowIndex, bool isChasing = false)  // public in rogues
 	{
 		Color arrowColor;
 		switch (movementType)
@@ -816,14 +815,12 @@ public class AbilityUtil_Targeter
 		return arrowIndex;
 	}
 
-	// TODO LOW check access level change: was protected in reactor
-	public void EnableAllMovementArrows()  // public in rogues
+	protected void EnableAllMovementArrows()  // public in rogues
 	{
 		SetMovementArrowEnabledFromIndex(0, true);
 	}
 
-	// TODO LOW check access level change: was protected in reactor
-	public void SetMovementArrowEnabledFromIndex(int fromIndex, bool enabled)  // public in rogues
+	protected void SetMovementArrowEnabledFromIndex(int fromIndex, bool enabled)  // public in rogues
 	{
 		for (int i = fromIndex; i < m_arrows.Count; i++)
 		{
@@ -1018,10 +1015,11 @@ public class AbilityUtil_Targeter
 			}
 			if (m_affectsEnemies)
 			{
-				// reactor
-				// list.Add(targeterOwner.GetEnemyTeam());
-				// rogues
-				list.AddRange(targeterOwner.GetOtherTeams());
+#if PURE_REACTOR
+				list.Add(targeterOwner.GetEnemyTeam()); // reactor
+#else
+				list.AddRange(targeterOwner.GetOtherTeams()); // rogues
+#endif
 			}
 		}
 		return list;
