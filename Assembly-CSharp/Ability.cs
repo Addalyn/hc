@@ -411,7 +411,7 @@ public class Ability : MonoBehaviour
 				list.Add(new TooltipTokenInt(techPointInteraction.m_type.ToString(), "Energy Gain", num));
 			}
 		}
-#if PURE_REACTOR
+#if VANILLA
 		if (m_techPointsCost > 0)
 		{
 			list.Add(new TooltipTokenInt("EnergyCost", "Energy Cost", m_techPointsCost));
@@ -1117,7 +1117,7 @@ public class Ability : MonoBehaviour
 			}
 			if (GameFlowData.Get().activeOwnedActorData == null)
 			{
-#if PURE_REACTOR
+#if VANILLA
 				Team teamViewing = GameFlowData.Get().LocalPlayerData.GetTeamViewing(); // reactor
 #else // NOTE CHANGE custom fallback
 				Team teamViewing = GameFlowData.Get().LocalPlayerData?.GetTeamViewing() ?? Team.Invalid; // rogues

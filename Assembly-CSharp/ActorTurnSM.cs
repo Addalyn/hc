@@ -1599,7 +1599,7 @@ public class ActorTurnSM : NetworkBehaviour
 
 				// reactor
 				bool isWaypoint = 
-#if !PURE_REACTOR
+#if !VANILLA
 					Options_UI.Get() == null || InputManager.Get() == null || // custom
 #endif
 					Options_UI.Get().GetShiftClickForMovementWaypoints() == InputManager.Get().IsKeyBindingHeld(KeyPreference.MovementWaypointModifier)

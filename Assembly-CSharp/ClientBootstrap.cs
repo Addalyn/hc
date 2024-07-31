@@ -121,7 +121,7 @@ public class ClientBootstrap : MonoBehaviour
 		AppState_GameLoading.Create();
 		AppState_GroupCharacterSelect.Create();
 		AppState_RankModeDraft.Create(); // removed in rogues
-#if PURE_REACTOR
+#if VANILLA
 		AppState_LandingPage.Create(); // duplicate removed in rogues
 #endif
 		if (GetComponent<ClientIdleTimer>() == null)

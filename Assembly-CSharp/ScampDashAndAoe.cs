@@ -75,7 +75,7 @@ public class ScampDashAndAoe : GenericAbility_Container
 
 	public int GetShieldDownCooldown()
 	{
-#if !PURE_REACTOR
+#if !VANILLA
 		if (ActorData.HitPoints < GetShieldDownNoCooldownHealthThresh())
 		{
 			return 0;

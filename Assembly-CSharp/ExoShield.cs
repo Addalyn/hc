@@ -290,7 +290,7 @@ public class ExoShield : Ability
 		{
 			return true;
 		}
-#if PURE_REACTOR
+#if VANILLA
 		return m_freeActionWhileAnchored // reactor
 #else
 		return FreeActionWhileAnchored()  // custom

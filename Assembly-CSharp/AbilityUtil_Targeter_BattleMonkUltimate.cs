@@ -69,7 +69,7 @@ public class AbilityUtil_Targeter_BattleMonkUltimate : AbilityUtil_Targeter_Shap
 			BoardSquare gameplayRefSquare = GetGameplayRefSquare(currentTarget, targetingActor);
 			if (gameplayRefSquare != null)
 			{
-#if PURE_REACTOR
+#if VANILLA
 				// reactor
 				List<ActorData> actors = AreaEffectUtils.GetActorsInShape(
 					m_enemyShape,

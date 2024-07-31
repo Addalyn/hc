@@ -174,7 +174,7 @@ public class BazookaGirlDelayedBombDrops : Ability
 				item,
 				PenetrateLos(),
 				ActorData,
-#if PURE_REACTOR
+#if VANILLA
 				ActorData.GetEnemyTeam(), // reactor
 #else
 				ActorData.GetOtherTeams(), // rogues

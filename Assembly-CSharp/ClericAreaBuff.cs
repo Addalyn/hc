@@ -407,7 +407,7 @@ public class ClericAreaBuff : Ability
 		int cost = 0;
 		if (m_syncComp != null)
 		{
-#if PURE_REACTOR
+#if VANILLA
 			// reactor
 			cost = m_syncComp.m_turnsAreaBuffActive * m_extraTpCostPerTurnActive;
 #else

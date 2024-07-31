@@ -80,7 +80,7 @@ public class ThiefHiddenTrap : Ability
 	protected override void AddSpecificTooltipTokens(List<TooltipTokenEntry> tokens, AbilityMod modAsBase)
 	{
 		AbilityMod_ThiefHiddenTrap abilityMod_ThiefHiddenTrap = modAsBase as AbilityMod_ThiefHiddenTrap;
-#if PURE_REACTOR
+#if VANILLA
 		m_trapFieldInfo.AddTooltipTokens(tokens, "GroundEffect");
 #else
 		GetTrapFieldInfo().AddTooltipTokens(tokens, "GroundEffect");

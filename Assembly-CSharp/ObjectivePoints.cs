@@ -456,7 +456,7 @@ public class ObjectivePoints : NetworkBehaviour
 			{
 				// NOTE CHANGE bugfix?
 				// TODO LOW check
-#if PURE_REACTOR
+#if VANILLA
 				victoryConditionString = !m_teamAVictoryCondition.m_conditionString.IsNullOrEmpty()
 					? StringUtil.TR(m_teamAVictoryCondition.m_conditionString)
 					: "";

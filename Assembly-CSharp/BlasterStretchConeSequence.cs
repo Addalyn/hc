@@ -187,7 +187,7 @@ public class BlasterStretchConeSequence : Sequence
 			laserRangeInSquares,
 			0.1f,
 			Caster,
-#if PURE_REACTOR
+#if VANILLA
 			Caster.GetEnemyTeamAsList(), // reactor
 #else
 			Caster.GetOtherTeams(), // rogues

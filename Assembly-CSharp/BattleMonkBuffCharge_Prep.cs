@@ -85,7 +85,7 @@ public class BattleMonkBuffCharge_Prep : Ability
 		}
 		
 		// The effects are always the same in the mods that are available in game
-#if PURE_REACTOR
+#if VANILLA
 		StandardEffectInfo allyBuffEffect = GetSelfBuffEffect(); // reactor & rogues
 #else
 		StandardEffectInfo allyBuffEffect = GetAllyBuffEffect(); // custom 

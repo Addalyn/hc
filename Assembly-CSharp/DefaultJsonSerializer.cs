@@ -19,7 +19,7 @@ public static class DefaultJsonSerializer
 			s_serializer = new JsonSerializer();
 			s_serializer.NullValueHandling = NullValueHandling.Ignore;
 			s_serializer.Converters.Add(new StringEnumConverter());
-			
+#if SERVER
 			// custom
 			s_serializer.Converters.Add(new VectorJsonConverter());
 			s_serializer.Converters.Add(new Vector2JsonConverter());
@@ -35,7 +35,7 @@ public static class DefaultJsonSerializer
 			s_serializer.Converters.Add(new BoardSquarePathInfoJsonConverter());
 			s_serializer.Converters.Add(new ClientEffectDataJsonConverter());
 			s_serializer.Converters.Add(new NetworkConnectionJsonConverter());
-			// end custom
+#endif
 		}
 		return s_serializer;
 	}
@@ -53,6 +53,7 @@ public static class DefaultJsonSerializer
 		return Get().Deserialize<T>(reader);
 	}
 
+#if SERVER
 	// custom
 	public abstract class JsonWriterConverter : JsonConverter
 	{
@@ -341,4 +342,5 @@ public static class DefaultJsonSerializer
 			return typeof(NetworkConnection) == objectType;
 		}
 	}
+#endif
 }

@@ -112,7 +112,7 @@ public class AbilityUtil_Targeter_ClaymoreSlam : AbilityUtil_Targeter
 			m_coneBackwardOffsetInSquares,
 			m_penetrateLos,
 			targetingActor,
-#if PURE_REACTOR
+#if VANILLA
 			targetingActor.GetEnemyTeam(), // reactor
 #else
 			targetingActor.GetOtherTeams(), // rogues

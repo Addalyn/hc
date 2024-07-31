@@ -191,7 +191,7 @@ public class ThiefOnTheRun : Ability
 	{
 		List<AbilityTooltipNumber> numbers = new List<AbilityTooltipNumber>();
 		AbilityTooltipHelper.ReportDamage(ref numbers, AbilityTooltipSubject.Primary, m_damageAmount);
-#if PURE_REACTOR
+#if VANILLA
 		m_enemyHitEffect.ReportAbilityTooltipNumbers(ref numbers, AbilityTooltipSubject.Primary);
 #else
 		GetEnemyHitEffect().ReportAbilityTooltipNumbers(ref numbers, AbilityTooltipSubject.Primary);

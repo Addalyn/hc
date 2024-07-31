@@ -1015,7 +1015,7 @@ public class AbilityUtil_Targeter
 			}
 			if (m_affectsEnemies)
 			{
-#if PURE_REACTOR
+#if VANILLA
 				list.Add(targeterOwner.GetEnemyTeam()); // reactor
 #else
 				list.AddRange(targeterOwner.GetOtherTeams()); // rogues

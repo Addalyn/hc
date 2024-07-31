@@ -46,7 +46,7 @@ public class SpoilsManager : MonoBehaviour, PowerUp.IPowerUpListener
 		{
 			case SpoilsType.Hero when m_heroSpoils != null && m_heroSpoils.Length > 0:
 				return m_heroSpoils[GameplayRandom.Range(0, m_heroSpoils.Length)];
-#if PURE_REACTOR
+#if VANILLA
 			// reactor
 			case SpoilsType.Minion when m_heroSpoils != null && m_heroSpoils.Length > 0:
 				return m_minionSpoils[GameplayRandom.Range(0, m_heroSpoils.Length)];

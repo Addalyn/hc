@@ -79,7 +79,7 @@ public class AbilityUtil_Targeter_RampartGrab : AbilityUtil_Targeter
 		{
 			VectorUtils.LaserCoords laserCoords = default(VectorUtils.LaserCoords);
 			laserCoords.start = targetingActor.GetLoSCheckPos();
-#if PURE_REACTOR
+#if VANILLA
 			List<Team> otherTeams = targetingActor.GetEnemyTeamAsList(); // reactor
 #else
 			List<Team> otherTeams = targetingActor.GetOtherTeams(); // rogues

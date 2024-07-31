@@ -325,7 +325,7 @@ public class ActorStats : NetworkBehaviour
 			case StatType.MaxTechPoints:
 				if (NetworkServer.active)
 				{
-#if PURE_REACTOR
+#if VANILLA
 					component.OnMaxHitPointsChanged((int)oldStatValue); // reactor
 #else
 					// NOTE CHANGE bugged in reactor, fixed in rogues

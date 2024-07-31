@@ -59,7 +59,7 @@ public class AbilityUtil_Targeter_ClaymoreKnockbackLaser : AbilityUtil_Targeter
 			m_laserRange,
 			m_laserWidth,
 			targetingActor,
-#if PURE_REACTOR
+#if VANILLA
 			targetingActor.GetEnemyTeamAsList(), // reactor
 #else
 			targetingActor.GetOtherTeams(), // rogues
@@ -76,7 +76,7 @@ public class AbilityUtil_Targeter_ClaymoreKnockbackLaser : AbilityUtil_Targeter
 			m_laserRange,
 			m_laserMiddleWidth,
 			targetingActor,
-#if PURE_REACTOR
+#if VANILLA
 			targetingActor.GetEnemyTeamAsList(), // reactor
 #else
 			targetingActor.GetOtherTeams(), // rogues

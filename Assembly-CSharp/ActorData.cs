@@ -2479,7 +2479,7 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 		ClientAppliedHoTThisTurn = 0;
 		transform.parent = GameFlowData.Get().GetActorRoot().transform;
 		// NOTE CHANGE rogues
-#if PURE_REACTOR
+#if VANILLA
 		GameFlowData.Get().AddActor(this);  // added here in reactor, not a few lines later
 #endif
 		EnableRagdoll(false);
@@ -2489,7 +2489,7 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 			HUD_UI.Get().m_mainScreenPanel.m_nameplatePanel.AddActor(this);
 			HUD_UI.Get().m_mainScreenPanel.m_offscreenIndicatorPanel.AddActor(this);
 		}
-#if !PURE_REACTOR
+#if !VANILLA
 		GameFlowData.Get().AddActor(this);
 #endif
 		if (GameFlow.Get().playerDetails.TryGetValue(PlayerData.GetPlayer(), out var playerDetails) && playerDetails.IsLocal())
@@ -3395,7 +3395,7 @@ public class ActorData : NetworkBehaviour, IGameEventListener
 		}
 		if (GameFlow.Get().playerDetails.TryGetValue(PlayerData.GetPlayer(), out PlayerDetails value))
 		{
-#if PURE_REACTOR
+#if VANILLA
             return value.IsHumanControlled; // reactor
 #else // NOTE CHANGE rogues: did not check IsLoadTestBot in reactor
 			return value.IsHumanControlled && !value.IsLoadTestBot; // rogues

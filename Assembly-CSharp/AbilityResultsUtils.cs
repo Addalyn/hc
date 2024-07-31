@@ -765,7 +765,7 @@ public static class AbilityResultsUtils
 		stream.Serialize(ref casterIndex);
 		Dictionary<ActorData, ClientActorHitResults> actorToHitResults = DeSerializeActorHitResultsDictionaryFromStream(ref stream);
 		Dictionary<Vector3, ClientPositionHitResults> posToHitResults = DeSerializePositionHitResultsDictionaryFromStream(ref stream);
-	#if PURE_REACTOR
+	#if VANILLA
 		ActorData barrierCaster = GameFlowData.Get().FindActorByActorIndex(casterIndex);
 	#else
 		ActorData barrierCaster = casterIndex >= 0 ? GameFlowData.Get().FindActorByActorIndex(casterIndex) : null; // check added in rogues

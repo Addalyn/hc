@@ -239,7 +239,7 @@ public class SpawnPointManager : MonoBehaviour
 	{
 		return square != null
 			&& MovementUtils.CanStopOnSquare(square)
-#if !PURE_REACTOR
+#if !VANILLA
 			&& square.IsValidForGameplay()  // added in rogues
 #endif
 			&& (allowOccupiedSquares || square.occupant == null);

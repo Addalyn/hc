@@ -8,14 +8,18 @@ public static class BuildVersion
 	private const int s_buildNumber = 100;
 	private const string s_buildLetter = "k";
 	private const string s_changelistNumber = "265834";
+#if SERVER
 	public const string s_buildTag = ThisAssembly.Git.Tag; // custom
+#endif
 
 	public static int ReleaseNumber => s_releaseNumber;
 	public static int BuildNumber => s_buildNumber;
 	public static string BuildLetter => s_buildLetter.ToUpper();
 	public static string BranchName => BuildBranch.BranchName;
 	public static string ChangelistNumber => s_changelistNumber;
+#if SERVER
 	public static string BuildTag => s_buildTag; // custom
+#endif
 	public static string MiniVersionString => $"{BranchName}-{ReleaseNumber}";
 	public static string ShortVersionString => $"{BranchName}-{ReleaseNumber}-{BuildNumber}";
 	public static string FullVersionString => $"{BranchName}-{ReleaseNumber}-{BuildNumber}-{BuildLetter}-{ChangelistNumber}";

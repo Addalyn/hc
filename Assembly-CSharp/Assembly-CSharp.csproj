@@ -27,18 +27,6 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
-    <DefineConstants>
-    </DefineConstants>
-    <GitTagRegex>client*</GitTagRegex>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
-    <DefineConstants>
-    </DefineConstants>
-    <GitTagRegex>client*</GitTagRegex>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Server Release|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\ServerRelease\</OutputPath>
@@ -63,10 +51,22 @@
     <GitTagRegex>[0-9]*</GitTagRegex>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Vanilla Client|AnyCPU' ">
-    <DefineConstants>PURE_REACTOR</DefineConstants>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Client Release|AnyCPU' ">
+    <DefineConstants>
+    </DefineConstants>
     <GitTagRegex>client*</GitTagRegex>
-    <OutputPath>bin\Vanilla Client\</OutputPath>
+    <OutputPath>bin\ClientRelease\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Client Vanilla|AnyCPU' ">
+    <DefineConstants>VANILLA</DefineConstants>
+    <GitTagRegex>client*</GitTagRegex>
+    <OutputPath>bin\ClientVanilla\</OutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Client Debug|AnyCPU' ">
+    <DefineConstants>
+    </DefineConstants>
+    <GitTagRegex>client*</GitTagRegex>
+    <OutputPath>bin\ClientDebug\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Ability.cs" />
