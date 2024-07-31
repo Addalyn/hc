@@ -596,56 +596,61 @@ public class GameFlowData : NetworkBehaviour, IGameEventListener
 		return result;
 	}
 
+
+	// reactor
 	public void AddOwnedActorData(ActorData actorData)
 	{
 		if (m_ownedActorDatas.Contains(actorData))
 		{
 			return;
 		}
-		// rogues
-		//PveLog.DebugLog(string.Concat(new object[]
-		//{
-		//	"Adding Owned actor ",
-		//	actorData.DebugNameString(),
-		//	", Team ",
-		//	actorData.GetTeam()
-		//}), null);
-		if (actorData.GetTeam() != Team.TeamA)
+		if (actorData.GetTeam() != Team.TeamA && m_ownedActorDatas.Count != 0)
 		{
-			// reactor
-			if (m_ownedActorDatas.Count != 0)
-			{
-				m_ownedActorDatas.Add(actorData);
-				Log.Info($"GameFlowData.AddOwnedActorData {m_ownedActorDatas.Count} {actorData}");
-			}
-			// rogues
-			//this.m_ownedActorDatas.Add(actorData);
+			m_ownedActorDatas.Add(actorData);
+			Log.Info("GameFlowData.AddOwnedActorData {0} {1}", m_ownedActorDatas.Count, actorData);
 		}
 		else
 		{
-			// reactor
 			m_ownedActorDatas.Insert(0, actorData);
-			Log.Info($"GameFlowData.AddOwnedActorData {0} {actorData}");
-			// rogues
-			//int num = -1;
-			//         int num2 = 0;
-			//         while (num2 < this.m_ownedActorDatas.Count && this.m_ownedActorDatas[num2].GetTeam() == Team.TeamA)
-			//         {
-			//             num = num2;
-			//             num2++;
-			//         }
-			//         this.m_ownedActorDatas.Insert(num + 1, actorData);
+			Log.Info("GameFlowData.AddOwnedActorData {0} {1}", 0, actorData);
 		}
 		if (activeOwnedActorData == null)
 		{
 			activeOwnedActorData = actorData;
 		}
-		// added in rogues
-		//if (this.m_ownedActorDatas.Count > 1)
-		//{
-		//	LobbyGameInfo gameInfo = ClientGameManager.Get().GameInfo;
-		//}
 	}
+	// rogues
+	// public void AddOwnedActorData(ActorData actorData)
+	// {
+	// 	if (m_ownedActorDatas.Contains(actorData))
+	// 	{
+	// 		return;
+	// 	}
+	// 	PveLog.DebugLog(string.Concat("Adding Owned actor ", actorData.DebugNameString(), ", Team ", actorData.GetTeam()), null);
+	// 	if (actorData.GetTeam() == Team.TeamA)
+	// 	{
+	// 		int num = -1;
+	// 		int num2 = 0;
+	// 		while (num2 < m_ownedActorDatas.Count && m_ownedActorDatas[num2].GetTeam() == Team.TeamA)
+	// 		{
+	// 			num = num2;
+	// 			num2++;
+	// 		}
+	// 		m_ownedActorDatas.Insert(num + 1, actorData);
+	// 	}
+	// 	else
+	// 	{
+	// 		m_ownedActorDatas.Add(actorData);
+	// 	}
+	// 	if (activeOwnedActorData == null)
+	// 	{
+	// 		activeOwnedActorData = actorData;
+	// 	}
+	// 	if (m_ownedActorDatas.Count > 1)
+	// 	{
+	// 		LobbyGameInfo gameInfo = ClientGameManager.Get().GameInfo;
+	// 	}
+	// }
 
 	public void ResetOwnedActorDataToFirst()
 	{
