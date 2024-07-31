@@ -23,12 +23,7 @@ using System.Security.Permissions;
     ThisAssembly.Git.Commits
     )]
 
-[assembly: AssemblyInformationalVersion (
-    ThisAssembly.Git.BaseVersion.Major + "." + 
-    ThisAssembly.Git.BaseVersion.Minor + 
-    (ThisAssembly.Git.BaseVersion.Patch != "0" ? "." + ThisAssembly.Git.BaseVersion.Patch : "") +
-    (ThisAssembly.Git.SemVer.DashLabel != "-client" ? ThisAssembly.Git.SemVer.DashLabel : "")
-    )]
+[assembly: AssemblyInformationalVersion (BuildVersion.s_version)]
 
 [assembly: AssemblyProduct (
 #if SERVER

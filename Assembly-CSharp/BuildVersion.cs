@@ -11,6 +11,17 @@ public static class BuildVersion
 #if SERVER
 	public const string s_buildTag = ThisAssembly.Git.Tag; // custom
 #endif
+	
+	// NOTE custom
+	public const string s_version =
+		ThisAssembly.Git.BaseVersion.Major + "." + 
+		ThisAssembly.Git.BaseVersion.Minor + 
+		(ThisAssembly.Git.BaseVersion.Patch != "0" ? "." + ThisAssembly.Git.BaseVersion.Patch : "") +
+		(ThisAssembly.Git.SemVer.DashLabel != "-client" ? ThisAssembly.Git.SemVer.DashLabel : ""
+#if VANILLA
+		+ "-vanilla"
+#endif
+		);
 
 	public static int ReleaseNumber => s_releaseNumber;
 	public static int BuildNumber => s_buildNumber;
@@ -21,7 +32,13 @@ public static class BuildVersion
 	public static string BuildTag => s_buildTag; // custom
 #endif
 	public static string MiniVersionString => $"{BranchName}-{ReleaseNumber}";
+	
+#if VANILLA
 	public static string ShortVersionString => $"{BranchName}-{ReleaseNumber}-{BuildNumber}";
+#else
+	public static string ShortVersionString => $"{BranchName}-{ReleaseNumber}-{BuildNumber}_{s_version}";
+#endif
+	
 	public static string FullVersionString => $"{BranchName}-{ReleaseNumber}-{BuildNumber}-{BuildLetter}-{ChangelistNumber}";
 
 	public static string GetBuildDescriptionString(DateTime buildDate = default(DateTime), string buildHostName = null)
