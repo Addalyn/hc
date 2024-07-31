@@ -37,7 +37,10 @@ public class ClientCrashReportThreadedJob : ThreadedJob
     private string m_archiveFileName;
     private byte[] m_crashReportBytes;
 
-    internal bool IsFinished => m_state == State.Succeeded || m_state == State.Failed || m_state == State.Canceled;
+    internal bool IsFinished =>
+        m_state == State.Succeeded
+        || m_state == State.Failed
+        || m_state == State.Canceled;
     internal bool IsSucceeded => m_stateSucceeeded;
 
     internal ClientCrashReportThreadedJob(
@@ -68,14 +71,18 @@ public class ClientCrashReportThreadedJob : ThreadedJob
                 m_userKeyValues["CommandLine"] = $"\"{string.Join(string.Empty, Environment.GetCommandLineArgs())}\"";
                 m_userKeyValues["Language"] = Application.systemLanguage.ToString();
                 m_userKeyValues["SettingsPath"] = Application.persistentDataPath;
-                m_userKeyValues["SupportsRenderTextureFormat_Depth"] = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.Depth).ToString();
-                m_userKeyValues["SupportsRenderTextureFormat_RFloat"] = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RFloat).ToString();
-                m_userKeyValues["SupportsRenderTextureFormat_RHalf"] = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RHalf).ToString();
+                m_userKeyValues["SupportsRenderTextureFormat_Depth"] =
+                    SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.Depth).ToString();
+                m_userKeyValues["SupportsRenderTextureFormat_RFloat"] =
+                    SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RFloat).ToString();
+                m_userKeyValues["SupportsRenderTextureFormat_RHalf"] =
+                    SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RHalf).ToString();
                 m_userKeyValues["CurrentResolution"] = Screen.currentResolution.ToString();
                 if (Options_UI.Get() != null)
                 {
                     m_userKeyValues["GraphicsQuality"] = Options_UI.Get().GetCurrentGraphicsQuality().ToString();
-                    m_userKeyValues["GraphicsQualityEverSetManually"] = Options_UI.Get().GetGraphicsQualityEverSetManually().ToString();
+                    m_userKeyValues["GraphicsQualityEverSetManually"] =
+                        Options_UI.Get().GetGraphicsQualityEverSetManually().ToString();
                 }
 
                 Resolution[] resolutions = Screen.resolutions;
@@ -135,15 +142,206 @@ public class ClientCrashReportThreadedJob : ThreadedJob
         try
         {
             State state = m_state;
-            if (state != State.CreatingArchive)
+            switch (state)
             {
-                if (state != State.MoveArchiveAndReadBytes)
+                case State.CreatingArchive:
                 {
-                    if (state != State.CleanUp)
+                    m_progressValue = 0.05f;
+                    m_stateSucceeeded = true;
+                    if (!Directory.Exists(m_crashDumpDirectoryPath))
                     {
-                        return;
+                        if (m_bugReportType != BugReportType.Crash)
+                        {
+                            try
+                            {
+                                DirectoryInfo directoryInfo = Directory.CreateDirectory(m_crashDumpDirectoryPath);
+                                if (directoryInfo == null || !directoryInfo.Exists)
+                                {
+                                    Log.Error(
+                                        "Failed to create temp directory for user bug report at {0}",
+                                        m_crashDumpDirectoryPath);
+                                    m_stateSucceeeded = false;
+                                }
+
+                                using (new StreamWriter(m_crashDumpDirectoryPath + "\\crash.dmp"))
+                                {
+                                }
+                            }
+                            catch (Exception exception)
+                            {
+                                Log.Exception(exception);
+                                m_stateSucceeeded = false;
+                            }
+                        }
+                        else
+                        {
+                            Log.Error("Directory does not exist for crash report {0}", m_crashDumpDirectoryPath);
+                            m_stateSucceeeded = false;
+                        }
                     }
 
+                    if (m_stateSucceeeded)
+                    {
+                        if (!string.IsNullOrEmpty(m_userMessage))
+                        {
+                            try
+                            {
+                                using (StreamWriter userMsgWriter =
+                                       new StreamWriter(m_crashDumpDirectoryPath + "\\UserMessage.txt"))
+                                {
+                                    userMsgWriter.Write(m_userMessage);
+                                }
+                            }
+                            catch (Exception exception)
+                            {
+                                Log.Exception(exception);
+                                m_stateSucceeeded = m_bugReportType != BugReportType.Bug
+                                                    && m_bugReportType != BugReportType.Exception;
+                            }
+                        }
+                    }
+
+                    if (m_stateSucceeeded && m_bugReportType != 0)
+                    {
+                        try
+                        {
+                            StringBuilder stringBuilder =
+                                new StringBuilder(m_logMessage != null ? m_logMessage + "\n" : string.Empty);
+                            if (File.Exists(m_outputLogPath))
+                            {
+                                File.Copy(m_outputLogPath, m_outputLogPathCopy, true);
+                                if (File.Exists(m_outputLogPathCopy))
+                                {
+                                    using (StreamReader streamReader = File.OpenText(m_outputLogPathCopy))
+                                    {
+                                        if (streamReader.BaseStream.Length <= 262144)
+                                        {
+                                            streamReader.BaseStream.Seek(-streamReader.BaseStream.Length, SeekOrigin.End);
+                                        }
+                                        else
+                                        {
+                                            streamReader.BaseStream.Seek(-262144L, SeekOrigin.End);
+                                            stringBuilder.AppendFormat(
+                                                "(Skipped {0} bytes)\n",
+                                                streamReader.BaseStream.Length - 262144);
+                                        }
+
+                                        stringBuilder.Append(streamReader.ReadToEnd());
+                                    }
+
+                                    using (StreamWriter streamWriter = new StreamWriter(
+                                               Path.Combine(m_crashDumpDirectoryPath, Path.GetFileName(m_outputLogPath))))
+                                    {
+                                        streamWriter.Write(stringBuilder.ToString());
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            Log.Exception(exception);
+                        }
+                    }
+
+                    if (m_stateSucceeeded)
+                    {
+                        try
+                        {
+                            StringBuilder crushDumpBuilder = new StringBuilder();
+                            if (ClientBootstrap.Instance != null)
+                            {
+                                if (File.Exists(ClientBootstrap.Instance.GetFileLogCurrentPath()))
+                                {
+                                    string path = Path.Combine(m_temporaryCachePath, "AtlasReactor.txt");
+                                    File.Copy(ClientBootstrap.Instance.GetFileLogCurrentPath(), path, true);
+                                    if (File.Exists(path))
+                                    {
+                                        using (StreamReader streamReader = File.OpenText(path))
+                                        {
+                                            if (streamReader.BaseStream.Length <= 262144)
+                                            {
+                                                streamReader.BaseStream.Seek(
+                                                    -streamReader.BaseStream.Length,
+                                                    SeekOrigin.End);
+                                            }
+                                            else
+                                            {
+                                                streamReader.BaseStream.Seek(-262144L, SeekOrigin.End);
+                                                crushDumpBuilder.AppendFormat(
+                                                    "(Skipped {0} bytes)\n",
+                                                    streamReader.BaseStream.Length - 262144);
+                                            }
+
+                                            crushDumpBuilder.Append(streamReader.ReadToEnd());
+                                        }
+
+                                        using (StreamWriter crashDumpWriter = new StreamWriter(
+                                                   Path.Combine(m_crashDumpDirectoryPath, "AtlasReactor.txt")))
+                                        {
+                                            crashDumpWriter.Write(crushDumpBuilder.ToString());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception exception)
+                        {
+                            Log.Exception(exception);
+                        }
+                    }
+
+                    if (m_stateSucceeeded)
+                    {
+                        m_stateSucceeeded = CrashReportArchiver.CreateArchiveFromCrashDumpDirectory(
+                            out m_tempArchivePath,
+                            out m_tempArchiveFileSize,
+                            m_crashDumpDirectoryPath,
+                            m_temporaryCachePath,
+                            m_userKeyValues,
+                            m_bugReportType);
+                    }
+
+                    m_progressValue = 0.2f;
+                    break;
+                }
+                case State.MoveArchiveAndReadBytes:
+                {
+                    m_progressValue = 0.4f;
+                    string text = Path.Combine(m_temporaryCachePath, m_archiveFileName);
+                    m_progressValue = 0.5f;
+                    try
+                    {
+                        File.Move(m_tempArchivePath, text);
+                    }
+                    catch (Exception exception)
+                    {
+                        Log.Exception(exception);
+                    }
+
+                    m_progressValue = 0.6f;
+                    if (File.Exists(text))
+                    {
+                        try
+                        {
+                            m_crashReportBytes = File.ReadAllBytes(text);
+                            m_stateSucceeeded = m_crashReportBytes != null && m_crashReportBytes.Length > 0;
+                        }
+                        catch (Exception exception)
+                        {
+                            Log.Exception(exception);
+                            m_stateSucceeeded = false;
+                        }
+                    }
+                    else
+                    {
+                        Log.Error("Failed to move file {0} to {1}", m_tempArchivePath, text);
+                        m_state = State.Failed;
+                    }
+
+                    return;
+                }
+                case State.CleanUp:
+                {
                     CrashReportArchiver.DeleteArchives(m_temporaryCachePath);
                     m_progressValue = 0.95f;
                     if (m_stateSucceeeded)
@@ -160,193 +358,13 @@ public class ClientCrashReportThreadedJob : ThreadedJob
 
                     m_progressValue = 1f;
                     m_stateSucceeeded = true;
-                    return;
-                }
-
-                m_progressValue = 0.4f;
-                string text = Path.Combine(m_temporaryCachePath, m_archiveFileName);
-                m_progressValue = 0.5f;
-                try
-                {
-                    File.Move(m_tempArchivePath, text);
-                }
-                catch (Exception exception)
-                {
-                    Log.Exception(exception);
-                }
-
-                m_progressValue = 0.6f;
-                if (File.Exists(text))
-                {
-                    try
-                    {
-                        m_crashReportBytes = File.ReadAllBytes(text);
-                        m_stateSucceeeded = m_crashReportBytes != null && m_crashReportBytes.Length > 0;
-                    }
-                    catch (Exception exception)
-                    {
-                        Log.Exception(exception);
-                        m_stateSucceeeded = false;
-                    }
-                }
-                else
-                {
-                    Log.Error("Failed to move file {0} to {1}", m_tempArchivePath, text);
-                    m_state = State.Failed;
-                }
-
-                return;
-            }
-
-            m_progressValue = 0.05f;
-            m_stateSucceeeded = true;
-            if (!Directory.Exists(m_crashDumpDirectoryPath))
-            {
-                if (m_bugReportType != 0)
-                {
-                    try
-                    {
-                        DirectoryInfo directoryInfo = Directory.CreateDirectory(m_crashDumpDirectoryPath);
-                        if (directoryInfo == null || !directoryInfo.Exists)
-                        {
-                            Log.Error("Failed to create temp directory for user bug report at {0}",
-                                m_crashDumpDirectoryPath);
-                            m_stateSucceeeded = false;
-                        }
-
-                        using (new StreamWriter(m_crashDumpDirectoryPath + "\\crash.dmp"))
-                        {
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        Log.Exception(exception);
-                        m_stateSucceeeded = false;
-                    }
-                }
-                else
-                {
-                    Log.Error("Directory does not exist for crash report {0}", m_crashDumpDirectoryPath);
-                    m_stateSucceeeded = false;
+                    break;
                 }
             }
-
-            if (m_stateSucceeeded)
-            {
-                if (!string.IsNullOrEmpty(m_userMessage))
-                {
-                    try
-                    {
-                        using (StreamWriter userMsgWriter = new StreamWriter(m_crashDumpDirectoryPath + "\\UserMessage.txt"))
-                        {
-                            userMsgWriter.Write(m_userMessage);
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        Log.Exception(exception);
-                        m_stateSucceeeded = m_bugReportType != BugReportType.Bug && m_bugReportType != BugReportType.Exception;
-                    }
-                }
-            }
-
-            if (m_stateSucceeeded && m_bugReportType != 0)
-            {
-                try
-                {
-                    StringBuilder stringBuilder = new StringBuilder(m_logMessage != null ? m_logMessage + "\n" : string.Empty);
-                    if (File.Exists(m_outputLogPath))
-                    {
-                        File.Copy(m_outputLogPath, m_outputLogPathCopy, true);
-                        if (File.Exists(m_outputLogPathCopy))
-                        {
-                            using (StreamReader streamReader = File.OpenText(m_outputLogPathCopy))
-                            {
-                                if (streamReader.BaseStream.Length <= 262144)
-                                {
-                                    streamReader.BaseStream.Seek(-streamReader.BaseStream.Length, SeekOrigin.End);
-                                }
-                                else
-                                {
-                                    streamReader.BaseStream.Seek(-262144L, SeekOrigin.End);
-                                    stringBuilder.AppendFormat("(Skipped {0} bytes)\n", streamReader.BaseStream.Length - 262144);
-                                }
-
-                                stringBuilder.Append(streamReader.ReadToEnd());
-                            }
-
-                            using (StreamWriter streamWriter3 = new StreamWriter(Path.Combine(m_crashDumpDirectoryPath,
-                                       Path.GetFileName(m_outputLogPath))))
-                            {
-                                streamWriter3.Write(stringBuilder.ToString());
-                            }
-                        }
-                    }
-                }
-                catch (Exception exception)
-                {
-                    Log.Exception(exception);
-                }
-            }
-
-            if (m_stateSucceeeded)
-            {
-                try
-                {
-                    StringBuilder crushDumpBuilder = new StringBuilder();
-                    if (ClientBootstrap.Instance != null)
-                    {
-                        if (File.Exists(ClientBootstrap.Instance.GetFileLogCurrentPath()))
-                        {
-                            string path = Path.Combine(m_temporaryCachePath, "AtlasReactor.txt");
-                            File.Copy(ClientBootstrap.Instance.GetFileLogCurrentPath(), path, true);
-                            if (File.Exists(path))
-                            {
-                                using (StreamReader streamReader = File.OpenText(path))
-                                {
-                                    if (streamReader.BaseStream.Length <= 262144)
-                                    {
-                                        streamReader.BaseStream.Seek(-streamReader.BaseStream.Length, SeekOrigin.End);
-                                    }
-                                    else
-                                    {
-                                        streamReader.BaseStream.Seek(-262144L, SeekOrigin.End);
-                                        crushDumpBuilder.AppendFormat("(Skipped {0} bytes)\n", streamReader.BaseStream.Length - 262144);
-                                    }
-
-                                    crushDumpBuilder.Append(streamReader.ReadToEnd());
-                                }
-
-                                using (StreamWriter crashDumpWriter = new StreamWriter(Path.Combine(m_crashDumpDirectoryPath, "AtlasReactor.txt")))
-                                {
-                                    crashDumpWriter.Write(crushDumpBuilder.ToString());
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception exception)
-                {
-                    Log.Exception(exception);
-                }
-            }
-
-            if (m_stateSucceeeded)
-            {
-                m_stateSucceeeded = CrashReportArchiver.CreateArchiveFromCrashDumpDirectory(
-                    out m_tempArchivePath,
-                    out m_tempArchiveFileSize,
-                    m_crashDumpDirectoryPath,
-                    m_temporaryCachePath,
-                    m_userKeyValues,
-                    m_bugReportType);
-            }
-
-            m_progressValue = 0.2f;
         }
-        catch (Exception exception8)
+        catch (Exception ex)
         {
-            Log.Exception(exception8);
+            Log.Exception(ex);
             m_state = State.Failed;
         }
     }
@@ -385,7 +403,10 @@ public class ClientCrashReportThreadedJob : ThreadedJob
                     {
                         Log.Info("Attempting to build URL to send crash report {0}", m_archiveFileName);
                         string crashServerAndArchiveURL = $"http://debug.triongames.com/v2/archive/{m_archiveFileName}";
-                        ClientCrashReportDetector.Get().UploadArchive(crashServerAndArchiveURL, m_crashReportBytes, OnUploadArchiveEndStatus);
+                        ClientCrashReportDetector.Get().UploadArchive(
+                            crashServerAndArchiveURL,
+                            m_crashReportBytes,
+                            OnUploadArchiveEndStatus);
                     }
                     catch (Exception exception)
                     {
@@ -419,7 +440,9 @@ public class ClientCrashReportThreadedJob : ThreadedJob
 
     private void RequestArchiveName()
     {
-        if (ClientGameManager.Get().RequestCrashReportArchiveName(m_tempArchiveFileSize, OnCrashReportArchiveNameResponse))
+        if (ClientGameManager.Get().RequestCrashReportArchiveName(
+                m_tempArchiveFileSize,
+                OnCrashReportArchiveNameResponse))
         {
             m_state = State.WaitingForArchiveNameResponse;
         }
