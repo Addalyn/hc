@@ -31,16 +31,19 @@
     <PlatformTarget>x64</PlatformTarget>
     <DefineConstants>
     </DefineConstants>
+    <GitTagRegex>client*</GitTagRegex>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <PlatformTarget>x64</PlatformTarget>
     <DefineConstants>
     </DefineConstants>
+    <GitTagRegex>client*</GitTagRegex>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Server Release|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\ServerRelease\</OutputPath>
     <DefineConstants>SERVER SERVER2</DefineConstants>
+    <GitTagRegex>[0-9]*</GitTagRegex>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -57,10 +60,12 @@
     <LangVersion>7</LangVersion>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <DefineConstants>TRACE;DEBUG;SERVER SERVER2</DefineConstants>
+    <GitTagRegex>[0-9]*</GitTagRegex>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Vanilla Client|AnyCPU' ">
     <DefineConstants>PURE_REACTOR</DefineConstants>
+    <GitTagRegex>client*</GitTagRegex>
     <OutputPath>bin\Vanilla Client\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
