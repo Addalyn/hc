@@ -402,7 +402,11 @@ public class ClientCrashReportThreadedJob : ThreadedJob
                     try
                     {
                         Log.Info("Attempting to build URL to send crash report {0}", m_archiveFileName);
+#if VANILLA
                         string crashServerAndArchiveURL = $"http://debug.triongames.com/v2/archive/{m_archiveFileName}";
+#else
+                        string crashServerAndArchiveURL = $"{HydrogenConfig.Get().CrashReportUrl}{m_archiveFileName}";
+#endif
                         ClientCrashReportDetector.Get().UploadArchive(
                             crashServerAndArchiveURL,
                             m_crashReportBytes,

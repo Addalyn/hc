@@ -139,6 +139,10 @@ public class HydrogenConfig : JsonConfig
 	public string ReplayUploadUrl;
 	public Dictionary<string, string> ReplayUploadHeaders;
 #endif
+	
+#if !VANILLA
+	public string CrashReportUrl = "https://evos-emu.com/api/archive/";
+#endif
 
 	public HydrogenConfig()
 	{
