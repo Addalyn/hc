@@ -68,7 +68,20 @@ public class ExternalLighting : MonoBehaviour, IGameEventListener
 
 	private void OnApplicationQuit()
 	{
-		if (Chroma.SdkAvailable)
+#if VANILLA
+		bool isSdkAvailable = Chroma.SdkAvailable;
+#else
+		bool isSdkAvailable = false;
+		try
+		{
+			isSdkAvailable = Chroma.SdkAvailable;
+		}
+		catch (Exception e)
+		{
+			Log.Error($"Failed to query Chroma SDK: {e}");
+		}
+#endif
+		if (isSdkAvailable)
 		{
 			Chroma.Instance.Uninitialize();
 		}
