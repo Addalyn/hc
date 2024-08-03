@@ -126,7 +126,7 @@ public class UIRankedModePlayerDraftEntry : UIRankedModeDraftCharacterEntry
             // Custom titles
             m_playerTitle.text = GameBalanceVars.Get().GetTitle(info.TitleID, info.GetHandle(), string.Empty, info.TitleLevel);
 #else
-			m_playerTitle.text = GameBalanceVars.Get().GetTitle(info.TitleID, string.Empty, info.TitleLevel);
+            m_playerTitle.text = GameBalanceVars.Get().GetTitle(info.TitleID, string.Empty, info.TitleLevel);
 #endif
             m_playerLevel.text = string.Empty;
             GameBalanceVars.PlayerBanner banner = GameWideData.Get().m_gameBalanceVars.GetBanner(info.BannerID);

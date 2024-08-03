@@ -468,7 +468,7 @@ public class UIPlayerProgressPanel : UIScene
         // Custom titles
         m_playerTitle.text = GameBalanceVars.Get().GetTitle(newData.AccountComponent.SelectedTitleID, newData.Handle, string.Empty);
 #else
-		m_playerTitle.text = GameBalanceVars.Get().GetTitle(newData.AccountComponent.SelectedTitleID, string.Empty);
+        m_playerTitle.text = GameBalanceVars.Get().GetTitle(newData.AccountComponent.SelectedTitleID, string.Empty);
 #endif
         UIManager.SetGameObjectActive(m_playerTitle, true);
         m_overviewPanel.Setup(m_playerAccountData, m_charactersList);

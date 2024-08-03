@@ -141,7 +141,7 @@ public class UILoadscreenProfile : MonoBehaviour
         // Custom titles
         m_playerTitle.text = GameBalanceVars.Get().GetTitle(playerInfo.TitleID, playerInfo.Handle, string.Empty, playerInfo.TitleLevel);
 #else
-		m_playerTitle.text = GameBalanceVars.Get().GetTitle(playerInfo.TitleID, string.Empty, playerInfo.TitleLevel);
+        m_playerTitle.text = GameBalanceVars.Get().GetTitle(playerInfo.TitleID, string.Empty, playerInfo.TitleLevel);
 #endif
         m_playerId = playerInfo.PlayerId;
         int isBot;

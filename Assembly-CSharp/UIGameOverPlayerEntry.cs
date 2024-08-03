@@ -694,7 +694,7 @@ public class UIGameOverPlayerEntry : MonoBehaviour
             // Custom titles
             m_playertitle.text = GameBalanceVars.Get().GetTitle(statline.TitleID, statline.DisplayName, string.Empty, statline.TitleLevel);
 #else
-			m_playertitle.text = GameBalanceVars.Get().GetTitle(statline.TitleID, string.Empty, statline.TitleLevel);
+            m_playertitle.text = GameBalanceVars.Get().GetTitle(statline.TitleID, string.Empty, statline.TitleLevel);
 #endif
         }
         GameBalanceVars.PlayerBanner banner = GameWideData.Get().m_gameBalanceVars.GetBanner(statline.BannerID);

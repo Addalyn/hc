@@ -416,7 +416,7 @@ public class UIStorePurchaseItemDialogBox : UIDialogBox
 #if !VANILLA && !SERVER
             string title = gameBalanceVars2.GetTitle(item.m_titleID, ClientGameManager.Get().Handle, string.Empty, -1);
 #else 
-			string title = gameBalanceVars2.GetTitle(item.m_titleID, string.Empty, -1);
+            string title = gameBalanceVars2.GetTitle(item.m_titleID, string.Empty, -1);
 #endif
             text2 = string.Format(StringUtil.TR("PurchaseItem", "Store"), title);
             text = string.Format(StringUtil.TR("PurchaseItemDesc", "Store"), title);

@@ -48,7 +48,7 @@ public class UIGameOverTopParticipantWidget : MonoBehaviour
             // Custom titles
             m_PlayerTitle.text = GameBalanceVars.Get().GetTitle(current.TitleID, current.Handle, string.Empty, current.TitleLevel);
 #else
-			m_PlayerTitle.text = GameBalanceVars.Get().GetTitle(current.TitleID, string.Empty, current.TitleLevel);
+            m_PlayerTitle.text = GameBalanceVars.Get().GetTitle(current.TitleID, string.Empty, current.TitleLevel);
 #endif
             UIManager.SetGameObjectActive(m_PlayerLevel, false);
             m_CharacterIcon.sprite = GameWideData.Get().GetCharacterResourceLink(topPlayerInfo.FreelancerPlayed).GetCharacterSelectIcon();

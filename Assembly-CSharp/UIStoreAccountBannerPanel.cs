@@ -424,7 +424,7 @@ public class UIStoreAccountBannerPanel : UIStoreBaseInventoryPanel
             // Custom titles
             text = GameBalanceVars.Get().GetTitle(accountComponent.SelectedTitleID, ClientGameManager.Get().Handle, string.Empty);
 #else
-			text = GameBalanceVars.Get().GetTitle(accountComponent.SelectedTitleID, string.Empty);
+            text = GameBalanceVars.Get().GetTitle(accountComponent.SelectedTitleID, string.Empty);
 #endif
         }
         if (playerRibbon == null)

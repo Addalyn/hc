@@ -290,7 +290,7 @@ public class FriendListBannerEntry : MonoBehaviour
                             // Custom titles
                             string title = GameWideData.Get().m_gameBalanceVars.GetTitle(m_friendInfo.TitleID, m_friendInfo.FriendHandle, string.Empty, m_friendInfo.TitleLevel);
 #else
-					        string title = GameWideData.Get().m_gameBalanceVars.GetTitle(m_friendInfo.TitleID, string.Empty, m_friendInfo.TitleLevel);
+                            string title = GameWideData.Get().m_gameBalanceVars.GetTitle(m_friendInfo.TitleID, string.Empty, m_friendInfo.TitleLevel);
 #endif
                             string str = m_friendInfo.FriendHandle;
                             if (!title.IsNullOrEmpty())
