@@ -158,6 +158,13 @@ public class ClientBootstrap : MonoBehaviour
             ClientGameManager.Get().GroupInfo.SelectedQueueType = GameType.PvP;
             AppState_GroupCharacterSelect.Get().UpdateReadyState(true);
         }
+        if (HydrogenConfig.Get().StraightPlay
+            && AppState.GetCurrent() == AppState_LandingPage.Get()
+            && UIFrontEnd.Get() != null)
+        {
+            AppState_LandingPage.Get().OnQuickPlayClicked();
+            ClientGameManager.Get().GroupInfo.SelectedQueueType = GameType.PvP;
+        }
         if (m_fileLog != null)
         {
             m_fileLog.Update();

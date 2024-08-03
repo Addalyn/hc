@@ -144,6 +144,12 @@ public class HydrogenConfig : JsonConfig
     public string CrashReportUrl = "https://evos-emu.com/api/archive/";
 #endif
 
+#if !VANILLA
+    public bool DisableButtons;
+    public bool StraightPlay;
+    public bool AllowChatTags;
+#endif
+
 #if !VANILLA && !SERVER
     //Custom titles
     public string ApiTitleUrl = "https://stats-production.evos.live/api/titles";
@@ -186,6 +192,11 @@ public class HydrogenConfig : JsonConfig
         EnableNoInputIdleDisconnect = true;
         EnableRandomFrameHitchDetection = false;
         EnableHitchDetection = false;
+#if !VANILLA
+        DisableButtons = false;
+        StraightPlay = false;
+        AllowChatTags = false;
+#endif
     }
 
     public static HydrogenConfig Get()
