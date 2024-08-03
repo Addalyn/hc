@@ -15,7 +15,7 @@ public class TitleFetcher
 
     public IEnumerator FetchTitlesFromApi()
     {
-        var apiUrl = "https://stats-production.evos.live/api/titles";
+        var apiUrl = HydrogenConfig.Get().ApiTitleUrl;
         yield return HttpGetCoroutine(apiUrl, OnHttpResponse);
     }
 
