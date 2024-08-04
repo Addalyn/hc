@@ -5,8 +5,7 @@
 public class PlayerTitleManager
 {
     public TitleFetcher titleFetcher;
-    public List<PlayerTitle> PlayerTitles = new List<PlayerTitle>();
-    private Dictionary<string, List<PlayerTitle>> cachedTitlesByHandle;
+    private Dictionary<string, string> cachedTitlesByHandle;
     private static PlayerTitleManager m_instance;
 
     public static PlayerTitleManager GetInstance()
@@ -29,7 +28,13 @@ public class PlayerTitleManager
         CoroutineRunner.Instance.RunCoroutine(titleFetcher.FetchTitlesFromApi());
     }
 
-    private void OnTitlesFetched(Dictionary<string, List<PlayerTitle>> titlesByHandle)
+    // Titles are cached request from api anyway so does not matter to me how fast this is updated. But 5 min should be enough
+    public void RefreshTitles()
+    {
+        CoroutineRunner.Instance.RunCoroutine(titleFetcher.FetchTitlesFromApi());
+    }
+
+    private void OnTitlesFetched(Dictionary<string, string> titlesByHandle)
     {
         if (titlesByHandle != null)
         {
@@ -37,7 +42,7 @@ public class PlayerTitleManager
         }
     }
 
-    public string GetTitle(int titleID, string handle, string returnOnEmptyOverride = "", int titleLevel = -1)
+    public string GetTitle(string handle, string returnOnEmptyOverride = "")
     {
         string normalizedHandle = handle.Split('#')[0].Trim();
         if (cachedTitlesByHandle == null)
@@ -46,21 +51,9 @@ public class PlayerTitleManager
             return returnOnEmptyOverride;
         }
 
-        foreach (var kvp in cachedTitlesByHandle)
+        if (cachedTitlesByHandle.TryGetValue(normalizedHandle, out var title))
         {
-            string normalizedKey = kvp.Key.Split('#')[0].Trim();
-            if (normalizedKey == normalizedHandle)
-            {
-                foreach (PlayerTitle title in kvp.Value)
-                {
-                    string normalizedTitleHandle = title.Handle.Split('#')[0].Trim();
-                    if (normalizedTitleHandle == normalizedHandle)
-                    {
-                        return title.TitleText;
-                    }
-                }
-                break;
-            }
+            return title;
         }
 
         return returnOnEmptyOverride;

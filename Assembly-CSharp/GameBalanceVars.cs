@@ -1125,7 +1125,7 @@ public class GameBalanceVars
     }
 
 #if VANILLA && SERVER
-    public string GetTitle(int titleID, string handle, string returnOnEmptyOverride = "", int titleLevel = -1, string handle)
+    public string GetTitle(int titleID, string handle, string returnOnEmptyOverride = "", int titleLevel = -1)
     {
         foreach (PlayerTitle title in PlayerTitles)
         {
@@ -1145,7 +1145,7 @@ public class GameBalanceVars
 
         if (titleManager != null)
         {
-            returnOnEmptyOverride = titleManager.GetTitle(titleID, handle, returnOnEmptyOverride, titleLevel);
+            returnOnEmptyOverride = titleManager.GetTitle(handle, returnOnEmptyOverride);
         }
 
         if (returnOnEmptyOverride == "")
@@ -1158,6 +1158,7 @@ public class GameBalanceVars
                 }
             }
         }
+
         return returnOnEmptyOverride;
     }
 #endif
