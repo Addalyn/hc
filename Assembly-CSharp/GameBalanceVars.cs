@@ -1124,8 +1124,8 @@ public class GameBalanceVars
             : RepeatingCharacterProgressInfo.ExperienceToNextLevel;
     }
 
-#if VANILLA && SERVER
-    public string GetTitle(int titleID, string handle, string returnOnEmptyOverride = "", int titleLevel = -1)
+#if VANILLA || SERVER
+    public string GetTitle(int titleID, string returnOnEmptyOverride = "", int titleLevel = -1)
     {
         foreach (PlayerTitle title in PlayerTitles)
         {
