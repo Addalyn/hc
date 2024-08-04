@@ -42,7 +42,7 @@ public class PlayerTitleManager
         }
     }
 
-    public string GetTitle(string handle, string returnOnEmptyOverride)
+    public string GetTitle(string handle, string returnOnEmptyOverride = "")
     {
         string normalizedHandle = handle.Split('#')[0].Trim();
         if (cachedTitlesByHandle == null)
