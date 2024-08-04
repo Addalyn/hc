@@ -9,10 +9,8 @@ using System;
 // Custom titles
 public class TitleFetcher
 {
-    public delegate void OnTitlesFetched(Dictionary<string, List<PlayerTitle>> titlesByHandle);
+    public delegate void OnTitlesFetched(Dictionary<string, string> titlesByHandle);
     public event OnTitlesFetched TitlesFetched;
-
-    private Dictionary<string, List<PlayerTitle>> cachedTitlesByHandle = new Dictionary<string, List<PlayerTitle>>();
 
     public IEnumerator FetchTitlesFromApi()
     {
@@ -36,28 +34,18 @@ public class TitleFetcher
 
             if (data != null)
             {
-                var titlesByHandle = new Dictionary<string, List<PlayerTitle>>();
+                var titlesByHandle = new Dictionary<string, string>();
 
                 foreach (var item in data.Children<JObject>())
                 {
                     var attributes = item["attributes"] as JObject;
                     var handle = (string)attributes["handle"];
-                    var title = new PlayerTitle
-                    {
-                        ID = (int)item["id"],
-                        TitleText = (string)attributes["title"],
-                        Handle = handle
-                    };
+                    var title = (string)attributes["title"];
 
-                    if (!titlesByHandle.ContainsKey(handle))
-                    {
-                        titlesByHandle[handle] = new List<PlayerTitle>();
-                    }
-                    titlesByHandle[handle].Add(title);
+                    titlesByHandle[handle.Split('#')[0].Trim()] = title;
                 }
 
-                cachedTitlesByHandle = titlesByHandle;
-                TitlesFetched?.Invoke(cachedTitlesByHandle);
+                TitlesFetched?.Invoke(titlesByHandle);
             }
             else
             {
@@ -99,11 +87,6 @@ public class TitleFetcher
                 client.Dispose();
             }
         }
-    }
-
-    public Dictionary<string, List<PlayerTitle>> GetCachedTitlesByHandle()
-    {
-        return cachedTitlesByHandle;
     }
 }
 #endif

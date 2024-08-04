@@ -1932,7 +1932,6 @@
     <Compile Include="PlayerSelectionEffect.cs" />
     <Compile Include="PlayerSkinData.cs" />
     <Compile Include="PlayerTauntData.cs" />
-    <Compile Include="PlayerTitle.cs" />
     <Compile Include="PlayerTitleManager.cs" />
     <Compile Include="PlayRawImageMovieTexture.cs" />
     <Compile Include="PointCondition.cs" />

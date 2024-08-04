@@ -15,7 +15,13 @@ public class ClientBootstrap : MonoBehaviour
 	private string[] m_commandLine;
 	private AsyncPump m_asyncPump;
 
-	internal static ClientBootstrap Instance { get; private set; }
+#if !VANILLA && !SERVER
+    // Custom titles
+    private float timeSinceLastRefresh = 0f;
+    private const float refreshInterval = 300f; //5min
+#endif
+
+    internal static ClientBootstrap Instance { get; private set; }
 	internal static bool LoadTest { get; private set; }
 
 	private void Awake()
@@ -166,9 +172,19 @@ public class ClientBootstrap : MonoBehaviour
 		{
 			m_asyncPump.Run(0);
 		}
-	}
 
-	private void OnDestroy()
+#if !VANILLA && !SERVER
+        // Custom titles refresh
+        timeSinceLastRefresh += Time.deltaTime;
+        if (timeSinceLastRefresh >= refreshInterval)
+        {
+            PlayerTitleManager.GetInstance().RefreshTitles();
+            timeSinceLastRefresh = 0f;
+        }
+#endif
+    }
+
+    private void OnDestroy()
 	{
 		if (m_fileLog != null)
 		{
