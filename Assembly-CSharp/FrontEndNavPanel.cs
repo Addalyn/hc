@@ -94,7 +94,16 @@ public class FrontEndNavPanel : MonoBehaviour
         m_PlayBtn.spriteController.callback = PlayBtnClicked;
         m_CollectionBtn.spriteController.callback = CollectionsBtnClicked;
         m_CashShopBtn.spriteController.callback = CashShopBtnClicked;
+#if !VANILLA
+        if (HydrogenConfig.Get().StraightPlay)
+        {
+            m_landingPageBtn.spriteController.callback = PlayBtnClicked;
+        } else {
+            m_landingPageBtn.spriteController.callback = LandingPageBtnClicked;
+        }
+#else
         m_landingPageBtn.spriteController.callback = LandingPageBtnClicked;
+#endif
         m_SeasonBtn.spriteController.callback = SeasonsBtnClicked;
         m_LootMatrixBtn.spriteController.callback = LootMatrixBtnClicked;
         m_notificationsBtn.spriteController.callback = NotificationBtnClicked;
